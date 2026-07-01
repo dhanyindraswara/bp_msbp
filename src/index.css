@@ -129,6 +129,22 @@ table.stones-table td:last-child { overflow: visible; }
 .act-detail { font-size: 12.5px; color: #1f2937; line-height: 1.35; }
 .act-meta { font-size: 11px; color: #9aa4ae; margin-top: 1px; }
 
+/* ---- file attachments ---- */
+.filerow { display: flex; gap: 10px; border: 1px solid #e6eaee; border-radius: 9px; padding: 9px; margin-bottom: 9px; }
+.file-thumb-wrap { flex: none; }
+.file-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e6ea; display: block; }
+.file-ic { width: 48px; height: 48px; flex: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; letter-spacing: .02em; }
+.file-ic-pdf { background: #c0505a; }
+.file-ic-file { background: #6b7280; }
+.file-main { min-width: 0; flex: 1; }
+.file-name { font-weight: 700; color: #1f4f86; font-size: 13px; text-decoration: none; word-break: break-word; display: block; }
+.file-name:hover { text-decoration: underline; }
+.file-meta { font-size: 11px; color: #9aa4ae; margin: 3px 0 5px; }
+.file-actions { display: flex; gap: 12px; }
+.file-actions a, .file-actions button { border: none; background: transparent; color: #6b7280; font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: none; }
+.file-actions a:hover { color: #1f4f86; text-decoration: underline; }
+.file-actions button:hover { color: #c0505a; text-decoration: underline; }
+
 /* ---- global search ---- */
 .search-bar { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #cbd2d9; border-radius: 10px; padding: 10px 14px; max-width: 720px; }
 .search-bar:focus-within { outline: 2px solid #9cc3e3; outline-offset: -1px; }

@@ -20,6 +20,7 @@ import {
   toggleResolveComment,
   deleteComment,
 } from '../lib/store.js'
+import { subscribeFiles, uploadFile, deleteFile, filesEnabled } from '../lib/files.js'
 import SipocEditor from '../components/SipocEditor.jsx'
 import ProcessMap from '../components/ProcessMap.jsx'
 import Rasci from '../components/Rasci.jsx'
@@ -32,6 +33,12 @@ const fmt = (ts) => {
     return ''
   }
 }
+const fmtSize = (b) => {
+  if (!b) return '0 B'
+  const u = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(b) / Math.log(1024))
+  return (b / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i]
+}
 
 function StatusBadge({ status }) {
   return <span className={'stbadge stbadge-' + status}>{STATUS[status] || 'Draft'}</span>
@@ -41,8 +48,11 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
   const [view, setView] = useState('sipoc')
   const [project, setProject] = useState(() => (openId ? getDoc(openId)?.project || null : null))
   const [meta, setMeta] = useState(() => loadMeta(openId))
-  const [drawer, setDrawer] = useState(null) // 'comments' | 'history' | null
+  const [drawer, setDrawer] = useState(null) // 'comments' | 'history' | 'files' | null
   const [commentText, setCommentText] = useState('')
+  const [files, setFiles] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const fileUpRef = useRef(null)
 
   function loadMeta(id) {
     const d = id ? getDoc(id) : null
@@ -66,6 +76,27 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
     const t = setTimeout(() => saveDoc({ id: openId, project }), 700)
     return () => clearTimeout(t)
   }, [project, openId])
+
+  // Live-subscribe to the document's attached files.
+  useEffect(() => {
+    if (!openId) {
+      setFiles([])
+      return
+    }
+    return subscribeFiles(openId, setFiles)
+  }, [openId])
+
+  const onUpload = async (file) => {
+    if (!file || !openId) return
+    setUploading(true)
+    try {
+      await uploadFile(openId, file)
+      notify('File uploaded')
+    } catch (e) {
+      notify('Upload failed: ' + (e.message || e))
+    }
+    setUploading(false)
+  }
 
   const derived = useMemo(() => (project ? generate(project) : null), [project])
 
@@ -211,6 +242,9 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
             Comments{openComments ? ' (' + openComments + ')' : ''}
           </button>
           <button className={'btn btn-sm' + (drawer === 'history' ? ' btn-on' : '')} onClick={() => setDrawer(drawer === 'history' ? null : 'history')}>History</button>
+          <button className={'btn btn-sm' + (drawer === 'files' ? ' btn-on' : '')} onClick={() => setDrawer(drawer === 'files' ? null : 'files')}>
+            Files{files.length ? ' (' + files.length + ')' : ''}
+          </button>
           <button className="btn btn-sm" onClick={doSaveVersion}>Save version</button>
           <button className="btn btn-sm btn-primary" onClick={workflow}>{workflowLabel}</button>
           <span style={{ width: 1, background: '#e2e6ea', alignSelf: 'stretch', margin: '2px 2px' }} />
@@ -301,6 +335,68 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
               ) : (
                 <div className="drawer-empty">No activity.</div>
               )}
+            </div>
+          </aside>
+        ) : null}
+
+        {drawer === 'files' ? (
+          <aside className="stones-drawer">
+            <div className="drawer-hd">Files<button className="drawer-x" onClick={() => setDrawer(null)}>✕</button></div>
+            <div className="drawer-body">
+              {!filesEnabled ? (
+                <div className="drawer-empty">File attachments need Firebase Storage (not available in local mode).</div>
+              ) : files.length ? (
+                files.map((f) => (
+                  <div key={f.id} className="filerow">
+                    {f.kind === 'png' ? (
+                      <a href={f.url} target="_blank" rel="noreferrer" className="file-thumb-wrap">
+                        <img className="file-thumb" src={f.url} alt="" />
+                      </a>
+                    ) : (
+                      <div className={'file-ic file-ic-' + f.kind}>{f.kind === 'pdf' ? 'PDF' : 'FILE'}</div>
+                    )}
+                    <div className="file-main">
+                      <a className="file-name" href={f.url} target="_blank" rel="noreferrer">{f.name}</a>
+                      <div className="file-meta">{fmtSize(f.size)} · {f.uploadedBy} · {fmt(f.createdAt)}</div>
+                      <div className="file-actions">
+                        <a href={f.url} target="_blank" rel="noreferrer">Open</a>
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Delete "' + f.name + '"?')) {
+                              deleteFile(openId, f)
+                              notify('File deleted')
+                            }
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="drawer-empty">No files yet. Upload a PDF or PNG below.</div>
+              )}
+            </div>
+            <div className="drawer-foot">
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf"
+                ref={fileUpRef}
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files[0]
+                  if (f) onUpload(f)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                className="btn btn-sm btn-primary"
+                disabled={!filesEnabled || uploading}
+                onClick={() => fileUpRef.current && fileUpRef.current.click()}
+              >
+                {uploading ? 'Uploading…' : '+ Upload PDF / PNG'}
+              </button>
             </div>
           </aside>
         ) : null}

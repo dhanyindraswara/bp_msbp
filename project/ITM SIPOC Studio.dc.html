@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="reactflow.css">
+<script crossorigin="anonymous" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+<style>
+*{box-sizing:border-box}
+#itm-root{font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1f2937;font-size:14px}
+.itm-wrap{display:flex;flex-direction:column;height:100vh;background:#f4f6f8;overflow:hidden}
+.itm-top{display:flex;align-items:center;gap:12px;padding:9px 16px;background:#fff;border-bottom:1px solid #e2e6ea;flex:none}
+.itm-brand{display:flex;flex-direction:column;line-height:1.15}
+.itm-title{font-weight:800;font-size:15px;color:#0f2a43;letter-spacing:-.01em}
+.itm-sub{font-size:11px;color:#8a94a0;font-weight:600}
+.itm-tabs{display:flex;gap:4px;margin-left:10px}
+.itm-tab{padding:7px 14px;border-radius:6px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:600;color:#4b5563;font-size:13px}
+.itm-tab.active{background:#e8f0f8;color:#1f4f86;border-color:#cfe0f2}
+.itm-actions{margin-left:auto;display:flex;gap:7px;align-items:center}
+.btn{padding:7px 12px;border-radius:6px;border:1px solid #cbd2d9;background:#fff;cursor:pointer;font-weight:600;font-size:13px;color:#374151;white-space:nowrap}
+.btn:hover{background:#f3f5f7}
+.btn-primary{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
+.btn-primary:hover{background:#285f97}
+.btn-sm{padding:5px 9px;font-size:12px}
+.itm-body{flex:1;overflow:auto;position:relative}
+.pane{padding:22px 26px 60px;max-width:1320px;margin:0 auto}
+.hd-grid{display:grid;grid-template-columns:2fr 1.4fr .7fr;gap:14px;margin-bottom:18px}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.fld input{padding:9px 11px;border:1px solid #cbd2d9;border-radius:7px;background:#fff}
+.fld input:focus{outline:2px solid #9cc3e3;outline-offset:-1px}
+.sec-h{display:flex;align-items:center;gap:10px;margin:6px 0 10px}
+.sec-h h3{font-size:14px;font-weight:800;color:#0f2a43;margin:0}
+.sec-h .hint{font-size:12px;color:#94a0ac}
+table.grid{border-collapse:collapse;width:100%;background:#fff;border:1px solid #dbe0e5;border-radius:9px;overflow:hidden}
+table.grid th{background:#2f6fb0;color:#fff;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:9px 10px;text-align:left}
+table.grid th.tiny{width:34px;text-align:center}
+table.grid td{border-top:1px solid #eef1f4;padding:0;vertical-align:top}
+table.grid td.tiny{text-align:center;vertical-align:middle}
+table.grid td textarea{width:100%;border:none;padding:8px 10px;resize:none;background:transparent;font-family:inherit;font-size:13px;line-height:1.35;min-height:38px;overflow:hidden}
+table.grid td textarea:focus{outline:2px solid #9cc3e3;outline-offset:-2px;background:#f7fbff}
+table.grid tr:hover td{background:#fbfcfd}
+.rowdel{color:#c0505a;cursor:pointer;font-weight:800;border:none;background:transparent;font-size:14px;padding:4px 6px;border-radius:4px}
+.rowdel:hover{background:#fbe9eb}
+.legend-card{background:#fff;border:1px solid #b9c6d2;border-radius:2px;overflow:hidden}
+.legend-hd{background:#9db8cf;color:#12324e;font-weight:800;text-align:center;padding:6px;font-size:12.5px;text-transform:uppercase;letter-spacing:.03em}
+.legend-body{padding:9px 12px;font-size:12.5px;line-height:1.5}
+.react-flow__attribution{display:none!important}
+.react-flow__handle{border:none!important;min-width:0!important;min-height:0!important}
+.nodedel{position:absolute;top:2px;right:3px;border:none;background:transparent;color:#b6bcc4;cursor:pointer;font-size:11px;line-height:1;opacity:0;transition:opacity .12s}
+.rf-node:hover .nodedel{opacity:1}
+.rf-node:hover .nodedel:hover{color:#c0505a}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 5px;border-radius:4px;font-weight:800;font-size:11px}
+.rasci-sel{width:100%;height:100%;border:none;background:transparent;text-align:center;font-weight:800;font-size:13px;cursor:pointer;appearance:none;padding:8px 2px;color:#334155}
+.rasci-sel:focus{outline:2px solid #9cc3e3;outline-offset:-2px}
+table.rasci{border-collapse:collapse;background:#fff;border:1px solid #cbd2d9;font-size:13px}
+table.rasci th,table.rasci td{border:1px solid #dde3e9;padding:0}
+table.rasci thead th{background:#eef2f6;color:#334155;font-weight:700;padding:9px 8px;text-align:center;vertical-align:bottom;font-size:12px}
+table.rasci th.rowhd{background:#2f6fb0;color:#fff;text-align:left;padding:9px 12px;min-width:220px}
+table.rasci td.rowhd{text-align:left;padding:9px 12px;font-weight:600;background:#f7fafd;min-width:220px}
+table.rasci td.cell{min-width:64px;height:40px}
+.warn{background:#fff5e6;border:1px solid #f0cf94;color:#9a6b00;border-radius:7px;padding:9px 12px;font-size:12.5px;font-weight:600}
+.toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:#12324e;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:50}
+.pillrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid #cbd2d9;border-radius:7px;overflow:hidden}
+.seg button{border:none;background:#fff;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;color:#64707c;white-space:nowrap}
+.seg button.on{background:#2f6fb0;color:#fff}
+.rf-loading{display:flex;align-items:center;justify-content:center;height:100%;color:#8a94a0;font-weight:600}
+</style>
+</helmet>
+<div id="itm-root"><div class="rf-loading" style="height:100vh">Loading ITM SIPOC Studio…</div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount(){ this._boot(); }
+  componentWillUnmount(){ try{ this._root && this._root.unmount(); }catch(e){} const el=document.getElementById('itm-host'); if(el) el.remove(); }
+
+  _host(){ let el=document.getElementById('itm-host'); if(!el){ el=document.createElement('div'); el.id='itm-host'; el.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#f4f6f8;overflow:hidden'; document.body.appendChild(el); } return el; }
+
+  _installROShim(){
+    if(window.__itmROShim) return;
+    function Shim(cb){ this._cb=cb; this._els=new Set(); Shim._all.add(this); }
+    Shim._all=new Set();
+    Shim.prototype._tick=function(){ if(!this._els.size) return; const entries=[]; this._els.forEach(el=>{ let r; try{ r=el.getBoundingClientRect(); }catch(e){ return; } entries.push({ target:el, contentRect:r, borderBoxSize:[{inlineSize:r.width,blockSize:r.height}], contentBoxSize:[{inlineSize:r.width,blockSize:r.height}], devicePixelContentBoxSize:[{inlineSize:r.width,blockSize:r.height}] }); }); try{ this._cb(entries, this); }catch(e){} };
+    Shim.prototype.observe=function(el){ this._els.add(el); const self=this; [0,50,150,350,700,1300].forEach(d=>setTimeout(()=>self._tick(),d)); };
+    Shim.prototype.unobserve=function(el){ this._els.delete(el); };
+    Shim.prototype.disconnect=function(){ this._els.clear(); Shim._all.delete(this); };
+    window.ResizeObserver=Shim;
+    window.__itmROShim=true;
+    window.addEventListener('resize',()=>{ Shim._all.forEach(o=>o._tick()); });
+    // periodic safety ticks so late layout/font settle is captured
+    setInterval(()=>{ Shim._all.forEach(o=>o._tick()); }, 1200);
+  }
+
+  _boot(){
+    const self=this;
+    this._installROShim();
+    const ensure=(check,src)=>new Promise((res,rej)=>{ if(check()) return res(); const s=document.createElement('script'); s.src=src; s.crossOrigin='anonymous'; s.onload=()=>res(); s.onerror=()=>rej(new Error('failed to load '+src)); document.head.appendChild(s); });
+    const waitReact=()=>new Promise((res,rej)=>{ let n=0; const t=()=>{ if(window.React&&window.ReactDOM&&window.ReactDOM.createRoot) return res(); if(n++>240) return rej(new Error('host React not available')); setTimeout(t,50); }; t(); });
+    waitReact()
+      .then(()=>ensure(()=>window.ReactFlow,'https://unpkg.com/reactflow@11.11.4/dist/umd/index.js'))
+      .then(()=>ensure(()=>window.XLSX,'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'))
+      .then(()=>ensure(()=>window.htmlToImage,'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js'))
+      .then(()=>{ self._start(); })
+      .catch(err=>{ console.error('ITM boot error',err); self._host().innerHTML='<div class="rf-loading" style="height:100vh;color:#b91c1c">Startup error: '+(err&&err.message)+'</div>'; });
+  }
+
+  _start(){
+    if (this._mounted) return; this._mounted = true;
+    const React = window.React;
+    const ReactDOM = window.ReactDOM;
+    const RF = window.ReactFlow;
+    const XLSX = window.XLSX;
+    const htmlToImage = window.htmlToImage;
+    const h = React.createElement;
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    const ReactFlowComp = RF.ReactFlow || RF.default || RF;
+    const { Handle, Position, Background, Controls, MarkerType, ReactFlowProvider, useReactFlow, applyNodeChanges } = RF;
+
+    // ---------- constants ----------
+    const KEY = 'itm-sipoc-studio-v1';
+    const C = { boxBg:'#eceef1', boxBorder:'#c8ccd2', bandBg:'#dcecf6', bandBorder:'#9cc3e3', procBorder:'#2f6fb0', inC:'#2f6fb0', outC:'#3f9142', hoC:'#6b7280', hi:'#c5d8ef', hiB:'#7ba7d4' };
+    const RASCI_OPTS = ['','A/R','R','A','S','C','I'];
+    const RASCI_COLOR = { R:{bg:'#e3f3e8',fg:'#256d33'}, A:{bg:'#e1edf9',fg:'#1f4f86'}, S:{bg:'#edeff2',fg:'#4b5563'}, C:{bg:'#fbf1d4',fg:'#8a6b00'}, I:{bg:'#ece5fb',fg:'#5b3fb8'} };
+    const PROC_W=194, PROC_H=94, BOX_W=180, BOX_H=88;
+    const uid = () => 'r'+Math.random().toString(36).slice(2,9);
+
+    // ---------- helpers ----------
+    const distinct = arr => { const seen=new Set(), out=[]; (arr||[]).forEach(v=>{ const t=(v==null?'':(''+v)).trim(); if(t && !seen.has(t.toLowerCase())){ seen.add(t.toLowerCase()); out.push(t); } }); return out; };
+    const download = (name, blob) => { const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000); };
+
+    function parseProcess(raw){
+      raw = (raw||'').trim();
+      let m = raw.match(/^([A-Za-z0-9.]*\d[A-Za-z0-9.]*?)\.\s*([A-Za-z].*)$/);
+      if(m) return { code:m[1], name:m[2].trim(), raw };
+      m = raw.match(/^([A-Za-z0-9.]*\d[A-Za-z0-9.]*?)\.?\s+([A-Za-z].*)$/);
+      if(m) return { code:m[1].replace(/\.$/,''), name:m[2].trim(), raw };
+      return { code:'', name:raw, raw };
+    }
+    const isAdvisory = a => /regulat|legal|\bsme\b|practition|advis|\baudit\b|consult|expert/i.test(a||'');
+
+    // ---------- generation ----------
+    function generate(p){
+      const sipoc = p.sipoc||[];
+      const procRaws = distinct(sipoc.map(r=>r.process));
+      const processes = procRaws.map(raw=>({ ...parseProcess(raw) }));
+      const procKeys = new Set();
+      processes.forEach(pr=>{ procKeys.add(pr.raw.toLowerCase().trim()); procKeys.add(pr.name.toLowerCase().trim()); });
+      const isProc = s => { s=(s||'').toLowerCase().trim(); return !!s && procKeys.has(s); };
+      const procRawFor = name => { const k=(name||'').toLowerCase().trim(); const pr=processes.find(x=>x.raw.toLowerCase().trim()===k || x.name.toLowerCase().trim()===k); return pr?pr.raw:name; };
+
+      const suppliers = distinct(sipoc.map(r=>r.supplier)).filter(s=>!isProc(s));
+      const customers = distinct(sipoc.map(r=>r.customer)).filter(s=>!isProc(s));
+      const actors = distinct([...suppliers, ...customers]);
+
+      // flows: preserve existing order, append new (first-appearance across rows: input then output)
+      const found=[]; sipoc.forEach(r=>{ [r.input,r.output].forEach(t=>{ t=(t||'').trim(); if(t && !found.some(x=>x.toLowerCase()===t.toLowerCase())) found.push(t); }); });
+      let order = (p.flows||[]).map(f=>f.text).filter(t=> found.some(x=>x.toLowerCase()===t.toLowerCase()));
+      found.forEach(t=>{ if(!order.some(x=>x.toLowerCase()===t.toLowerCase())) order.push(t); });
+      const flows = order.map((text,i)=>({ n:i+1, text }));
+      const flowNum = {}; flows.forEach(f=>{ flowNum[f.text.toLowerCase()] = f.n; });
+
+      // relations (edges)
+      const relMap={};
+      const addRel=(key,base,text)=>{ const rel=relMap[key]||(relMap[key]={ id:'e_'+Object.keys(relMap).length, ...base, nums:new Set(), texts:new Set() }); const t=(text||'').trim(); if(t){ rel.texts.add(t); const n=flowNum[t.toLowerCase()]; if(n) rel.nums.add(n); } };
+      const pid=s=>'P:'+(s||'').trim();
+      const aid=s=>'A:'+(s||'').trim();
+      sipoc.forEach(r=>{
+        const proc=(r.process||'').trim(); if(!proc) return;
+        const pIdT=pid(proc);
+        const sup=(r.supplier||'').trim();
+        if(sup){
+          if(isProc(sup)){ const src=pid(procRawFor(sup)); if(src!==pIdT) addRel('h|'+src+'|'+pIdT,{source:src,target:pIdT,kind:'handoff'}, r.input); }
+          else addRel('in|'+aid(sup)+'|'+pIdT,{source:aid(sup),target:pIdT,kind:'in'}, r.input);
+        }
+        const cust=(r.customer||'').trim();
+        if(cust && !isProc(cust)) addRel('out|'+pIdT+'|'+aid(cust),{source:pIdT,target:aid(cust),kind:'out'}, r.output);
+      });
+      const relations = Object.values(relMap).map(r=>({ id:r.id, source:r.source, target:r.target, kind:r.kind, nums:[...r.nums].sort((a,b)=>a-b), texts:[...r.texts] }));
+
+      // positions: seeded + auto-layout for missing
+      const positions = { ...(p.positions||{}) };
+      const need = id => !positions[id];
+      const procW = PROC_W+56;
+      processes.forEach((pr,i)=>{ const id=pid(pr.raw); if(need(id)) positions[id]={ x:360 + i*procW, y:400 }; });
+      const supOnly = suppliers.filter(s=>!customers.some(c=>c.toLowerCase()===s.toLowerCase()));
+      const custOnly = customers.filter(c=>!suppliers.some(s=>s.toLowerCase()===c.toLowerCase()));
+      const both = actors.filter(a=> suppliers.some(s=>s.toLowerCase()===a.toLowerCase()) && customers.some(c=>c.toLowerCase()===a.toLowerCase()));
+      const rightX = 360 + Math.max(1,processes.length)*procW + 60;
+      supOnly.forEach((s,i)=>{ const id=aid(s); if(need(id)) positions[id]={ x:40, y:150 + i*138 }; });
+      custOnly.forEach((c,i)=>{ const id=aid(c); if(need(id)) positions[id]={ x:rightX, y:150 + i*138 }; });
+      both.forEach((b,i)=>{ const id=aid(b); if(need(id)) positions[id]={ x:340 + i*(BOX_W+60), y:150 }; });
+
+      return { processes, suppliers, customers, actors, isProc, flows, flowNum, relations, positions, procRawFor };
+    }
+
+    // ---------- sample data ----------
+    function sampleProject(){
+      const S=(supplier,input,process,output,customer)=>({id:uid(),supplier,input,process,output,customer});
+      const P1='C3.1. HSE Marine & Logistic', P2='C3.2. Management System';
+      const sipoc=[
+        S('C4. Marine & Logistic Operation','Inform Accident',P1,'Accident Report for Insurance','C4. Marine & Logistic Operation'),
+        S('C4. Marine & Logistic Operation','Investigation Report',P1,'Document Related to Safety (Investigation Report)','HSEC ITM'),
+        S('Barge/FLF Owner','Inform Accident',P1,'Monthly Report (HSE)','HSEC ITM'),
+        S('ERSM','Inform Accident',P1,'HSE Standard for Sourcing Parameter','Marine & Logistic Planning'),
+        S(P1,'Emergency Respons',P2,'Risk Register','Marine & Logistic Planning'),
+        S('MSBP','Advisory & Suppport (management system)',P2,'Audit Support','Internal Audit'),
+        S('Internal Audit','Support data dan lain lain untuk audit misalnya',P2,'Support data dan lain lain untuk audit misalnya','MSBP'),
+        S(P2,'Risk Register',P1,'Monthly Report (HSE)','MSBP'),
+        S('C4. Marine & Logistic','Support data dan lain lain untuk audit misalnya',P2,'Audit Support','C4. Marine & Logistic')
+      ];
+      const flows=[
+        'Accident Report for Insurance','Inform Accident','Document Related to Safety (Investigation Report)','Monthly Report (HSE)',
+        'Investigation Report','Risk Register','Emergency Respons','Advisory & Suppport (management system)',
+        'Audit Support','Support data dan lain lain untuk audit misalnya','HSE Standard for Sourcing Parameter'
+      ].map((text,i)=>({n:i+1,text}));
+      const ppi=[
+        {id:uid(),process:P1,indicator:'Maks tanggal 10 setiap bulan'},
+        {id:uid(),process:'',indicator:'Zero Accident & Zero Fatality'},
+        {id:uid(),process:'',indicator:'Safety Management Training 1x setahun vendor (Monitor & Asses dilakukan vendor)'},
+        {id:uid(),process:P2,indicator:'Submit & Followup temuan audit sesuai target date'},
+        {id:uid(),process:'',indicator:'Submit & Followup risk register within target date'},
+        {id:uid(),process:'',indicator:'Pembaruan/Review document setiap 2 tahun'}
+      ];
+      const positions={
+        ['P:'+P1]:{x:330,y:410}, ['P:'+P2]:{x:672,y:410},
+        'A:HSEC ITM':{x:330,y:150}, 'A:ERSM':{x:628,y:150}, 'A:Marine & Logistic Planning':{x:930,y:150},
+        'A:C4. Marine & Logistic Operation':{x:28,y:410}, 'A:Internal Audit':{x:1030,y:410},
+        'A:Barge/FLF Owner':{x:236,y:660}, 'A:C4. Marine & Logistic':{x:536,y:660}, 'A:MSBP':{x:848,y:660}
+      };
+      return { header:{ processName:'HSE Marine & Logistic', processOwner:'C4. HSE Marine & Logistic', version:'1.0' }, sipoc, ppi, flows, positions, rasciOverrides:{}, flowLabelMode:'number', highlight:'C4. Marine & Logistic' };
+    }
+    function blankProject(){ return { header:{processName:'',processOwner:'',version:'1.0'}, sipoc:[{id:uid(),supplier:'',input:'',process:'',output:'',customer:''}], ppi:[], flows:[], positions:{}, rasciOverrides:{}, flowLabelMode:'number', highlight:'' }; }
+    function loadInitial(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return sampleProject(); }
+
+    // ---------- node components ----------
+    const SIDES=[['top',Position.Top],['right',Position.Right],['bottom',Position.Bottom],['left',Position.Left]];
+    function handles(){ const els=[]; SIDES.forEach(([name,pos])=>{ els.push(h(Handle,{key:name+'s',type:'source',position:pos,id:name+'-s',style:{opacity:0,width:7,height:7,background:'#000'}})); els.push(h(Handle,{key:name+'t',type:'target',position:pos,id:name+'-t',style:{opacity:0,width:7,height:7,background:'#000'}})); }); return els; }
+
+    function BoxNode({data}){
+      return h('div',{className:'rf-node',style:{width:BOX_W,height:BOX_H,background:data.highlight?C.hi:C.boxBg,border:'1px solid '+(data.highlight?C.hiB:C.boxBorder),borderRadius:2,display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'6px 12px',fontSize:13,fontWeight:600,color:'#1f2937',position:'relative'}},
+        handles(),
+        h('button',{className:'nodedel',title:'Remove',onClick:e=>{e.stopPropagation();data.onDelete&&data.onDelete();}},'✕'),
+        h('span',{onDoubleClick:e=>{e.stopPropagation();data.onRename&&data.onRename();},style:{cursor:'text'}}, data.label)
+      );
+    }
+    function ProcessNode({data}){
+      return h('div',{className:'rf-node',style:{width:PROC_W,height:PROC_H,background:'#fff',border:'1.5px solid '+C.procBorder,borderRadius:2,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'6px 10px',position:'relative',boxShadow:'0 1px 3px rgba(0,0,0,.08)'}},
+        handles(),
+        data.code?h('div',{style:{fontSize:12,fontWeight:700,color:C.procBorder,marginBottom:1}},data.code):null,
+        h('div',{onDoubleClick:e=>{e.stopPropagation();data.onRename&&data.onRename();},style:{fontSize:13,fontWeight:700,color:'#12324e',cursor:'text',lineHeight:1.2}}, data.name)
+      );
+    }
+    function BandNode(){ return h('div',{style:{width:'100%',height:'100%',background:C.bandBg,border:'1px solid '+C.bandBorder,borderRadius:3}}); }
+
+    // ---------- Process Map ----------
+    function FlowInner(props){
+      const { project, setProject, derived, notify } = props;
+      const rf = useReactFlow();
+      const updateNI = (RF.useUpdateNodeInternals ? RF.useUpdateNodeInternals() : ()=>{});
+      const nodeTypes = useMemo(()=>({ box:BoxNode, process:ProcessNode, band:BandNode }),[]);
+      const labelMode = project.flowLabelMode||'number';
+
+      const renameEntity = useCallback((kind, oldRaw)=>{
+        const nv = window.prompt('Rename', oldRaw); if(nv==null) return; const nn=nv.trim(); if(!nn||nn===oldRaw) return;
+        setProject(p=>{
+          const sipoc=p.sipoc.map(r=>{ const c={...r};
+            if(kind==='process'){ if((c.process||'').trim()===oldRaw) c.process=nn; if((c.supplier||'').trim()===oldRaw) c.supplier=nn; }
+            else { if((c.supplier||'').trim()===oldRaw) c.supplier=nn; if((c.customer||'').trim()===oldRaw) c.customer=nn; }
+            return c; });
+          const pref=kind==='process'?'P:':'A:'; const positions={...p.positions}; if(positions[pref+oldRaw]){ positions[pref+nn]=positions[pref+oldRaw]; delete positions[pref+oldRaw]; }
+          return {...p, sipoc, positions};
+        });
+      },[setProject]);
+      const deleteActor = useCallback((name)=>{
+        if(!window.confirm('Remove "'+name+'" from the diagram? (clears it from Suppliers/Customers)')) return;
+        setProject(p=>({ ...p, sipoc:p.sipoc.map(r=>{ const c={...r}; if((c.supplier||'').trim()===name) c.supplier=''; if((c.customer||'').trim()===name) c.customer=''; return c; }), positions:(()=>{ const q={...p.positions}; delete q['A:'+name]; return q; })() }));
+      },[setProject]);
+
+      const buildNodes = useCallback(()=>{
+        const pos=derived.positions; const out=[];
+        derived.processes.forEach(pr=>{ const id='P:'+pr.raw; out.push({ id, type:'process', position:pos[id]||{x:360,y:400}, width:PROC_W, height:PROC_H, style:{width:PROC_W,height:PROC_H}, data:{ code:pr.code, name:pr.name, onRename:()=>renameEntity('process',pr.raw) }, zIndex:2 }); });
+        derived.actors.forEach(name=>{ const id='A:'+name; out.push({ id, type:'box', position:pos[id]||{x:40,y:150}, width:BOX_W, height:BOX_H, style:{width:BOX_W,height:BOX_H}, data:{ label:name, highlight:(project.highlight||'').toLowerCase()===name.toLowerCase(), onRename:()=>renameEntity('actor',name), onDelete:()=>deleteActor(name) }, zIndex:2 }); });
+        return out;
+      },[derived, project.highlight, renameEntity, deleteActor]);
+
+      const [nodes,setNodes]=useState(buildNodes);
+      const derivedKey = useMemo(()=> JSON.stringify([derived.processes.map(p=>p.raw), derived.actors, project.highlight]), [derived.processes, derived.actors, project.highlight]);
+      useEffect(()=>{ setNodes(buildNodes()); },[derivedKey]);
+
+      const posMap = useMemo(()=>{ const m={}; nodes.forEach(n=>{ const w=n.type==='process'?PROC_W:BOX_W; const hh=n.type==='process'?PROC_H:BOX_H; m[n.id]={x:n.position.x,y:n.position.y,w,h:hh}; }); return m; },[nodes]);
+
+      const band = useMemo(()=>{
+        const pn=nodes.filter(n=>n.type==='process'); if(!pn.length) return null;
+        let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; pn.forEach(n=>{ x0=Math.min(x0,n.position.x); y0=Math.min(y0,n.position.y); x1=Math.max(x1,n.position.x+PROC_W); y1=Math.max(y1,n.position.y+PROC_H); });
+        const px=34,py=30; return { id:'__band', type:'band', position:{x:x0-px,y:y0-py}, style:{width:(x1-x0)+px*2,height:(y1-y0)+py*2}, data:{}, selectable:false, draggable:false, zIndex:0 };
+      },[nodes]);
+
+      const edges = useMemo(()=>{
+        return derived.relations.map(rel=>{
+          const s=posMap[rel.source], t=posMap[rel.target]; if(!s||!t) return null;
+          const sc={x:s.x+s.w/2,y:s.y+s.h/2}, tc={x:t.x+t.w/2,y:t.y+t.h/2};
+          const dx=tc.x-sc.x, dy=tc.y-sc.y; let sh,th;
+          if(Math.abs(dx)>=Math.abs(dy)){ sh=(dx>=0?'right':'left')+'-s'; th=(dx>=0?'left':'right')+'-t'; }
+          else { sh=(dy>=0?'bottom':'top')+'-s'; th=(dy>=0?'top':'bottom')+'-t'; }
+          const color=rel.kind==='in'?C.inC:rel.kind==='out'?C.outC:C.hoC;
+          const label = labelMode==='number' ? (rel.nums.length?rel.nums.join(','):'') : rel.texts.join(', ');
+          return { id:rel.id, source:rel.source, target:rel.target, sourceHandle:sh, targetHandle:th, type:'smoothstep', label:label||undefined,
+            labelBgPadding:[5,2], labelBgBorderRadius:3, labelBgStyle:{fill:'#ffffff',fillOpacity:.92}, labelStyle:{fontSize:11,fontWeight:700,fill:'#1f2937'},
+            style:{stroke:color,strokeWidth:1.7,strokeDasharray: rel.kind==='handoff'?'7 4':'3 3'},
+            markerEnd:{type:MarkerType.ArrowClosed,color,width:15,height:15} };
+        }).filter(Boolean);
+      },[derived.relations, posMap, labelMode]);
+
+      const onNodesChange = useCallback((changes)=>{ setNodes(ns=>applyNodeChanges(changes.filter(c=>c.id!=='__band'), ns)); },[]);
+      const onNodeDragStop = useCallback((e,node)=>{ if(node.id==='__band') return; setProject(p=>({ ...p, positions:{ ...p.positions, [node.id]:{x:Math.round(node.position.x),y:Math.round(node.position.y)} } })); },[setProject]);
+
+      useEffect(()=>{
+        let a=setTimeout(()=>{ try{ nodes.forEach(n=>{ if(n.id!=='__band') updateNI(n.id); }); }catch(e){} b=setTimeout(()=>{ try{ rf.fitView({padding:0.14,duration:200}); }catch(e){} },160); },120);
+        let b;
+        return ()=>{ clearTimeout(a); clearTimeout(b); };
+      },[derivedKey]);
+
+      const allNodes = band?[band,...nodes]:nodes;
+
+      const exportPng = useCallback(async ()=>{
+        try{
+          rf.fitView({padding:0.12,duration:0}); await new Promise(r=>setTimeout(r,350));
+          const el=document.getElementById('itm-capture');
+          const dataUrl=await htmlToImage.toPng(el,{ backgroundColor:'#ffffff', pixelRatio:2, cacheBust:true,
+            filter:(n)=>{ if(n.classList && (n.classList.contains('react-flow__controls')||n.classList.contains('react-flow__attribution')||n.classList.contains('nodedel'))) return false; return true; } });
+          const res=await fetch(dataUrl); const blob=await res.blob(); download('itm-process-map.png', blob); notify('PNG exported');
+        }catch(err){ console.error(err); notify('PNG export failed: '+err.message); }
+      },[rf]);
+      const exportJSON = useCallback(()=>{ download('itm-sipoc-project.json', new Blob([JSON.stringify(project,null,2)],{type:'application/json'})); notify('JSON exported'); },[project]);
+
+      // legend PPI grouping
+      const ppiGroups = useMemo(()=>{ const g=[]; let cur=null; (project.ppi||[]).forEach(row=>{ const proc=(row.process||'').trim(); if(proc){ cur={proc, items:[]}; g.push(cur);} if(!cur){ cur={proc:'', items:[]}; g.push(cur);} if((row.indicator||'').trim()) cur.items.push(row.indicator.trim()); }); return g; },[project.ppi]);
+
+      return h('div',{style:{display:'flex',height:'100%'}},
+        h('div',{style:{flex:1,display:'flex',flexDirection:'column',minWidth:0}},
+          h('div',{style:{display:'flex',alignItems:'center',gap:12,padding:'9px 14px',borderBottom:'1px solid #e6eaee',background:'#fff'}},
+            h('span',{style:{fontWeight:800,color:'#0f2a43',fontSize:13.5}}, project.header.processName||'Business process map'),
+            h('div',{className:'seg',style:{marginLeft:8}},
+              h('button',{className:labelMode==='number'?'on':'',onClick:()=>setProject(p=>({...p,flowLabelMode:'number'}))},'Flow #'),
+              h('button',{className:labelMode==='text'?'on':'',onClick:()=>setProject(p=>({...p,flowLabelMode:'text'}))},'Text')
+            ),
+            h('div',{style:{marginLeft:'auto',display:'flex',gap:7}},
+              h('button',{className:'btn btn-sm',onClick:()=>rf.fitView({padding:0.12})},'Fit view'),
+              h('button',{className:'btn btn-sm',onClick:exportJSON},'Export JSON'),
+              h('button',{className:'btn btn-sm btn-primary',onClick:exportPng},'Export PNG')
+            )
+          ),
+          h('div',{id:'itm-capture',style:{flex:1,display:'flex',background:'#fff',minHeight:0}},
+            h('div',{style:{flex:1,minWidth:0}},
+              h(ReactFlowComp,{ nodes:allNodes, edges, nodeTypes, onNodesChange, onNodeDragStop, onInit:(inst)=>{ setTimeout(()=>{ try{ inst.fitView({padding:0.14}); }catch(e){} },80); }, fitView:true, fitViewOptions:{padding:0.14}, minZoom:0.2, maxZoom:2, proOptions:{hideAttribution:true}, nodesConnectable:false, elevateNodesOnSelect:false, defaultEdgeOptions:{} },
+                h(Background,{color:'#e3e8ee',gap:22,size:1}),
+                h(Controls,{showInteractive:false})
+              )
+            ),
+            h('div',{style:{width:352,flex:'none',borderLeft:'1px solid #e6eaee',padding:'12px 12px',overflow:'auto',display:'flex',flexDirection:'column',gap:14,background:'#fbfcfd'}},
+              h('div',{className:'legend-card'},
+                h('div',{className:'legend-hd'},'Data/Document/Information Flow'),
+                h('div',{className:'legend-body'}, project.flows && project.flows.length ? project.flows.map(f=>h('div',{key:f.n,style:{display:'flex',gap:6}}, h('span',{style:{fontWeight:700,minWidth:18}},f.n+'.'), h('span',null,f.text))) : h('span',{style:{color:'#9aa4ae'}},'No flows yet'))
+              ),
+              h('div',{className:'legend-card'},
+                h('div',{className:'legend-hd'},'Process Performance Indicator (PPI)'),
+                h('div',{className:'legend-body'}, ppiGroups.length ? ppiGroups.map((g,gi)=>{ const pp=parseProcess(g.proc); return h('div',{key:gi,style:{marginBottom:8}},
+                    h('div',{style:{fontWeight:700,marginBottom:2}}, g.proc? (pp.code?pp.code+'. ':'')+pp.name : '—'),
+                    g.items.map((it,ii)=>h('div',{key:ii,style:{paddingLeft:12}}, (ii+1)+'. '+it))
+                  ); }) : h('span',{style:{color:'#9aa4ae'}},'No indicators yet'))
+              ),
+              h('div',{style:{fontSize:11.5,color:'#94a0ac',lineHeight:1.5,padding:'0 2px'}},'Drag boxes to arrange · double-click a box to rename · hover a grey box for the remove ✕.')
+            )
+          )
+        )
+      );
+    }
+
+    function ProcessMap(props){ return h(ReactFlowProvider,null, h(FlowInner, props)); }
+
+    // ---------- SIPOC editor ----------
+    function AutoTextarea(props){ const ref=useRef(null); const fit=el=>{ if(!el)return; el.style.height='auto'; el.style.height=Math.max(38,el.scrollHeight)+'px'; }; useEffect(()=>{ fit(ref.current); }); return h('textarea',{...props, ref, rows:1, onInput:e=>fit(e.target)}); }
+
+    function SipocEditor(props){
+      const { project, setProject, notify, goGenerate } = props;
+      const cols=['supplier','input','process','output','customer'];
+      const setHeader=(k,v)=>setProject(p=>({...p,header:{...p.header,[k]:v}}));
+      const setCell=(ri,key,v)=>setProject(p=>{ const s=p.sipoc.map(r=>({...r})); s[ri][key]=v; return {...p,sipoc:s}; });
+      const addRow=()=>setProject(p=>({...p,sipoc:[...p.sipoc,{id:uid(),supplier:'',input:'',process:'',output:'',customer:''}]}));
+      const delRow=ri=>setProject(p=>({...p,sipoc:p.sipoc.filter((_,i)=>i!==ri).length?p.sipoc.filter((_,i)=>i!==ri):[{id:uid(),supplier:'',input:'',process:'',output:'',customer:''}]}));
+      const onPaste=(e,ri,ci)=>{ const text=e.clipboardData.getData('text'); if(!text||(!text.includes('\t')&&!text.includes('\n')))return; e.preventDefault();
+        const lines=text.replace(/\r/g,'').split('\n'); while(lines.length && lines[lines.length-1]==='') lines.pop();
+        setProject(p=>{ const s=p.sipoc.map(r=>({...r})); lines.forEach((line,li)=>{ const cells=line.split('\t'); const r=ri+li; while(s.length<=r) s.push({id:uid(),supplier:'',input:'',process:'',output:'',customer:''}); cells.forEach((val,cj)=>{ const key=cols[ci+cj]; if(key) s[r][key]=val.trim(); }); }); return {...p,sipoc:s}; });
+      };
+
+      // PPI
+      const setPpi=(ri,key,v)=>setProject(p=>{ const s=p.ppi.map(r=>({...r})); s[ri][key]=v; return {...p,ppi:s}; });
+      const addPpi=()=>setProject(p=>({...p,ppi:[...(p.ppi||[]),{id:uid(),process:'',indicator:''}]}));
+      const delPpi=ri=>setProject(p=>({...p,ppi:p.ppi.filter((_,i)=>i!==ri)}));
+
+      const fileRef=useRef(null);
+      const doImport=async (file)=>{ try{
+          let wb; const name=(file.name||'').toLowerCase();
+          if(name.endsWith('.csv')){ const txt=await file.text(); wb=XLSX.read(txt,{type:'string'}); }
+          else { const buf=await file.arrayBuffer(); wb=XLSX.read(buf,{type:'array'}); }
+          const first=wb.Sheets[wb.SheetNames[0]]; const aoa=XLSX.utils.sheet_to_json(first,{header:1,defval:''});
+          const norm=v=>(''+v).toLowerCase().trim();
+          let hi=-1, cmap={};
+          for(let i=0;i<aoa.length;i++){ const low=aoa[i].map(norm); if(low.includes('suppliers')&&low.includes('process')){ hi=i; ['suppliers','inputs','process','outputs','customers'].forEach(kk=>{cmap[kk]=low.indexOf(kk);}); break; } }
+          const header={};
+          for(let i=0;i<Math.min(aoa.length,25);i++){ for(let j=0;j<aoa[i].length;j++){ const cell=(''+aoa[i][j]); const v=norm(cell); const nxt=(''+(aoa[i][j+1]||'')).trim();
+            if(v.includes('process name')) header.processName = nxt || cell.split(':')[1]?.trim() || header.processName;
+            if(v.includes('process owner')) header.processOwner = nxt || cell.split(':')[1]?.trim() || header.processOwner;
+            if(v.startsWith('version')) header.version = nxt || cell.split(':')[1]?.trim() || header.version; } }
+          const sipoc=[];
+          if(hi>=0){ for(let i=hi+1;i<aoa.length;i++){ const row=aoa[i]||[]; const g=kk=>(''+(row[cmap[kk]]||'')).trim(); const r={id:uid(),supplier:g('suppliers'),input:g('inputs'),process:g('process'),output:g('outputs'),customer:g('customers')}; if(r.supplier||r.input||r.process||r.output||r.customer) sipoc.push(r); } }
+          let lp=''; sipoc.forEach(r=>{ if(r.process) lp=r.process; else r.process=lp; });
+          const ppi=[]; const pn=wb.SheetNames.find(n=>/ppi/i.test(n));
+          if(pn){ const paoa=XLSX.utils.sheet_to_json(wb.Sheets[pn],{header:1,defval:''}); let phi=-1,pc=0,ic=1; for(let i=0;i<paoa.length;i++){ const low=paoa[i].map(norm); if(low.some(x=>x.includes('indicator'))||low.includes('process')){ phi=i; pc=low.indexOf('process'); ic=low.findIndex(x=>x.includes('indicator')); if(pc<0)pc=0; if(ic<0)ic=pc+1; break; } } let lpp=''; for(let i=(phi<0?0:phi+1);i<paoa.length;i++){ const row=paoa[i]||[]; const proc=(''+(row[pc]||'')).trim(); const ind=(''+(row[ic]||'')).trim(); if(!proc&&!ind)continue; if(proc)lpp=proc; ppi.push({id:uid(),process:proc,indicator:ind}); } }
+          setProject(p=>({ ...p, header:{...p.header, ...header}, sipoc:sipoc.length?sipoc:p.sipoc, ppi:ppi.length?ppi:p.ppi, positions:{}, flows:[] }));
+          notify('Imported '+sipoc.length+' SIPOC rows'+(ppi.length?' · '+ppi.length+' PPI':''));
+        }catch(err){ console.error(err); notify('Import failed: '+err.message); } };
+
+      return h('div',{className:'pane'},
+        h('div',{className:'hd-grid'},
+          h('div',{className:'fld'}, h('label',null,'Process name'), h('input',{value:project.header.processName,onChange:e=>setHeader('processName',e.target.value),placeholder:'e.g. HSE Marine & Logistic'})),
+          h('div',{className:'fld'}, h('label',null,'Process owner'), h('input',{value:project.header.processOwner,onChange:e=>setHeader('processOwner',e.target.value),placeholder:'e.g. C4. HSE Marine & Logistic'})),
+          h('div',{className:'fld'}, h('label',null,'Version'), h('input',{value:project.header.version,onChange:e=>setHeader('version',e.target.value),placeholder:'1.0'}))
+        ),
+        h('div',{className:'sec-h'}, h('h3',null,'SIPOC table'), h('span',{className:'hint'},'One row = one relation. Paste directly from Excel.'),
+          h('div',{style:{marginLeft:'auto',display:'flex',gap:7}},
+            h('input',{type:'file',accept:'.xlsx,.xls,.csv',ref:fileRef,style:{display:'none'},onChange:e=>{ const f=e.target.files[0]; if(f) doImport(f); e.target.value=''; }}),
+            h('button',{className:'btn btn-sm',onClick:()=>fileRef.current&&fileRef.current.click()},'Import .xlsx / .csv'),
+            h('button',{className:'btn btn-sm',onClick:addRow},'+ Add row'),
+            h('button',{className:'btn btn-sm btn-primary',onClick:goGenerate},'Generate →')
+          )
+        ),
+        h('table',{className:'grid'},
+          h('thead',null,h('tr',null,
+            h('th',{className:'tiny'},'#'),
+            h('th',null,'Suppliers'), h('th',null,'Inputs'), h('th',null,'Process'), h('th',null,'Outputs'), h('th',null,'Customers'),
+            h('th',{className:'tiny'},'')
+          )),
+          h('tbody',null, project.sipoc.map((r,ri)=>h('tr',{key:r.id},
+            h('td',{className:'tiny',style:{color:'#9aa4ae',fontWeight:700,fontSize:12}},ri+1),
+            ...cols.map((key,ci)=>h('td',{key},h(AutoTextarea,{value:r[key]||'',onChange:e=>setCell(ri,key,e.target.value),onPaste:e=>onPaste(e,ri,ci),placeholder:''}))),
+            h('td',{className:'tiny'},h('button',{className:'rowdel',title:'Delete row',onClick:()=>delRow(ri)},'✕'))
+          )))
+        ),
+        h('div',{className:'sec-h',style:{marginTop:26}}, h('h3',null,'Process Performance Indicator (PPI)'), h('span',{className:'hint'},'Leave Process blank to continue the process above.'),
+          h('button',{className:'btn btn-sm',style:{marginLeft:'auto'},onClick:addPpi},'+ Add indicator')
+        ),
+        h('table',{className:'grid'},
+          h('thead',null,h('tr',null, h('th',{style:{width:'38%'}},'Process'), h('th',null,'Indicator'), h('th',{className:'tiny'},''))),
+          h('tbody',null, (project.ppi||[]).length? project.ppi.map((r,ri)=>h('tr',{key:r.id},
+            h('td',null,h(AutoTextarea,{value:r.process||'',onChange:e=>setPpi(ri,'process',e.target.value),placeholder:'(same as above)'})),
+            h('td',null,h(AutoTextarea,{value:r.indicator||'',onChange:e=>setPpi(ri,'indicator',e.target.value)})),
+            h('td',{className:'tiny'},h('button',{className:'rowdel',onClick:()=>delPpi(ri)},'✕'))
+          )) : h('tr',null,h('td',{colSpan:3,style:{padding:'14px',color:'#9aa4ae'}},'No indicators. Click “+ Add indicator”.')))
+        )
+      );
+    }
+
+    // ---------- RASCI ----------
+    function Rasci(props){
+      const { project, setProject, derived, notify } = props;
+      const owner=(project.header.processOwner||'').trim();
+      const actors = useMemo(()=> distinct([...derived.suppliers, ...derived.customers, owner]).filter(a=>!derived.isProc(a)), [derived, owner]);
+      const supSet=new Set(derived.suppliers.map(s=>s.toLowerCase()));
+      const custSet=new Set(derived.customers.map(s=>s.toLowerCase()));
+      const rows=derived.processes;
+
+      const autoVal=(procRaw,actor)=>{ const a=actor.toLowerCase();
+        if(owner && a===owner.toLowerCase()) return 'A/R';
+        if(isAdvisory(actor)) return 'C';
+        if(supSet.has(a)) return 'S';
+        if(custSet.has(a)) return 'I';
+        return '';
+      };
+      const keyOf=(procRaw,actor)=>procRaw+'||'+actor;
+      const val=(procRaw,actor)=>{ const k=keyOf(procRaw,actor); const o=project.rasciOverrides||{}; return (k in o)?o[k]:autoVal(procRaw,actor); };
+      const setVal=(procRaw,actor,v)=>setProject(p=>{ const o={...(p.rasciOverrides||{})}; o[keyOf(procRaw,actor)]=v; return {...p,rasciOverrides:o}; });
+      const resetAuto=()=>{ if(window.confirm('Reset all cells to auto-generated defaults?')) setProject(p=>({...p,rasciOverrides:{}})); };
+
+      const warnings=useMemo(()=>{ const w=[]; rows.forEach(pr=>{ let aCount=0,rCount=0; actors.forEach(a=>{ const v=val(pr.raw,a); if(v && v.includes('A')) aCount++; if(v && v.includes('R')) rCount++; }); const lbl=(pr.code?pr.code+'. ':'')+pr.name; if(aCount!==1) w.push('“'+lbl+'” has '+aCount+' Accountable (A) — exactly 1 required.'); if(rCount===0) w.push('“'+lbl+'” has no Responsible (R).'); }); return w; },[rows,actors,project.rasciOverrides,owner]);
+
+      const buildAOA=()=>{ const head=['Sub-process', ...actors]; const body=rows.map(pr=>[ (pr.code?pr.code+'. ':'')+pr.name, ...actors.map(a=>val(pr.raw,a)) ]); return [head,...body]; };
+      const exportBook=(type)=>{ const ws=XLSX.utils.aoa_to_sheet(buildAOA()); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'RASCI'); XLSX.writeFile(wb, type==='csv'?'itm-rasci.csv':'itm-rasci.xlsx', {bookType:type}); notify(type.toUpperCase()+' exported'); };
+      const copyTable=async ()=>{ const tsv=buildAOA().map(r=>r.join('\t')).join('\n'); try{ await navigator.clipboard.writeText(tsv); notify('Copied to clipboard'); }catch(e){ notify('Copy failed'); } };
+
+      if(!rows.length) return h('div',{className:'pane'}, h('div',{className:'warn'},'No processes yet. Add rows with a Process value in the SIPOC editor, then Generate.'));
+
+      return h('div',{className:'pane'},
+        h('div',{className:'sec-h'}, h('h3',null,'RASCI matrix'), h('span',{className:'hint'},'Rows = sub-process · Columns = actors (suppliers, customers, process owner). Change any cell with its dropdown.'),
+          h('div',{style:{marginLeft:'auto',display:'flex',gap:7}},
+            h('button',{className:'btn btn-sm',onClick:resetAuto},'Reset to auto'),
+            h('button',{className:'btn btn-sm',onClick:copyTable},'Copy'),
+            h('button',{className:'btn btn-sm',onClick:()=>exportBook('csv')},'Export CSV'),
+            h('button',{className:'btn btn-sm btn-primary',onClick:()=>exportBook('xlsx')},'Export XLSX')
+          )
+        ),
+        warnings.length? h('div',{className:'warn',style:{marginBottom:12}}, warnings.map((w,i)=>h('div',{key:i},'⚠ '+w))) : null,
+        h('div',{style:{overflow:'auto',border:'1px solid #dbe0e5',borderRadius:9,background:'#fff'}},
+          h('table',{className:'rasci'},
+            h('thead',null,h('tr',null, h('th',{className:'rowhd'},'Sub-process'), ...actors.map(a=>h('th',{key:a,title:a,style:{maxWidth:130}}, a)))),
+            h('tbody',null, rows.map(pr=>h('tr',{key:pr.raw},
+              h('td',{className:'rowhd'}, pr.code?h('span',{style:{color:C.procBorder,fontWeight:800,marginRight:6}},pr.code):null, pr.name),
+              ...actors.map(a=>{ const v=val(pr.raw,a); const parts=(v||'').split('/').filter(Boolean); const main=parts[0]; const col=main&&RASCI_COLOR[main]; 
+                return h('td',{key:a,className:'cell',style:{background:col?col.bg:'#fff',position:'relative'}},
+                  h('select',{className:'rasci-sel',value:v,onChange:e=>setVal(pr.raw,a,e.target.value),style:{color:col?col.fg:'#94a0ac'}}, RASCI_OPTS.map(o=>h('option',{key:o,value:o}, o||'—')))
+                ); })
+            )))
+          )
+        ),
+        h('div',{style:{marginTop:14,display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}},
+          h('span',{style:{fontWeight:800,fontSize:12.5,color:'#334155'}},'Legend:'),
+          ...[['R','Responsible'],['A','Accountable'],['S','Support'],['C','Consulted'],['I','Informed']].map(([k,name])=>h('span',{key:k,style:{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5}}, h('span',{className:'badge',style:{background:RASCI_COLOR[k].bg,color:RASCI_COLOR[k].fg}},k), name))
+        )
+      );
+    }
+
+    // ---------- App ----------
+    function App(){
+      const [project,setProject]=useState(loadInitial);
+      const [view,setView]=useState('sipoc');
+      const [toast,setToast]=useState('');
+      const toastTimer=useRef(null);
+      const notify=useCallback((msg)=>{ setToast(msg); clearTimeout(toastTimer.current); toastTimer.current=setTimeout(()=>setToast(''),2200); },[]);
+      const derived=useMemo(()=>generate(project),[project]);
+
+      const save=()=>{ try{ localStorage.setItem(KEY, JSON.stringify(project)); notify('Saved to this browser'); }catch(e){ notify('Save failed'); } };
+      const load=()=>{ try{ const s=localStorage.getItem(KEY); if(s){ setProject(JSON.parse(s)); notify('Loaded saved project'); } else notify('No saved project found'); }catch(e){ notify('Load failed'); } };
+      const neu=()=>{ if(window.confirm('Start a new empty project? Unsaved changes will be lost.')){ setProject(blankProject()); setView('sipoc'); notify('New project'); } };
+      const loadSample=()=>{ if(window.confirm('Load the "HSE Marine & Logistic" sample? Current data will be replaced.')){ setProject(sampleProject()); notify('Sample loaded'); } };
+      const exportJSON=()=>{ download('itm-sipoc-project.json', new Blob([JSON.stringify(project,null,2)],{type:'application/json'})); notify('JSON exported'); };
+      const importJSON=(file)=>{ const rd=new FileReader(); rd.onload=()=>{ try{ setProject(JSON.parse(rd.result)); notify('Project loaded from JSON'); }catch(e){ notify('Invalid JSON'); } }; rd.readAsText(file); };
+      const jsonRef=useRef(null);
+
+      const Tab=(id,label)=>h('button',{className:'itm-tab'+(view===id?' active':''),onClick:()=>setView(id)},label);
+
+      return h('div',{className:'itm-wrap'},
+        h('div',{className:'itm-top'},
+          h('div',{className:'itm-brand'}, h('span',{className:'itm-title'},'ITM SIPOC Studio'), h('span',{className:'itm-sub'},'SIPOC → process map + RASCI')),
+          h('div',{className:'itm-tabs'}, Tab('sipoc','SIPOC editor'), Tab('map','Business process map'), Tab('rasci','RASCI matrix')),
+          h('div',{className:'itm-actions'},
+            h('input',{type:'file',accept:'.json',ref:jsonRef,style:{display:'none'},onChange:e=>{ const f=e.target.files[0]; if(f) importJSON(f); e.target.value=''; }}),
+            h('button',{className:'btn btn-sm',onClick:neu},'New'),
+            h('button',{className:'btn btn-sm',onClick:save},'Save'),
+            h('button',{className:'btn btn-sm',onClick:load},'Load'),
+            h('button',{className:'btn btn-sm',onClick:()=>jsonRef.current&&jsonRef.current.click()},'Import JSON'),
+            h('button',{className:'btn btn-sm',onClick:exportJSON},'Export JSON'),
+            h('button',{className:'btn btn-sm',onClick:loadSample},'Sample')
+          )
+        ),
+        h('div',{className:'itm-body'},
+          view==='sipoc'? h(SipocEditor,{project,setProject,notify,goGenerate:()=>{ setView('map'); notify('Diagram & RASCI regenerated'); }}) :
+          view==='map'? h(ProcessMap,{project,setProject,derived,notify}) :
+          h(Rasci,{project,setProject,derived,notify})
+        ),
+        toast? h('div',{className:'toast'},toast):null
+      );
+    }
+
+    const container=this._host();
+    container.innerHTML='';
+    this._root=ReactDOM.createRoot(container);
+    this._root.render(h(App));
+  }
+
+  renderVals(){ return {}; }
+}
+</script>
+</body>
+</html>

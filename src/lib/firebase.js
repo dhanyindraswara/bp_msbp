@@ -3,9 +3,13 @@
 // cache so the app keeps working offline and syncs when back online.
 import { initializeApp } from 'firebase/app'
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
+import { getStorage } from 'firebase/storage'
 import { firebaseConfig, firebaseEnabled } from './firebaseConfig.js'
 
 let db = null
+let auth = null
+let storage = null
 
 if (firebaseEnabled) {
   try {
@@ -18,10 +22,14 @@ if (firebaseEnabled) {
       // Persistent cache can fail (e.g. private mode) — fall back to default.
       db = getFirestore(app)
     }
+    auth = getAuth(app)
+    storage = getStorage(app)
   } catch (e) {
     console.error('Firebase init failed — falling back to localStorage.', e)
     db = null
+    auth = null
+    storage = null
   }
 }
 
-export { db, firebaseEnabled }
+export { db, auth, storage, firebaseEnabled }

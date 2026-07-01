@@ -1,12 +1,35 @@
 // STONES — Business Process suite shell. Left-hand menu switches between the
 // four modules; Document Development hosts the SIPOC → map + RASCI studio.
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ensureSeed, getOpenId, setOpenId as storeSetOpenId, initStore, subscribe, backendName } from './lib/store.js'
+import { ensureSeed, getOpenId, setOpenId as storeSetOpenId, initStore, subscribe, setCurrentUser } from './lib/store.js'
+import { watchAuth, signInGoogle, signOutUser, firebaseEnabled } from './lib/auth.js'
 import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
 import Dashboard from './menus/Dashboard.jsx'
 import DocumentActionRequest from './menus/DocumentActionRequest.jsx'
 import GlobalSearch from './menus/GlobalSearch.jsx'
+
+function LoginScreen({ onSignIn, err }) {
+  return (
+    <div className="login">
+      <div className="login-card">
+        <div className="stones-logo" style={{ color: '#0f2a43', fontSize: 26 }}>STONES</div>
+        <div className="stones-tag" style={{ color: '#8a94a0', marginBottom: 22 }}>Business Process Suite</div>
+        <button className="login-btn" onClick={onSignIn}>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
+          </svg>
+          Sign in with Google
+        </button>
+        {err ? <div className="login-err">{err}</div> : null}
+        <div className="login-note">Access is restricted to authorized accounts.</div>
+      </div>
+    </div>
+  )
+}
 
 const Icon = ({ d }) => (
   <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -26,26 +49,58 @@ export default function App() {
   const [menu, setMenu] = useState('develop')
   const [ready, setReady] = useState(false)
   const [rev, setRev] = useState(0)
+  const [user, setUser] = useState(undefined) // undefined = checking, null = signed out, object = signed in
+  const [authErr, setAuthErr] = useState('')
   const [openId, setOpenIdState] = useState(null)
   const [toast, setToast] = useState('')
   const tt = useRef(null)
+  const bootedRef = useRef(false)
   const notify = useCallback((m) => {
     setToast(m)
     clearTimeout(tt.current)
     tt.current = setTimeout(() => setToast(''), 2200)
   }, [])
 
-  // Boot the store (Firestore or localStorage), then seed + subscribe for
-  // realtime re-renders.
+  // Watch auth, then (once signed in, or in local mode) boot the store and
+  // subscribe for realtime re-renders.
   useEffect(() => {
-    const unsub = subscribe(() => setRev((r) => r + 1))
-    initStore().then(() => {
-      ensureSeed()
-      setOpenIdState(getOpenId())
-      setReady(true)
+    const unsubStore = subscribe(() => setRev((r) => r + 1))
+    const boot = () => {
+      if (bootedRef.current) return
+      bootedRef.current = true
+      initStore().then(() => {
+        ensureSeed()
+        setOpenIdState(getOpenId())
+        setReady(true)
+      })
+    }
+    const unsubAuth = watchAuth((u) => {
+      if (!firebaseEnabled) {
+        setUser({ local: true })
+        boot()
+        return
+      }
+      setUser(u)
+      if (u) {
+        setCurrentUser(u.displayName || u.email || 'User')
+        boot()
+      } else {
+        setReady(false)
+      }
     })
-    return unsub
+    return () => {
+      unsubStore()
+      unsubAuth()
+    }
   }, [])
+
+  const doSignIn = () => {
+    setAuthErr('')
+    signInGoogle().catch((e) => setAuthErr(e && e.message ? e.message : 'Sign-in failed'))
+  }
+  const doSignOut = () => {
+    signOutUser().finally(() => window.location.reload())
+  }
 
   // Update the open document (keeps store + React in sync).
   const setOpenId = useCallback((id) => {
@@ -59,11 +114,24 @@ export default function App() {
     setMenu('develop')
   }, [])
 
+  // Firebase configured but still checking sign-in state.
+  if (firebaseEnabled && user === undefined) {
+    return (
+      <div className="stones" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div className="rf-loading" style={{ color: '#8a94a0' }}>Checking sign-in…</div>
+      </div>
+    )
+  }
+  // Signed out → login screen.
+  if (firebaseEnabled && user === null) {
+    return <LoginScreen onSignIn={doSignIn} err={authErr} />
+  }
+  // Signed in (or local mode) but store not ready yet.
   if (!ready) {
     return (
       <div className="stones" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div className="rf-loading" style={{ color: '#8a94a0' }}>
-          Loading STONES{backendName() === 'firebase' ? ' · connecting to Firebase…' : '…'}
+          Loading STONES{firebaseEnabled ? ' · connecting to Firebase…' : '…'}
         </div>
       </div>
     )
@@ -89,8 +157,15 @@ export default function App() {
           ))}
         </nav>
         <div className="stones-side-foot">
-          <div style={{ fontWeight: 700, color: '#aebfd0' }}>Signed in</div>
-          <div>dhanyindraswara</div>
+          <div style={{ fontWeight: 700, color: '#aebfd0' }}>
+            {firebaseEnabled ? user?.displayName || 'Signed in' : 'Local mode'}
+          </div>
+          <div style={{ wordBreak: 'break-all' }}>{firebaseEnabled ? user?.email || '' : 'localStorage'}</div>
+          {firebaseEnabled ? (
+            <button className="stones-signout" onClick={doSignOut}>
+              Sign out
+            </button>
+          ) : null}
         </div>
       </aside>
 

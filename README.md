@@ -1,25 +1,81 @@
-# CODING AGENTS: READ THIS FIRST
+# ITM SIPOC Studio
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+A web app that turns a **single SIPOC table** into two editable, exportable deliverables:
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+1. an **ITM-style business process map** (React Flow), and
+2. a **RASCI matrix**.
 
-## What you should do — IMPORTANT
+Everything downstream — processes, suppliers/customers, handoffs, numbered
+document flows, and the RASCI grid — is generated automatically from the SIPOC
+input, then can be edited by hand.
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+## Stack
 
-**Read `project/ITM SIPOC Studio.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+- **React 18** + **Vite**
+- **[reactflow](https://reactflow.dev) v11** for the process map
+- **SheetJS (xlsx)** for `.xlsx` / `.csv` import and XLSX/CSV export
+- **html-to-image** for PNG export
+- **Tailwind CSS** (+ ported component styles) for the corporate visual style
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+## Run
 
-## About the design files
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # production build → dist/
+npm run preview  # preview the production build
+```
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+## The three views
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+- **SIPOC editor** (default) — header fields (Process name / owner / version), a
+  5-column editable grid (Suppliers · Inputs · Process · Outputs · Customers)
+  with add/delete rows and multi-row paste from Excel, a separate PPI editor,
+  and `.xlsx` / `.csv` import following the ITM template layout. **Generate →**
+  jumps to the map.
+- **Business process map** — process boxes grouped in a light-blue Level-2 band,
+  suppliers on the left (blue IN arrows), customers on the right (green OUT
+  arrows), grey dashed handoff arrows between processes. Edge labels toggle
+  between numbered flows (**Flow #**) and full **Text**, wired to the right-side
+  legend (numbered Data/Document/Information Flow + PPI grouped per process).
+  Drag to arrange, double-click to rename, hover a grey box for the remove ✕.
+  Export **PNG** / **JSON**.
+- **RASCI matrix** — rows = sub-processes, columns = actors (non-process
+  suppliers + customers + process owner). Auto-rules: owner → **A/R**,
+  advisory/regulator → **C**, input suppliers → **S**, customers → **I**;
+  every cell is overridable via dropdown, with exactly-one-Accountable
+  validation warnings. Export **CSV** / **XLSX** and copy-to-clipboard.
 
-## Bundle contents
+## Persistence
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `ITM SIPOC Studio` project files (HTML prototypes, assets, components)
+The whole project (header + SIPOC + PPI + node positions + RASCI overrides) is a
+single JSON object. **New / Save / Load** use `localStorage`; **Import JSON /
+Export JSON** move it as a file. A filled-in **"HSE Marine & Logistic"** sample
+(matching the reference attachment) loads on first open.
+
+## Data model
+
+```
+header:  { processName, processOwner, version }
+sipoc:   [{ id, supplier, input, process, output, customer }]   // 1 row = 1 relation
+ppi:     [{ id, process, indicator }]                           // blank process = continues the one above
+flows:   [{ n, text }]                                          // numbered document/data flows
+positions, rasciOverrides, flowLabelMode, highlight
+```
+
+Derived at runtime (never stored as source): distinct processes (split into
+`{code, name}`), actor boxes, process→process handoffs, and the flow-numbered
+edges.
+
+## Note on SheetJS
+
+The original design pinned `xlsx@0.20.3` from the SheetJS CDN. That CDN is
+unreachable here, so this build uses `xlsx@0.18.5` from the npm registry — the
+same API for every call the app makes (`read`, `sheet_to_json`, `aoa_to_sheet`,
+`writeFile`). If you want the newest SheetJS, install it from
+`https://cdn.sheetjs.com` per their docs.
+
+---
+
+The original Claude Design export lives in `project/` (the `.dc.html` prototype
+and reference screenshots) for reference.

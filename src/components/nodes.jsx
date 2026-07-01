@@ -9,10 +9,9 @@ const SIDES = [
   ['left', Position.Left],
 ]
 
-// Multiple attach points along each side. When two boxes are connected by both
-// an IN (blue) and an OUT (green) edge, the edges are assigned different slots
-// so they run parallel instead of stacking on top of each other.
-export const SLOTS = ['22%', '36%', '50%', '64%', '78%']
+// Attach points spread along each side. Edge routing assigns every edge that
+// touches a side its own distinct slot, so no two lines meet at the same point.
+export const SLOTS = ['12%', '25%', '37%', '50%', '63%', '75%', '88%']
 
 // 4 sides × 5 slots × {source,target} handles per node. Hidden (opacity 0);
 // edges pick the side + slot explicitly.

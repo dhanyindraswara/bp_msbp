@@ -12,7 +12,7 @@ import ReactFlow, {
 import * as htmlToImage from 'html-to-image'
 import { C, PROC_W, PROC_H, BOX_W, BOX_H } from '../lib/constants.js'
 import { parseProcess, download } from '../lib/generate.js'
-import { BoxNode, ProcessNode, BandNode } from './nodes.jsx'
+import { BoxNode, ProcessNode, BandNode, SLOTS } from './nodes.jsx'
 
 const nodeTypesDef = { box: BoxNode, process: ProcessNode, band: BandNode }
 
@@ -160,41 +160,62 @@ function FlowInner({ project, setProject, derived, notify }) {
   }, [nodes])
 
   const edges = useMemo(() => {
-    // Group edges by unordered node pair so that a box with both an IN and an
-    // OUT edge to the same process gets two parallel lines (different slots)
-    // instead of one overlapping line.
-    const groups = {}
-    derived.relations.forEach((rel) => {
-      const k = [rel.source, rel.target].slice().sort().join('~')
-      ;(groups[k] || (groups[k] = [])).push(rel.id)
-    })
-    // For a pair of size k, spread its edges across the 5 slot positions.
-    const SLOTMAP = { 1: [2], 2: [1, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4] }
-    const slotFor = (rel) => {
-      const k = [rel.source, rel.target].slice().sort().join('~')
-      const arr = groups[k]
-      const slots = SLOTMAP[arr.length] || arr.map((_, i) => i % 5)
-      return slots[arr.indexOf(rel.id) % slots.length]
-    }
+    const S = SLOTS.length
 
-    return derived.relations
-      .map((rel) => {
-        const s = posMap[rel.source],
-          t = posMap[rel.target]
-        if (!s || !t) return null
-        const sc = { x: s.x + s.w / 2, y: s.y + s.h / 2 },
-          tc = { x: t.x + t.w / 2, y: t.y + t.h / 2 }
-        const dx = tc.x - sc.x,
-          dy = tc.y - sc.y
-        const slot = slotFor(rel)
-        let sh, th
-        if (Math.abs(dx) >= Math.abs(dy)) {
-          sh = (dx >= 0 ? 'right' : 'left') + '-s-' + slot
-          th = (dx >= 0 ? 'left' : 'right') + '-t-' + slot
-        } else {
-          sh = (dy >= 0 ? 'bottom' : 'top') + '-s-' + slot
-          th = (dy >= 0 ? 'top' : 'bottom') + '-t-' + slot
-        }
+    // 1) Pick which side of each box every edge leaves/enters, from geometry.
+    const routed = derived.relations.map((rel) => {
+      const s = posMap[rel.source],
+        t = posMap[rel.target]
+      if (!s || !t) return null
+      const sc = { x: s.x + s.w / 2, y: s.y + s.h / 2 },
+        tc = { x: t.x + t.w / 2, y: t.y + t.h / 2 }
+      const dx = tc.x - sc.x,
+        dy = tc.y - sc.y
+      let sSide, tSide
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        sSide = dx >= 0 ? 'right' : 'left'
+        tSide = dx >= 0 ? 'left' : 'right'
+      } else {
+        sSide = dy >= 0 ? 'bottom' : 'top'
+        tSide = dy >= 0 ? 'top' : 'bottom'
+      }
+      return { rel, sc, tc, sSide, tSide }
+    })
+
+    // 2) Collect every endpoint that lands on each (box, side).
+    const sideGroups = {}
+    routed.forEach((r, idx) => {
+      if (!r) return
+      const add = (node, side, end, other) => {
+        const k = node + '|' + side
+        ;(sideGroups[k] || (sideGroups[k] = [])).push({ idx, end, other })
+      }
+      add(r.rel.source, r.sSide, 's', r.tc)
+      add(r.rel.target, r.tSide, 't', r.sc)
+    })
+
+    // 3) Give each endpoint on a side its own slot. Order them by the position
+    //    of the opposite endpoint so the lines fan out without crossing, and so
+    //    no attach point is ever shared by two edges.
+    const slotOf = {}
+    Object.keys(sideGroups).forEach((k) => {
+      const arr = sideGroups[k]
+      const horizontal = k.endsWith('|top') || k.endsWith('|bottom')
+      arr.sort((a, b) => (horizontal ? a.other.x - b.other.x : a.other.y - b.other.y))
+      const N = arr.length
+      arr.forEach((item, i) => {
+        const slot = N === 1 ? Math.floor(S / 2) : Math.min(S - 1, Math.max(0, Math.floor(((i + 0.5) * S) / N)))
+        slotOf[item.idx + '|' + item.end] = slot
+      })
+    })
+
+    // 4) Build the edges with their assigned handles.
+    return routed
+      .map((r, idx) => {
+        if (!r) return null
+        const rel = r.rel
+        const sh = r.sSide + '-s-' + (slotOf[idx + '|s'] ?? Math.floor(S / 2))
+        const th = r.tSide + '-t-' + (slotOf[idx + '|t'] ?? Math.floor(S / 2))
         const color = rel.kind === 'in' ? C.inC : rel.kind === 'out' ? C.outC : C.hoC
         const label = labelMode === 'number' ? (rel.nums.length ? rel.nums.join(',') : '') : rel.texts.join(', ')
         return {
@@ -204,6 +225,7 @@ function FlowInner({ project, setProject, derived, notify }) {
           sourceHandle: sh,
           targetHandle: th,
           type: 'smoothstep',
+          pathOptions: { borderRadius: 10 },
           label: label || undefined,
           labelBgPadding: [5, 2],
           labelBgBorderRadius: 3,

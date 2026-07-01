@@ -222,6 +222,7 @@ function FlowInner({ project, setProject, derived, notify }) {
   }, [derived, project.highlight, renameEntity, deleteActor])
 
   const [nodes, setNodes] = useState(buildNodes)
+  const [arrangeNonce, setArrangeNonce] = useState(0)
   const derivedKey = useMemo(
     () => JSON.stringify([derived.processes.map((p) => p.raw), derived.actors, project.highlight]),
     [derived.processes, derived.actors, project.highlight],
@@ -230,6 +231,26 @@ function FlowInner({ project, setProject, derived, notify }) {
     setNodes(buildNodes())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [derivedKey])
+
+  // Auto-arrange: clear saved positions so every box is re-placed by the layout
+  // engine, then rebuild + fit.
+  const autoArrange = () => {
+    setProject((p) => ({ ...p, positions: {} }))
+    setArrangeNonce((n) => n + 1)
+  }
+  useEffect(() => {
+    if (!arrangeNonce) return
+    setNodes(buildNodes())
+    const t = setTimeout(() => {
+      try {
+        rf.fitView({ padding: 0.14, duration: 300 })
+      } catch (e) {
+        /* ignore */
+      }
+    }, 140)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arrangeNonce])
 
   const posMap = useMemo(() => {
     const m = {}
@@ -480,6 +501,9 @@ function FlowInner({ project, setProject, derived, notify }) {
         </div>
         <span className="map-hint">Click any header field or the logo to edit · drag boxes to arrange</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
+          <button className="btn btn-sm" onClick={autoArrange} title="Re-place all boxes automatically">
+            Auto-arrange
+          </button>
           <button className="btn btn-sm" onClick={() => rf.fitView({ padding: 0.12 })}>
             Fit view
           </button>
@@ -573,8 +597,8 @@ function FlowInner({ project, setProject, derived, notify }) {
               <div className="legend-card">
                 <div className="legend-hd">Data/Document/Information Flow</div>
                 <div className="legend-body">
-                  {project.flows && project.flows.length ? (
-                    project.flows.map((f) => (
+                  {derived.flows && derived.flows.length ? (
+                    derived.flows.map((f) => (
                       <div key={f.n} style={{ display: 'flex', gap: 6 }}>
                         <span style={{ fontWeight: 700, minWidth: 18 }}>{f.n + '.'}</span>
                         <span>{f.text}</span>

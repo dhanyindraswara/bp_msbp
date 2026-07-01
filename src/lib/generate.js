@@ -133,33 +133,66 @@ export function generate(p) {
     texts: [...r.texts],
   }))
 
-  // positions: seeded + auto-layout for missing
+  // positions: seeded + auto-layout for missing. Actors wrap around all four
+  // sides of the process band (suppliers on top/left, customers on bottom/right)
+  // so a document with many flows stays compact instead of a long vertical stack.
   const positions = { ...(p.positions || {}) }
   const need = (id) => !positions[id]
-  const procW = PROC_W + 56
+  const P = Math.max(1, processes.length)
+  const stepX = PROC_W + 64
+  const X0 = 440
+  const CY = 540 // top-y of the central process row
+
   processes.forEach((pr, i) => {
     const id = pid(pr.raw)
-    if (need(id)) positions[id] = { x: 360 + i * procW, y: 400 }
+    if (need(id)) positions[id] = { x: X0 + i * stepX, y: CY }
   })
-  const supOnly = suppliers.filter((s) => !customers.some((c) => c.toLowerCase() === s.toLowerCase()))
-  const custOnly = customers.filter((c) => !suppliers.some((s) => s.toLowerCase() === c.toLowerCase()))
-  const both = actors.filter(
-    (a) =>
-      suppliers.some((s) => s.toLowerCase() === a.toLowerCase()) &&
-      customers.some((c) => c.toLowerCase() === a.toLowerCase()),
-  )
-  const rightX = 360 + Math.max(1, processes.length) * procW + 60
-  supOnly.forEach((s, i) => {
-    const id = aid(s)
-    if (need(id)) positions[id] = { x: 40, y: 150 + i * 138 }
+
+  const bandLeft = X0
+  const bandRight = X0 + (P - 1) * stepX + PROC_W
+  const bandCenterX = (bandLeft + bandRight) / 2
+  const bandTop = CY
+  const bandBottom = CY + PROC_H
+
+  const gapH = 30
+  const gapV = 44
+  const hStep = BOX_W + gapH
+  const vStep = BOX_H + gapV
+  const topY0 = bandTop - 168 // first row above the band (further rows go up)
+  const botY0 = bandBottom + 70 // first row below the band (further rows go down)
+  const leftX = bandLeft - (BOX_W + 78)
+  const rightXpos = bandRight + 78
+
+  const supAll = suppliers // suppliers (includes actors that are also customers)
+  const custPlace = customers.filter((c) => !suppliers.some((s) => s.toLowerCase() === c.toLowerCase()))
+
+  // A few boxes hug the sides; the rest spread across top/bottom, wrapping.
+  const leftN = supAll.length > 4 ? 2 : 0
+  const rightN = custPlace.length > 4 ? 2 : 0
+  const colsTop = Math.max(P + 1, 4)
+  const colsBot = Math.max(P + 1, 4)
+  const topSX = bandCenterX - ((colsTop - 1) * hStep + BOX_W) / 2
+  const botSX = bandCenterX - ((colsBot - 1) * hStep + BOX_W) / 2
+
+  supAll.slice(0, leftN).forEach((a, i) => {
+    const id = aid(a)
+    if (need(id)) positions[id] = { x: leftX, y: bandTop + i * vStep }
   })
-  custOnly.forEach((c, i) => {
-    const id = aid(c)
-    if (need(id)) positions[id] = { x: rightX, y: 150 + i * 138 }
+  supAll.slice(leftN).forEach((a, i) => {
+    const id = aid(a)
+    const c = i % colsTop
+    const r = Math.floor(i / colsTop)
+    if (need(id)) positions[id] = { x: topSX + c * hStep, y: topY0 - r * vStep }
   })
-  both.forEach((b, i) => {
-    const id = aid(b)
-    if (need(id)) positions[id] = { x: 340 + i * (BOX_W + 60), y: 150 }
+  custPlace.slice(0, rightN).forEach((a, i) => {
+    const id = aid(a)
+    if (need(id)) positions[id] = { x: rightXpos, y: bandTop + i * vStep }
+  })
+  custPlace.slice(rightN).forEach((a, i) => {
+    const id = aid(a)
+    const c = i % colsBot
+    const r = Math.floor(i / colsBot)
+    if (need(id)) positions[id] = { x: botSX + c * hStep, y: botY0 + r * vStep }
   })
 
   return { processes, suppliers, customers, actors, isProc, flows, flowNum, relations, positions, procRawFor }

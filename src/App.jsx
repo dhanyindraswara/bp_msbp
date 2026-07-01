@@ -1,7 +1,7 @@
 // STONES — Business Process suite shell. Left-hand menu switches between the
 // four modules; Document Development hosts the SIPOC → map + RASCI studio.
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ensureSeed, getOpenId, setOpenId as storeSetOpenId, initStore, subscribe, setCurrentUser } from './lib/store.js'
+import { ensureSeed, getOpenId, getDoc, setOpenId as storeSetOpenId, initStore, subscribe, setCurrentUser } from './lib/store.js'
 import { watchAuth, signInGoogle, signOutUser, firebaseEnabled } from './lib/auth.js'
 import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
@@ -89,7 +89,15 @@ export default function App() {
       bootedRef.current = true
       initStore().then(() => {
         ensureSeed()
-        setOpenIdState(getOpenId())
+        // Deep link: ?doc=BP-0001 opens that document directly.
+        const urlDoc = new URLSearchParams(window.location.search).get('doc')
+        if (urlDoc && getDoc(urlDoc)) {
+          storeSetOpenId(urlDoc)
+          setOpenIdState(urlDoc)
+          setMenu('develop')
+        } else {
+          setOpenIdState(getOpenId())
+        }
         setReady(true)
       })
     }
@@ -121,16 +129,26 @@ export default function App() {
     signOutUser().finally(() => window.location.reload())
   }
 
-  // Update the open document (keeps store + React in sync).
+  // Reflect the open document in the URL so it can be shared as a deep link.
+  const syncUrl = (id) => {
+    try {
+      window.history.replaceState(null, '', window.location.pathname + (id ? '?doc=' + encodeURIComponent(id) : ''))
+    } catch (e) {
+      /* ignore */
+    }
+  }
+  // Update the open document (keeps store + React + URL in sync).
   const setOpenId = useCallback((id) => {
     storeSetOpenId(id)
     setOpenIdState(id)
+    syncUrl(id)
   }, [])
   // Open a document and jump to Document Development.
   const openDoc = useCallback((id) => {
     storeSetOpenId(id)
     setOpenIdState(id)
     setMenu('develop')
+    syncUrl(id)
   }, [])
 
   // Firebase configured but still checking sign-in state.

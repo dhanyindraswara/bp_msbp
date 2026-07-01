@@ -115,6 +115,14 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
     download((openId || 'bp') + '.json', new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }))
     notify('JSON exported')
   }
+  const shareLink = () => {
+    const url = window.location.origin + window.location.pathname + '?doc=' + encodeURIComponent(openId)
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => notify('Share link copied')).catch(() => notify('Copy failed'))
+    } else {
+      window.prompt('Share link:', url)
+    }
+  }
   const jsonRef = useRef(null)
   const importJSON = (file) => {
     const rd = new FileReader()
@@ -256,6 +264,7 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
               <>
                 <div className="more-backdrop" onClick={() => setMoreOpen(false)} />
                 <div className="more-menu">
+                  <button onClick={() => { setMoreOpen(false); shareLink() }}>🔗 Copy share link</button>
                   <button onClick={() => { setMoreOpen(false); jsonRef.current && jsonRef.current.click() }}>Import JSON</button>
                   <button onClick={() => { setMoreOpen(false); exportJSON() }}>Export JSON</button>
                   <button onClick={() => { setMoreOpen(false); loadSample() }}>Load sample BP</button>

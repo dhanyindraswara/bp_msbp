@@ -1,0 +1,10 @@
+{
+  "name": "stones-functions",
+  "description": "STONES Cloud Functions — Grok (xAI) AI assistant proxy",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^6.0.0"
+  },
+  "private": true
+}

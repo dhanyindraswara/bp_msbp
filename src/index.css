@@ -208,6 +208,36 @@ table.stones-table td:last-child { overflow: visible; }
 .sr-more { font-size: 11.5px; color: var(--muted); font-weight: 600; }
 .search-result mark, .sr-snip mark, .sr-name mark { background: #fdeeb3; color: inherit; border-radius: 3px; padding: 0 2px; }
 
+/* ---- Ask AI (chat) ---- */
+.ai-page { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 26px 30px 20px; max-width: 900px; width: 100%; margin: 0 auto; }
+.ai-hd { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.ai-hd h1 { font-size: 22px; font-weight: 750; color: var(--text); margin: 0; letter-spacing: -.02em; }
+.ai-hd p { margin: 5px 0 0; color: var(--text-2); font-size: 13.5px; }
+.ai-badge { background: var(--text); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 4px 11px; border-radius: 20px; }
+.ai-chat { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 2px 10px; }
+.ai-empty { margin: auto; text-align: center; max-width: 560px; }
+.ai-empty-mark { width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 15px; background: linear-gradient(150deg, #3d81c6, #235c96); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: var(--shadow-md); }
+.ai-empty-title { font-size: 19px; font-weight: 750; color: var(--text); }
+.ai-empty-sub { color: var(--text-2); font-size: 13.5px; margin-top: 4px; }
+.ai-sugs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+.ai-sug { text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--text); cursor: pointer; box-shadow: var(--shadow-xs); transition: border-color .13s, box-shadow .13s; }
+.ai-sug:hover:not(:disabled) { border-color: var(--accent-tint-2); box-shadow: var(--shadow-sm); }
+.ai-sug:disabled { opacity: .5; cursor: not-allowed; }
+.ai-msg { display: flex; gap: 12px; align-items: flex-start; }
+.ai-msg-user { flex-direction: row-reverse; }
+.ai-avatar { width: 30px; height: 30px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.ai-msg-assistant .ai-avatar { background: linear-gradient(150deg, #3d81c6, #235c96); color: #fff; }
+.ai-msg-user .ai-avatar { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+.ai-bubble { max-width: 76%; background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 11px 15px; font-size: 14px; line-height: 1.55; color: var(--text); white-space: pre-wrap; word-break: break-word; box-shadow: var(--shadow-xs); }
+.ai-msg-user .ai-bubble { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ai-typing { color: var(--muted); font-style: italic; }
+.ai-err { background: #fdecec; border: 1px solid #f3c4c4; color: #a13636; border-radius: var(--radius-sm); padding: 9px 13px; font-size: 12.5px; margin: 4px 0 8px; }
+.ai-inputbar { flex: none; display: flex; gap: 10px; align-items: flex-end; padding-top: 12px; border-top: 1px solid var(--border); }
+.ai-input { flex: 1; border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 11px 14px; font-family: inherit; font-size: 14px; resize: none; min-height: 46px; max-height: 160px; color: var(--text); box-shadow: var(--shadow-xs); }
+.ai-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.ai-inputbar .btn-primary { height: 46px; padding: 0 20px; }
+@media (max-width: 640px) { .ai-sugs { grid-template-columns: 1fr; } }
+
 .itm-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--bg); overflow: hidden; }
 .itm-top { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: var(--surface); border-bottom: 1px solid var(--border); flex: none; }
 .itm-brand { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; max-width: 220px; }

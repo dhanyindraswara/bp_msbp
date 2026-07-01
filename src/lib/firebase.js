@@ -5,11 +5,13 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
+import { getFunctions } from 'firebase/functions'
 import { firebaseConfig, firebaseEnabled } from './firebaseConfig.js'
 
 let db = null
 let auth = null
 let storage = null
+let functions = null
 
 if (firebaseEnabled) {
   try {
@@ -24,12 +26,14 @@ if (firebaseEnabled) {
     }
     auth = getAuth(app)
     storage = getStorage(app)
+    functions = getFunctions(app, 'us-central1')
   } catch (e) {
     console.error('Firebase init failed — falling back to localStorage.', e)
     db = null
     auth = null
     storage = null
+    functions = null
   }
 }
 
-export { db, auth, storage, firebaseEnabled }
+export { db, auth, storage, functions, firebaseEnabled }

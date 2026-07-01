@@ -260,8 +260,8 @@ table.sipoc-grid tbody tr:hover td { background: #eef5fc; }
 .rowdel:hover { background: #fbe9eb; }
 
 .legend-card { background: #fff; border: 1px solid #b9c6d2; border-radius: 2px; overflow: hidden; }
-.legend-hd { background: #9db8cf; color: #12324e; font-weight: 800; text-align: center; padding: 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; }
-.legend-body { padding: 9px 12px; font-size: 12.5px; line-height: 1.5; }
+.legend-hd { background: #9db8cf; color: #12324e; font-weight: 800; text-align: center; padding: 5px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .02em; }
+.legend-body { padding: 7px 10px; font-size: 8px; line-height: 1.4; }
 
 .react-flow__attribution { display: none !important; }
 .react-flow__handle { border: none !important; min-width: 0 !important; min-height: 0 !important; }
@@ -327,12 +327,12 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .doc-canvas .react-flow { width: 100%; height: 100%; position: relative; z-index: 1; background: transparent; }
 .doc-side { width: 320px; flex: none; display: flex; flex-direction: column; gap: 10px; }
 
-.legend-grid { display: flex; flex-direction: column; gap: 6px; }
-.legend-item { display: flex; align-items: center; gap: 9px; font-size: 12px; }
-.legend-sw { width: 26px; height: 15px; flex: none; border-radius: 2px; }
-.legend-line { width: 26px; height: 0; flex: none; position: relative; }
+.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 8px; line-height: 1.2; }
+.legend-sw { width: 16px; height: 10px; flex: none; border-radius: 2px; }
+.legend-line { width: 16px; height: 0; flex: none; position: relative; }
 .legend-line-ext { border-top: 2px dotted #2f6fb0; }
 .legend-line-int { border-top: 2px solid #1f2937; }
-.legend-line::after { content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%); border-left: 6px solid; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.legend-line::after { content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%); border-left: 5px solid; border-top: 3px solid transparent; border-bottom: 3px solid transparent; }
 .legend-line-ext::after { border-left-color: #2f6fb0; }
 .legend-line-int::after { border-left-color: #1f2937; }

@@ -139,20 +139,27 @@ export function generate(p) {
   const positions = { ...(p.positions || {}) }
   const need = (id) => !positions[id]
   const P = Math.max(1, processes.length)
+  const perRow = 4 // max process boxes per row; extra wrap to the next row
   const stepX = PROC_W + 64
+  const procGapV = 58
+  const rowH = PROC_H + procGapV
   const X0 = 440
-  const CY = 540 // top-y of the central process row
+  const CY = 540 // top-y of the first process row
+  const maxCols = Math.min(P, perRow)
+  const procRows = Math.ceil(P / perRow)
 
   processes.forEach((pr, i) => {
     const id = pid(pr.raw)
-    if (need(id)) positions[id] = { x: X0 + i * stepX, y: CY }
+    const col = i % perRow
+    const row = Math.floor(i / perRow)
+    if (need(id)) positions[id] = { x: X0 + col * stepX, y: CY + row * rowH }
   })
 
   const bandLeft = X0
-  const bandRight = X0 + (P - 1) * stepX + PROC_W
+  const bandRight = X0 + (maxCols - 1) * stepX + PROC_W
   const bandCenterX = (bandLeft + bandRight) / 2
   const bandTop = CY
-  const bandBottom = CY + PROC_H
+  const bandBottom = CY + (procRows - 1) * rowH + PROC_H
 
   const gapH = 30
   const gapV = 44

@@ -153,11 +153,30 @@ function FlowInner({ project, setProject, derived, notify }) {
       data: {},
       selectable: false,
       draggable: false,
-      zIndex: 0,
+      // Behind the edge layer (edges svg sits at z-index 0) so the light-blue
+      // band never covers the IN/OUT arrows that route across it.
+      zIndex: -1,
     }
   }, [nodes])
 
   const edges = useMemo(() => {
+    // Group edges by unordered node pair so that a box with both an IN and an
+    // OUT edge to the same process gets two parallel lines (different slots)
+    // instead of one overlapping line.
+    const groups = {}
+    derived.relations.forEach((rel) => {
+      const k = [rel.source, rel.target].slice().sort().join('~')
+      ;(groups[k] || (groups[k] = [])).push(rel.id)
+    })
+    // For a pair of size k, spread its edges across the 5 slot positions.
+    const SLOTMAP = { 1: [2], 2: [1, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4] }
+    const slotFor = (rel) => {
+      const k = [rel.source, rel.target].slice().sort().join('~')
+      const arr = groups[k]
+      const slots = SLOTMAP[arr.length] || arr.map((_, i) => i % 5)
+      return slots[arr.indexOf(rel.id) % slots.length]
+    }
+
     return derived.relations
       .map((rel) => {
         const s = posMap[rel.source],
@@ -167,13 +186,14 @@ function FlowInner({ project, setProject, derived, notify }) {
           tc = { x: t.x + t.w / 2, y: t.y + t.h / 2 }
         const dx = tc.x - sc.x,
           dy = tc.y - sc.y
+        const slot = slotFor(rel)
         let sh, th
         if (Math.abs(dx) >= Math.abs(dy)) {
-          sh = (dx >= 0 ? 'right' : 'left') + '-s'
-          th = (dx >= 0 ? 'left' : 'right') + '-t'
+          sh = (dx >= 0 ? 'right' : 'left') + '-s-' + slot
+          th = (dx >= 0 ? 'left' : 'right') + '-t-' + slot
         } else {
-          sh = (dy >= 0 ? 'bottom' : 'top') + '-s'
-          th = (dy >= 0 ? 'top' : 'bottom') + '-t'
+          sh = (dy >= 0 ? 'bottom' : 'top') + '-s-' + slot
+          th = (dy >= 0 ? 'top' : 'bottom') + '-t-' + slot
         }
         const color = rel.kind === 'in' ? C.inC : rel.kind === 'out' ? C.outC : C.hoC
         const label = labelMode === 'number' ? (rel.nums.length ? rel.nums.join(',') : '') : rel.texts.join(', ')
@@ -251,7 +271,8 @@ function FlowInner({ project, setProject, derived, notify }) {
             n.classList &&
             (n.classList.contains('react-flow__controls') ||
               n.classList.contains('react-flow__attribution') ||
-              n.classList.contains('nodedel'))
+              n.classList.contains('nodedel') ||
+              n.classList.contains('itm-hint'))
           )
             return false
           return true
@@ -415,7 +436,7 @@ function FlowInner({ project, setProject, derived, notify }) {
                 )}
               </div>
             </div>
-            <div style={{ fontSize: 11.5, color: '#94a0ac', lineHeight: 1.5, padding: '0 2px' }}>
+            <div className="itm-hint" style={{ fontSize: 11.5, color: '#94a0ac', lineHeight: 1.5, padding: '0 2px' }}>
               Drag boxes to arrange · double-click a box to rename · hover a grey box for the remove ✕.
             </div>
           </div>

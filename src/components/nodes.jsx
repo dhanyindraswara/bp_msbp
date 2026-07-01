@@ -9,29 +9,23 @@ const SIDES = [
   ['left', Position.Left],
 ]
 
-// Four source + four target handles per node so edges can attach to whichever
-// side faces the connected node.
+// Multiple attach points along each side. When two boxes are connected by both
+// an IN (blue) and an OUT (green) edge, the edges are assigned different slots
+// so they run parallel instead of stacking on top of each other.
+export const SLOTS = ['22%', '36%', '50%', '64%', '78%']
+
+// 4 sides × 5 slots × {source,target} handles per node. Hidden (opacity 0);
+// edges pick the side + slot explicitly.
 function Handles() {
   const els = []
   SIDES.forEach(([name, pos]) => {
-    els.push(
-      <Handle
-        key={name + 's'}
-        type="source"
-        position={pos}
-        id={name + '-s'}
-        style={{ opacity: 0, width: 7, height: 7, background: '#000' }}
-      />,
-    )
-    els.push(
-      <Handle
-        key={name + 't'}
-        type="target"
-        position={pos}
-        id={name + '-t'}
-        style={{ opacity: 0, width: 7, height: 7, background: '#000' }}
-      />,
-    )
+    const horizontal = name === 'top' || name === 'bottom'
+    SLOTS.forEach((p, si) => {
+      const off = horizontal ? { left: p } : { top: p }
+      const base = { opacity: 0, width: 6, height: 6, background: '#000', ...off }
+      els.push(<Handle key={name + 's' + si} type="source" position={pos} id={`${name}-s-${si}`} style={base} />)
+      els.push(<Handle key={name + 't' + si} type="target" position={pos} id={`${name}-t-${si}`} style={base} />)
+    })
   })
   return els
 }

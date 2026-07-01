@@ -1,13 +1,21 @@
-# ITM SIPOC Studio
+# STONES — Business Process Suite
 
-A web app that turns a **single SIPOC table** into two editable, exportable deliverables:
+STONES is a small suite shell with four modules:
 
-1. an **ITM-style business process map** (React Flow), and
-2. a **RASCI matrix**.
+1. **Document Action Request** — review/approve/publish requests _(placeholder for now)_.
+2. **Document Development** — the core studio: turn a **single SIPOC table** into an
+   editable **ITM-style business process map** (React Flow) + a **RASCI matrix**.
+   You can develop many Business Processes, each saved by **ID + name + version**.
+3. **Repository** — stores every BP document (ID, name, version, last updated) with
+   open / duplicate / delete.
+4. **Dashboard** — reporting _(live counts now; charts to come)_.
+
+## Document Development
 
 Everything downstream — processes, suppliers/customers, handoffs, numbered
 document flows, and the RASCI grid — is generated automatically from the SIPOC
-input, then can be edited by hand.
+input, then can be edited by hand. Edits **autosave** into the repository under the
+document's ID; the BP name and version come from the header fields.
 
 ## Stack
 

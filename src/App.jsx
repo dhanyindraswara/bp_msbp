@@ -6,6 +6,7 @@ import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
 import Dashboard from './menus/Dashboard.jsx'
 import DocumentActionRequest from './menus/DocumentActionRequest.jsx'
+import GlobalSearch from './menus/GlobalSearch.jsx'
 
 const Icon = ({ d }) => (
   <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -17,6 +18,7 @@ const MENUS = [
   { id: 'request', label: 'Document Action Request', d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
   { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
   { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
+  { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
   { id: 'dashboard', label: 'Dashboard', d: 'M4 13h6V4H4v9zm10 7h6V10h-6v10zM4 20h6v-4H4v4zM14 4v3h6V4h-6z' },
 ]
 
@@ -85,6 +87,7 @@ export default function App() {
           />
         )}
         {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} />}
+        {menu === 'search' && <GlobalSearch openDoc={openDoc} />}
         {menu === 'dashboard' && <Dashboard goRepository={() => setMenu('repository')} />}
       </main>
 

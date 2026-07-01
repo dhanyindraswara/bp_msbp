@@ -1,7 +1,8 @@
 // STONES › Document Action Request — approval queue. Documents submitted for
 // review land here; a reviewer approves or sends them back.
 import { useState } from 'react'
-import { listDocs, approveDoc, rejectDoc, STATUS } from '../lib/store.js'
+import { listDocs, approveDoc, rejectDoc, createDoc, STATUS } from '../lib/store.js'
+import { blankProject } from '../lib/sample.js'
 
 const fmt = (ts) => {
   if (!ts) return '—'
@@ -36,12 +37,19 @@ export default function DocumentActionRequest({ openDoc, notify }) {
     refresh()
     notify('Sent back to draft')
   }
+  const onNew = () => {
+    const d = createDoc(blankProject())
+    openDoc(d.id)
+  }
 
   return (
     <div className="stones-page">
-      <div className="stones-page-hd">
-        <h1>Document Action Request</h1>
-        <p>Business Processes awaiting review &amp; approval before they can be published.</p>
+      <div className="stones-page-hd stones-page-hd-row">
+        <div>
+          <h1>Document Action Request</h1>
+          <p>Business Processes awaiting review &amp; approval before they can be published.</p>
+        </div>
+        <button className="btn btn-primary" onClick={onNew}>+ New BP</button>
       </div>
 
       <div className="sec-h"><h3>Awaiting review</h3><span className="hint">{pending.length} pending</span></div>

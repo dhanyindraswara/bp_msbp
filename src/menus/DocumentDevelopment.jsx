@@ -52,6 +52,7 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
   const [commentText, setCommentText] = useState('')
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const fileUpRef = useRef(null)
 
   function loadMeta(id) {
@@ -247,11 +248,21 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
           </button>
           <button className="btn btn-sm" onClick={doSaveVersion}>Save version</button>
           <button className="btn btn-sm btn-primary" onClick={workflow}>{workflowLabel}</button>
-          <span style={{ width: 1, background: '#e2e6ea', alignSelf: 'stretch', margin: '2px 2px' }} />
+          <span className="itm-divider" />
           <button className="btn btn-sm" onClick={newDoc}>New</button>
-          <button className="btn btn-sm" onClick={() => jsonRef.current && jsonRef.current.click()}>Import</button>
-          <button className="btn btn-sm" onClick={exportJSON}>Export</button>
-          <button className="btn btn-sm" onClick={loadSample}>Sample</button>
+          <div className="more-wrap">
+            <button className="btn btn-sm" onClick={() => setMoreOpen((v) => !v)} title="More actions">⋯</button>
+            {moreOpen ? (
+              <>
+                <div className="more-backdrop" onClick={() => setMoreOpen(false)} />
+                <div className="more-menu">
+                  <button onClick={() => { setMoreOpen(false); jsonRef.current && jsonRef.current.click() }}>Import JSON</button>
+                  <button onClick={() => { setMoreOpen(false); exportJSON() }}>Export JSON</button>
+                  <button onClick={() => { setMoreOpen(false); loadSample() }}>Load sample BP</button>
+                </div>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
 

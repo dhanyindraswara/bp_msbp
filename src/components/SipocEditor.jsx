@@ -227,7 +227,16 @@ export default function SipocEditor({ project, setProject, notify, goGenerate })
         </div>
       </div>
 
-      <table className="grid">
+      <table className="sipoc-grid">
+        <colgroup>
+          <col style={{ width: '3.5%' }} />
+          <col style={{ width: '18.8%' }} />
+          <col style={{ width: '18.8%' }} />
+          <col style={{ width: '18.8%' }} />
+          <col style={{ width: '18.8%' }} />
+          <col style={{ width: '18.8%' }} />
+          <col style={{ width: '3.5%' }} />
+        </colgroup>
         <thead>
           <tr>
             <th className="tiny">#</th>
@@ -273,10 +282,15 @@ export default function SipocEditor({ project, setProject, notify, goGenerate })
         </button>
       </div>
 
-      <table className="grid">
+      <table className="sipoc-grid">
+        <colgroup>
+          <col style={{ width: '32%' }} />
+          <col style={{ width: '64%' }} />
+          <col style={{ width: '4%' }} />
+        </colgroup>
         <thead>
           <tr>
-            <th style={{ width: '38%' }}>Process</th>
+            <th>Process</th>
             <th>Indicator</th>
             <th className="tiny"></th>
           </tr>

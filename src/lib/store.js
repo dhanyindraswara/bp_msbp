@@ -1,17 +1,46 @@
-// STONES document store — persists many Business Process documents in
-// localStorage, each with its working project, version snapshots, an audit
-// trail, an approval status, and comments.
+// STONES document store. Backend-agnostic: uses Firestore when configured
+// (with realtime sync across devices), otherwise falls back to localStorage.
+// Reads are synchronous from an in-memory cache; writes update the cache and
+// persist to the active backend, then notify subscribers.
 import { sampleProject, blankProject } from './sample.js'
+import { db, firebaseEnabled } from './firebase.js'
+import { collection, doc, onSnapshot, setDoc, deleteDoc as fsDeleteDoc, getDoc as fsGetDoc } from 'firebase/firestore'
 
-const DOCS_KEY = 'stones-bp-docs-v1'
-const OLD_KEY = 'itm-sipoc-studio-v1' // single-project storage from before STONES
+const LOCAL_KEY = 'stones-bp-docs-v1'
+const OLD_KEY = 'itm-sipoc-studio-v1'
+const OPEN_KEY = 'stones-openid'
 const USER_KEY = 'stones-user'
+const COL = 'bp_documents'
 
 const rid = (p) => p + Math.random().toString(36).slice(2, 9)
-
-// Approval lifecycle.
 export const STATUS = { draft: 'Draft', in_review: 'In Review', approved: 'Approved', published: 'Published' }
 
+// ---- in-memory state + subscribers ----
+let state = { docs: {}, seq: 0 }
+let ready = false
+let backend = firebaseEnabled && db ? 'firebase' : 'local'
+const listeners = new Set()
+function emit() {
+  listeners.forEach((l) => {
+    try {
+      l()
+    } catch (e) {
+      /* ignore */
+    }
+  })
+}
+export function subscribe(l) {
+  listeners.add(l)
+  return () => listeners.delete(l)
+}
+export function isReady() {
+  return ready
+}
+export function backendName() {
+  return backend
+}
+
+// ---- current user + open document (per browser) ----
 export function getCurrentUser() {
   try {
     return localStorage.getItem(USER_KEY) || 'dhany indraswara'
@@ -26,42 +55,146 @@ export function setCurrentUser(n) {
     /* ignore */
   }
 }
-
-function read() {
+export function getOpenId() {
   try {
-    const s = localStorage.getItem(DOCS_KEY)
-    if (s) return JSON.parse(s)
+    return localStorage.getItem(OPEN_KEY) || null
   } catch (e) {
-    /* ignore */
+    return null
   }
-  return { docs: {}, openId: null, seq: 0 }
 }
-function write(state) {
+export function setOpenId(id) {
   try {
-    localStorage.setItem(DOCS_KEY, JSON.stringify(state))
+    if (id) localStorage.setItem(OPEN_KEY, id)
+    else localStorage.removeItem(OPEN_KEY)
   } catch (e) {
     /* ignore */
   }
 }
 
-function nextId(state) {
+// ---- local persistence ----
+function readLocal() {
+  try {
+    const s = localStorage.getItem(LOCAL_KEY)
+    if (s) {
+      const o = JSON.parse(s)
+      return { docs: o.docs || {}, seq: o.seq || 0 }
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return { docs: {}, seq: 0 }
+}
+function writeLocal() {
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify({ docs: state.docs, seq: state.seq }))
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// ---- persistence dispatch ----
+function persistDoc(id) {
+  if (backend === 'firebase') {
+    if (state.docs[id]) setDoc(doc(db, COL, id), state.docs[id]).catch((e) => console.error('save failed', e))
+    setDoc(doc(db, 'app', 'meta'), { seq: state.seq }, { merge: true }).catch(() => {})
+  } else {
+    writeLocal()
+  }
+}
+function persistDelete(id) {
+  if (backend === 'firebase') {
+    fsDeleteDoc(doc(db, COL, id)).catch((e) => console.error('delete failed', e))
+  } else {
+    writeLocal()
+  }
+}
+
+// ---- init ----
+export async function initStore() {
+  if (ready) return
+  if (backend === 'firebase') {
+    try {
+      const m = await fsGetDoc(doc(db, 'app', 'meta'))
+      if (m.exists()) state.seq = m.data().seq || 0
+    } catch (e) {
+      /* ignore */
+    }
+    await new Promise((resolve) => {
+      let first = true
+      const finish = () => {
+        if (first) {
+          first = false
+          ready = true
+          resolve()
+        }
+      }
+      onSnapshot(
+        collection(db, COL),
+        (snap) => {
+          const docs = {}
+          snap.forEach((d) => {
+            docs[d.id] = d.data()
+          })
+          state.docs = docs
+          finish()
+          emit()
+        },
+        (err) => {
+          console.error('Firestore error — falling back to localStorage.', err)
+          backend = 'local'
+          state = readLocal()
+          finish()
+          emit()
+        },
+      )
+    })
+  } else {
+    state = readLocal()
+    ready = true
+  }
+  emit()
+}
+
+// ---- helpers ----
+function nextId() {
   state.seq = (state.seq || 0) + 1
   return 'BP-' + String(state.seq).padStart(4, '0')
 }
-
 const nameOf = (project) => (project.header?.processName || '').trim() || 'Untitled BP'
 const versionOf = (project) => (project.header?.version || '').trim() || '1.0'
-
-// Backfill fields on docs created before document-control existed.
 function normalize(d) {
   if (!d) return d
   return { status: 'draft', versions: [], comments: [], audit: [], ...d }
 }
+function pushAudit(d, action, detail) {
+  d.audit = d.audit || []
+  d.audit.unshift({ id: rid('a'), ts: Date.now(), actor: getCurrentUser(), action, detail: detail || '' })
+}
 
-function newDoc(state, project) {
-  const id = nextId(state)
+// ---- reads ----
+export function listDocs() {
+  return Object.values(state.docs)
+    .map(normalize)
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+}
+export function getDoc(id) {
+  return normalize(state.docs[id] || null)
+}
+
+// ---- writes ----
+export function saveDoc({ id, project }) {
+  const prev = state.docs[id]
+  if (!prev) return null
+  state.docs[id] = { ...normalize(prev), project, name: nameOf(project), version: versionOf(project), updatedAt: Date.now() }
+  persistDoc(id)
+  emit()
+  return state.docs[id]
+}
+
+export function createDoc(project) {
+  const id = nextId()
   const now = Date.now()
-  const doc = {
+  const d = {
     id,
     name: nameOf(project),
     version: versionOf(project),
@@ -73,71 +206,26 @@ function newDoc(state, project) {
     createdAt: now,
     updatedAt: now,
   }
-  state.docs[id] = doc
-  return doc
-}
-
-function pushAudit(state, id, action, detail) {
-  const d = state.docs[id]
-  if (!d) return
-  d.audit = d.audit || []
-  d.audit.unshift({ id: rid('a'), ts: Date.now(), actor: getCurrentUser(), action, detail: detail || '' })
-}
-
-export function listDocs() {
-  const { docs } = read()
-  return Object.values(docs)
-    .map(normalize)
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-}
-
-export function getDoc(id) {
-  return normalize(read().docs[id] || null)
-}
-
-export function getOpenId() {
-  return read().openId
-}
-export function setOpenId(id) {
-  const s = read()
-  s.openId = id
-  write(s)
-}
-
-// Persist the working project (autosave). Preserves versions/audit/comments/status.
-export function saveDoc({ id, project }) {
-  const s = read()
-  const prev = s.docs[id]
-  if (!prev) return null
-  s.docs[id] = { ...normalize(prev), project, name: nameOf(project), version: versionOf(project), updatedAt: Date.now() }
-  write(s)
-  return s.docs[id]
-}
-
-export function createDoc(project) {
-  const s = read()
-  const d = newDoc(s, project)
-  s.openId = d.id
-  write(s)
+  state.docs[id] = d
+  setOpenId(id)
+  persistDoc(id)
+  emit()
   return d
 }
 
 export function deleteDoc(id) {
-  const s = read()
-  delete s.docs[id]
-  if (s.openId === id) s.openId = null
-  write(s)
+  delete state.docs[id]
+  if (getOpenId() === id) setOpenId(null)
+  persistDelete(id)
+  emit()
 }
 
 export function duplicateDoc(id) {
-  const s = read()
-  const src = normalize(s.docs[id])
+  const src = normalize(state.docs[id])
   if (!src) return null
   const project = JSON.parse(JSON.stringify(src.project))
   project.header = { ...project.header, processName: (src.name || 'BP') + ' (copy)' }
-  const d = newDoc(s, project)
-  write(s)
-  return d
+  return createDoc(project)
 }
 
 // ---- version snapshots ----
@@ -156,21 +244,18 @@ function snapshot(d, note) {
   d.versions.unshift(ver)
   return ver
 }
-
 export function saveVersion(id, note) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d) return null
   const ver = snapshot(d, note)
-  pushAudit(s, id, 'version', 'Saved snapshot #' + ver.snapNo + ' (v' + ver.bpVersion + ')' + (note ? ' — ' + note : ''))
+  pushAudit(d, 'version', 'Saved snapshot #' + ver.snapNo + ' (v' + ver.bpVersion + ')' + (note ? ' — ' + note : ''))
   d.updatedAt = Date.now()
-  write(s)
+  persistDoc(id)
+  emit()
   return ver
 }
-
 export function restoreVersion(id, verId) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d) return null
   const v = (d.versions || []).find((x) => x.id === verId)
   if (!v) return null
@@ -178,87 +263,74 @@ export function restoreVersion(id, verId) {
   d.name = nameOf(d.project)
   d.version = versionOf(d.project)
   d.updatedAt = Date.now()
-  pushAudit(s, id, 'restore', 'Restored snapshot #' + v.snapNo)
-  write(s)
+  pushAudit(d, 'restore', 'Restored snapshot #' + v.snapNo)
+  persistDoc(id)
+  emit()
   return normalize(d)
 }
 
 // ---- approval workflow ----
 function transition(id, status, action, detail) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d) return null
   d.status = status
   d.updatedAt = Date.now()
-  pushAudit(s, id, action, detail)
-  write(s)
+  pushAudit(d, action, detail)
+  persistDoc(id)
+  emit()
   return normalize(d)
 }
-
-export function submitForReview(id, note) {
-  return transition(id, 'in_review', 'submit', 'Submitted for review' + (note ? ' — ' + note : ''))
-}
-export function recallReview(id) {
-  return transition(id, 'draft', 'recall', 'Recalled from review')
-}
-export function approveDoc(id, note) {
-  return transition(id, 'approved', 'approve', 'Approved' + (note ? ' — ' + note : ''))
-}
-export function rejectDoc(id, note) {
-  return transition(id, 'draft', 'reject', 'Sent back to draft' + (note ? ' — ' + note : ''))
-}
-export function reviseDoc(id) {
-  return transition(id, 'draft', 'revise', 'Started a new revision')
-}
-
+export const submitForReview = (id, note) => transition(id, 'in_review', 'submit', 'Submitted for review' + (note ? ' — ' + note : ''))
+export const recallReview = (id) => transition(id, 'draft', 'recall', 'Recalled from review')
+export const approveDoc = (id, note) => transition(id, 'approved', 'approve', 'Approved' + (note ? ' — ' + note : ''))
+export const rejectDoc = (id, note) => transition(id, 'draft', 'reject', 'Sent back to draft' + (note ? ' — ' + note : ''))
+export const reviseDoc = (id) => transition(id, 'draft', 'revise', 'Started a new revision')
 export function publishDoc(id, note) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d) return null
   d.status = 'published'
   d.updatedAt = Date.now()
   const ver = snapshot(d, 'Published' + (note ? ' — ' + note : ''))
-  pushAudit(s, id, 'publish', 'Published v' + ver.bpVersion + ' (snapshot #' + ver.snapNo + ')')
-  write(s)
+  pushAudit(d, 'publish', 'Published v' + ver.bpVersion + ' (snapshot #' + ver.snapNo + ')')
+  persistDoc(id)
+  emit()
   return normalize(d)
 }
 
 // ---- comments ----
 export function addComment(id, body) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d || !(body || '').trim()) return null
   d.comments = d.comments || []
   const c = { id: rid('c'), author: getCurrentUser(), body: body.trim(), createdAt: Date.now(), resolved: false }
   d.comments.unshift(c)
-  pushAudit(s, id, 'comment', 'Added a comment')
-  write(s)
+  pushAudit(d, 'comment', 'Added a comment')
+  d.updatedAt = Date.now()
+  persistDoc(id)
+  emit()
   return c
 }
 export function toggleResolveComment(id, cid) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d) return
   ;(d.comments || []).forEach((c) => {
     if (c.id === cid) c.resolved = !c.resolved
   })
-  write(s)
+  persistDoc(id)
+  emit()
 }
 export function deleteComment(id, cid) {
-  const s = read()
-  const d = s.docs[id]
+  const d = state.docs[id]
   if (!d) return
   d.comments = (d.comments || []).filter((c) => c.id !== cid)
-  write(s)
+  persistDoc(id)
+  emit()
 }
 
+// Seed a first document if the store is empty (migrates the pre-STONES project).
 export function ensureSeed() {
-  const s = read()
-  if (Object.keys(s.docs).length) {
-    if (!s.openId || !s.docs[s.openId]) {
-      s.openId = Object.keys(s.docs)[0]
-      write(s)
-    }
+  if (Object.keys(state.docs).length) {
+    if (!getOpenId() || !state.docs[getOpenId()]) setOpenId(Object.keys(state.docs)[0])
     return
   }
   let project = null

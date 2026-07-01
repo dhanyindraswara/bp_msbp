@@ -1,7 +1,7 @@
 // STONES — Business Process suite shell. Left-hand menu switches between the
 // four modules; Document Development hosts the SIPOC → map + RASCI studio.
-import { useState, useRef, useCallback } from 'react'
-import { ensureSeed, getOpenId, setOpenId as storeSetOpenId } from './lib/store.js'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { ensureSeed, getOpenId, setOpenId as storeSetOpenId, initStore, subscribe, backendName } from './lib/store.js'
 import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
 import Dashboard from './menus/Dashboard.jsx'
@@ -24,10 +24,9 @@ const MENUS = [
 
 export default function App() {
   const [menu, setMenu] = useState('develop')
-  const [openId, setOpenIdState] = useState(() => {
-    ensureSeed()
-    return getOpenId()
-  })
+  const [ready, setReady] = useState(false)
+  const [rev, setRev] = useState(0)
+  const [openId, setOpenIdState] = useState(null)
   const [toast, setToast] = useState('')
   const tt = useRef(null)
   const notify = useCallback((m) => {
@@ -36,20 +35,39 @@ export default function App() {
     tt.current = setTimeout(() => setToast(''), 2200)
   }, [])
 
+  // Boot the store (Firestore or localStorage), then seed + subscribe for
+  // realtime re-renders.
+  useEffect(() => {
+    const unsub = subscribe(() => setRev((r) => r + 1))
+    initStore().then(() => {
+      ensureSeed()
+      setOpenIdState(getOpenId())
+      setReady(true)
+    })
+    return unsub
+  }, [])
+
   // Update the open document (keeps store + React in sync).
   const setOpenId = useCallback((id) => {
     storeSetOpenId(id)
     setOpenIdState(id)
   }, [])
   // Open a document and jump to Document Development.
-  const openDoc = useCallback(
-    (id) => {
-      storeSetOpenId(id)
-      setOpenIdState(id)
-      setMenu('develop')
-    },
-    [],
-  )
+  const openDoc = useCallback((id) => {
+    storeSetOpenId(id)
+    setOpenIdState(id)
+    setMenu('develop')
+  }, [])
+
+  if (!ready) {
+    return (
+      <div className="stones" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div className="rf-loading" style={{ color: '#8a94a0' }}>
+          Loading STONES{backendName() === 'firebase' ? ' · connecting to Firebase…' : '…'}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="stones">
@@ -77,7 +95,7 @@ export default function App() {
       </aside>
 
       <main className="stones-main">
-        {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} />}
+        {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} rev={rev} />}
         {menu === 'develop' && (
           <DocumentDevelopment
             openId={openId}
@@ -86,9 +104,9 @@ export default function App() {
             goRepository={() => setMenu('repository')}
           />
         )}
-        {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} />}
-        {menu === 'search' && <GlobalSearch openDoc={openDoc} />}
-        {menu === 'dashboard' && <Dashboard goRepository={() => setMenu('repository')} />}
+        {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} rev={rev} />}
+        {menu === 'search' && <GlobalSearch openDoc={openDoc} rev={rev} />}
+        {menu === 'dashboard' && <Dashboard goRepository={() => setMenu('repository')} rev={rev} />}
       </main>
 
       {toast ? <div className="toast">{toast}</div> : null}

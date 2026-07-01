@@ -62,9 +62,9 @@ function Snippet({ text, q }) {
   return <>{parts}</>
 }
 
-export default function GlobalSearch({ openDoc }) {
+export default function GlobalSearch({ openDoc, rev }) {
   const [q, setQ] = useState('')
-  const docs = useMemo(() => listDocs(), [])
+  const docs = useMemo(() => listDocs(), [rev])
   const query = q.trim()
 
   const results = useMemo(() => {

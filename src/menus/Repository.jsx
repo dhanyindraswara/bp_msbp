@@ -1,6 +1,6 @@
 // STONES › Repository — stores every BP document with its ID, name, version and
 // last-updated time. Open, duplicate or delete documents here.
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { listDocs, deleteDoc, duplicateDoc, createDoc, STATUS } from '../lib/store.js'
 import { blankProject } from '../lib/sample.js'
 
@@ -15,9 +15,8 @@ const fmt = (ts) => {
   }
 }
 
-export default function Repository({ openDoc, notify }) {
-  const [docs, setDocs] = useState(() => listDocs())
-  const refresh = () => setDocs(listDocs())
+export default function Repository({ openDoc, notify, rev }) {
+  const docs = useMemo(() => listDocs(), [rev])
 
   const onNew = () => {
     const d = createDoc(blankProject())
@@ -25,13 +24,11 @@ export default function Repository({ openDoc, notify }) {
   }
   const onDuplicate = (id) => {
     duplicateDoc(id)
-    refresh()
     notify('Document duplicated')
   }
   const onDelete = (id, name) => {
     if (window.confirm('Delete "' + name + '" permanently? This cannot be undone.')) {
       deleteDoc(id)
-      refresh()
       notify('Document deleted')
     }
   }

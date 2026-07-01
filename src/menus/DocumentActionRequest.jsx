@@ -1,6 +1,6 @@
 // STONES › Document Action Request — approval queue. Documents submitted for
 // review land here; a reviewer approves or sends them back.
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { listDocs, approveDoc, rejectDoc, createDoc, STATUS } from '../lib/store.js'
 import { blankProject } from '../lib/sample.js'
 
@@ -18,23 +18,20 @@ const submittedInfo = (d) => {
 }
 const StatusBadge = ({ status }) => <span className={'stbadge stbadge-' + status}>{STATUS[status] || 'Draft'}</span>
 
-export default function DocumentActionRequest({ openDoc, notify }) {
-  const [docs, setDocs] = useState(() => listDocs())
-  const refresh = () => setDocs(listDocs())
+export default function DocumentActionRequest({ openDoc, notify, rev }) {
+  const docs = useMemo(() => listDocs(), [rev])
   const pending = docs.filter((d) => d.status === 'in_review')
 
   const onApprove = (id, name) => {
     const note = window.prompt('Approve "' + name + '"? Add a note (optional):', '')
     if (note === null) return
     approveDoc(id, note)
-    refresh()
     notify('Approved — ready to publish')
   }
   const onReject = (id, name) => {
     const note = window.prompt('Send "' + name + '" back to draft. Reason (optional):', '')
     if (note === null) return
     rejectDoc(id, note)
-    refresh()
     notify('Sent back to draft')
   }
   const onNew = () => {

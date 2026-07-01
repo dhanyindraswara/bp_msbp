@@ -143,3 +143,50 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .seg button { border: none; background: #fff; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; color: #64707c; white-space: nowrap; }
 .seg button.on { background: #2f6fb0; color: #fff; }
 .rf-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: #8a94a0; font-weight: 600; }
+
+/* ---- Business process document template (map view) ---- */
+.map-view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.map-toolbar { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid #e6eaee; background: #fff; flex: none; }
+.map-hint { font-size: 11.5px; color: #9aa4ae; }
+.doc-scroll { flex: 1; overflow: auto; background: #e9edf1; padding: 20px; min-height: 0; }
+.itm-doc { background: #fff; border: 1px solid #9aa4ae; padding: 8px; margin: 0 auto; width: 100%; max-width: 1440px; box-shadow: 0 2px 12px rgba(15,42,67,.08); }
+
+.tb { border: 1px solid #3a3f45; display: flex; flex-direction: column; }
+.tb-row1 { display: flex; align-items: stretch; }
+.tb-logo { width: 210px; flex: none; border-right: 1px solid #3a3f45; display: flex; align-items: center; justify-content: center; padding: 8px 10px; position: relative; cursor: pointer; }
+.tb-logo:hover { background: #f7fafd; }
+.tb-logo-img { max-height: 46px; max-width: 190px; object-fit: contain; }
+.tb-logo-hint { position: absolute; bottom: 2px; right: 5px; font-size: 9px; color: #aab3bd; opacity: 0; }
+.tb-logo:hover .tb-logo-hint { opacity: 1; }
+.tb-title { flex: 1; min-width: 0; border-right: 1px solid #3a3f45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 12px; text-align: center; }
+.tb-level { font-weight: 800; font-size: 13px; letter-spacing: .02em; color: #1f2937; }
+.tb-name { font-weight: 800; font-size: 15.5px; color: #0f2a43; }
+.tb-appr { width: 150px; flex: none; border-right: 1px solid #3a3f45; display: flex; flex-direction: column; }
+.tb-appr:last-child { border-right: none; }
+.tb-appr-lb { text-align: center; padding: 6px 6px 2px; font-size: 11.5px; color: #333; }
+.tb-appr-val { text-align: center; padding: 6px; margin-top: auto; font-weight: 700; font-size: 12px; color: #0f2a43; min-height: 26px; }
+.tb-row2 { display: flex; border-top: 1px solid #3a3f45; font-size: 11.5px; }
+.tb-c { padding: 6px 10px; border-right: 1px solid #3a3f45; display: flex; align-items: center; }
+.tb-c:last-child { border-right: none; }
+.tb-c-lb { font-weight: 700; color: #1f2937; flex: none; }
+.tb-c-val { flex: 1; min-width: 0; font-weight: 600; color: #0f2a43; }
+
+.tb-edit { outline: none; cursor: text; border-radius: 2px; min-width: 24px; min-height: 15px; padding: 0 2px; }
+.tb-edit:hover { background: #eef5fc; }
+.tb-edit:focus { background: #eef5fc; box-shadow: inset 0 0 0 1px #9cc3e3; }
+.tb-edit:empty:before { content: attr(data-ph); color: #b9c0c9; font-weight: 400; }
+
+.doc-body { display: flex; align-items: stretch; min-height: 620px; margin-top: 8px; gap: 8px; }
+.doc-canvas { flex: 1; min-width: 0; position: relative; border: 1px solid #d3dae1; background: #fff; overflow: hidden; }
+.doc-canvas .react-flow { width: 100%; height: 100%; position: relative; z-index: 1; background: transparent; }
+.doc-side { width: 320px; flex: none; display: flex; flex-direction: column; gap: 10px; }
+
+.legend-grid { display: flex; flex-direction: column; gap: 6px; }
+.legend-item { display: flex; align-items: center; gap: 9px; font-size: 12px; }
+.legend-sw { width: 26px; height: 15px; flex: none; border-radius: 2px; }
+.legend-line { width: 26px; height: 0; flex: none; position: relative; }
+.legend-line-ext { border-top: 2px dotted #2f6fb0; }
+.legend-line-int { border-top: 2px solid #1f2937; }
+.legend-line::after { content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%); border-left: 6px solid; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.legend-line-ext::after { border-left-color: #2f6fb0; }
+.legend-line-int::after { border-left-color: #1f2937; }

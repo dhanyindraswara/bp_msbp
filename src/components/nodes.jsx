@@ -111,12 +111,14 @@ export function ProcessNode({ data }) {
   )
 }
 
-export function BandNode() {
+export function BandNode({ data }) {
+  // Explicit pixel dimensions (not 100%) so html-to-image resolves the size when
+  // it clones the node for the PNG export.
   return (
     <div
       style={{
-        width: '100%',
-        height: '100%',
+        width: data?.w || '100%',
+        height: data?.h || '100%',
         background: C.bandBg,
         border: '1px solid ' + C.bandBorder,
         borderRadius: 3,

@@ -60,6 +60,17 @@ export function sampleProject() {
   }
   return {
     header: { processName: 'HSE Marine & Logistic', processOwner: 'C4. HSE Marine & Logistic', version: '1.0' },
+    template: {
+      logo: '',
+      level: 'BUSINESS PROCESS LEVEL 2',
+      title: 'C3.1 HSE MARINE & LOGISTIC',
+      bpNo: 'ITM-BP-L2-ML-2026-001',
+      effectiveDate: '11-01-2024',
+      revision: '01',
+      preparedBy: 'MSBP Head',
+      reviewedBy: 'CS Head',
+      approvedBy: 'President Director',
+    },
     sipoc,
     ppi,
     flows,
@@ -73,6 +84,7 @@ export function sampleProject() {
 export function blankProject() {
   return {
     header: { processName: '', processOwner: '', version: '1.0' },
+    template: { logo: '', level: 'BUSINESS PROCESS LEVEL 1', title: '', bpNo: '', effectiveDate: '', revision: '01', preparedBy: '', reviewedBy: '', approvedBy: '' },
     sipoc: [{ id: uid(), supplier: '', input: '', process: '', output: '', customer: '' }],
     ppi: [],
     flows: [],

@@ -1,8 +1,10 @@
 // STONES › Repository — stores every BP document with its ID, name, version and
 // last-updated time. Open, duplicate or delete documents here.
 import { useState } from 'react'
-import { listDocs, deleteDoc, duplicateDoc, createDoc } from '../lib/store.js'
+import { listDocs, deleteDoc, duplicateDoc, createDoc, STATUS } from '../lib/store.js'
 import { blankProject } from '../lib/sample.js'
+
+const StatusBadge = ({ status }) => <span className={'stbadge stbadge-' + status}>{STATUS[status] || 'Draft'}</span>
 
 const fmt = (ts) => {
   if (!ts) return '—'
@@ -50,17 +52,19 @@ export default function Repository({ openDoc, notify }) {
         <div className="panel">
           <table className="stones-table">
             <colgroup>
-              <col style={{ width: '110px' }} />
+              <col style={{ width: '104px' }} />
               <col />
-              <col style={{ width: '80px' }} />
-              <col style={{ width: '180px' }} />
-              <col style={{ width: '280px' }} />
+              <col style={{ width: '70px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '170px' }} />
+              <col style={{ width: '270px' }} />
             </colgroup>
             <thead>
               <tr>
                 <th>ID</th>
                 <th>BP name</th>
                 <th>Version</th>
+                <th>Status</th>
                 <th>Last updated</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
@@ -75,6 +79,7 @@ export default function Repository({ openDoc, notify }) {
                     {d.name}
                   </td>
                   <td>v{d.version}</td>
+                  <td><StatusBadge status={d.status} /></td>
                   <td className="cell-muted">{fmt(d.updatedAt)}</td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button className="btn btn-sm btn-primary" onClick={() => openDoc(d.id)}>

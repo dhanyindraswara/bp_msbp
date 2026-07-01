@@ -75,7 +75,7 @@ export default function App() {
       </aside>
 
       <main className="stones-main">
-        {menu === 'request' && <DocumentActionRequest />}
+        {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} />}
         {menu === 'develop' && (
           <DocumentDevelopment
             openId={openId}

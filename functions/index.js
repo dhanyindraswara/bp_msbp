@@ -92,3 +92,110 @@ exports.askAI = onCall({ secrets: [GEMINI_API_KEY], region: 'us-central1' }, asy
     '(no answer)'
   return { answer: cleanText(answer) }
 })
+
+// ---------------------------------------------------------------------------
+// extractDoc — turn an uploaded company PDF (SOP / BP / policy) into structured
+// JSON. The app sends { pdfBase64, fileName }; Gemini reads the PDF natively
+// (including scans) and returns data matching the STONES import schema. The
+// user always reviews/corrects the draft in the app before it is saved.
+// ---------------------------------------------------------------------------
+
+const EXTRACT_PROMPT = [
+  'You are a document-digitization engine for STONES, a business-process management app.',
+  'Read the attached company document (usually an SOP, business process, or policy — often Indonesian and/or English, sometimes scanned) and extract it into JSON matching EXACTLY this schema:',
+  '{',
+  '  "type": "SOP" | "BP" | "POLICY" | "OTHER",',
+  '  "docNo": string,            // document number, e.g. ITM/SOP/FMC/015',
+  '  "title": string,',
+  '  "revision": string,         // revision/version number as written',
+  '  "effectiveDate": string,    // as written in the document',
+  '  "owner": string,            // owning function/division/department',
+  '  "approvals": { "preparedBy": string, "reviewedBy": string, "approvedBy": string },  // names and/or job titles',
+  '  "purpose": string,          // Tujuan — short summary, max ~3 sentences',
+  '  "scope": string,            // Ruang Lingkup — short summary',
+  '  "definitions": [ { "term": string, "meaning": string } ],',
+  '  "actors": [ string ],       // every role/function/unit that appears as a PIC or participant',
+  '  "steps": [ { "no": number, "activity": string, "pic": string, "input": string, "output": string, "docRef": string } ],',
+  '  "rasci": [ { "activity": string, "R": [string], "A": [string], "S": [string], "C": [string], "I": [string] } ],',
+  '  "ppi": [ string ],          // KPI / performance indicators / service levels / timelines if any',
+  '  "notes": string             // anything ambiguous, unreadable, or that needs human review',
+  '}',
+  'Rules:',
+  '- steps: follow the procedure section in order. activity = concise description of what is done. pic = the role doing it. input/output = the document or information consumed/produced, empty string if not stated. docRef = referenced form/document code if any.',
+  '- rasci: if the document has an explicit responsibility/RASCI matrix, transcribe it. If NOT, derive a draft: for each step, PIC = R; an approver/verifier of that step = A; roles that provide input = C; roles that receive the output = I; leave S empty. Mention in notes that the RASCI was derived, not explicit.',
+  '- Keep the original language of names/roles/titles as written in the document. Do not invent data; use empty strings/arrays for anything absent.',
+  '- Output ONLY the JSON object, nothing else.',
+].join('\n')
+
+exports.extractDoc = onCall(
+  { secrets: [GEMINI_API_KEY], region: 'us-central1', timeoutSeconds: 300, memory: '512MiB' },
+  async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in required.')
+
+    const pdfBase64 = String((request.data && request.data.pdfBase64) || '')
+    if (!pdfBase64) throw new HttpsError('invalid-argument', 'pdfBase64 is required.')
+    // Callable payload limit is ~10MB; keep a safety margin (~7MB binary).
+    if (pdfBase64.length > 9500000) throw new HttpsError('invalid-argument', 'PDF terlalu besar (maks ±7MB). Kompres dulu atau pecah per bagian.')
+
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent'
+
+    let resp
+    try {
+      resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': GEMINI_API_KEY.value(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
+                { text: EXTRACT_PROMPT },
+              ],
+            },
+          ],
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' },
+        }),
+      })
+    } catch (e) {
+      throw new HttpsError('unavailable', 'Could not reach Gemini: ' + (e && e.message))
+    }
+
+    if (!resp.ok) {
+      const t = await resp.text().catch(() => '')
+      throw new HttpsError('internal', 'Gemini error ' + resp.status + ': ' + t.slice(0, 300))
+    }
+
+    const data = await resp.json()
+    const raw =
+      (data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0] &&
+        data.candidates[0].content.parts[0].text) ||
+      ''
+
+    let parsed
+    try {
+      parsed = JSON.parse(raw)
+    } catch (e) {
+      // Salvage the outermost JSON object if the model wrapped it in anything.
+      const s = raw.indexOf('{')
+      const t = raw.lastIndexOf('}')
+      if (s >= 0 && t > s) {
+        try {
+          parsed = JSON.parse(raw.slice(s, t + 1))
+        } catch (e2) {
+          throw new HttpsError('internal', 'Extraction did not return valid JSON.')
+        }
+      } else {
+        throw new HttpsError('internal', 'Extraction did not return valid JSON.')
+      }
+    }
+    return { doc: parsed }
+  },
+)

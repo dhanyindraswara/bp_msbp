@@ -191,7 +191,7 @@ export function saveDoc({ id, project }) {
   return state.docs[id]
 }
 
-export function createDoc(project) {
+export function createDoc(project, extra = {}) {
   const id = nextId()
   const now = Date.now()
   const d = {
@@ -205,6 +205,7 @@ export function createDoc(project) {
     audit: [{ id: rid('a'), ts: now, actor: getCurrentUser(), action: 'created', detail: 'Document created' }],
     createdAt: now,
     updatedAt: now,
+    ...extra, // e.g. { docType: 'SOP', sop: {...} } from Document Import
   }
   state.docs[id] = d
   setOpenId(id)

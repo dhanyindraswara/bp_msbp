@@ -74,6 +74,7 @@ export default function Repository({ openDoc, notify, rev }) {
                   </td>
                   <td className="cell-name" onClick={() => openDoc(d.id)} title="Open">
                     {d.name}
+                    {d.docType && d.docType !== 'BP' ? <span className="chip chip-type">{d.docType}</span> : null}
                   </td>
                   <td>v{d.version}</td>
                   <td><StatusBadge status={d.status} /></td>

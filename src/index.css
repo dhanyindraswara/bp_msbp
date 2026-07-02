@@ -236,6 +236,50 @@ table.stones-table td:last-child { overflow: visible; }
 .ai-input { flex: 1; border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 11px 14px; font-family: inherit; font-size: 14px; resize: none; min-height: 46px; max-height: 160px; color: var(--text); box-shadow: var(--shadow-xs); }
 .ai-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
 .ai-inputbar .btn-primary { height: 46px; padding: 0 20px; }
+
+/* ---- Document Import ---- */
+.chip-type { margin-left: 8px; background: #fef3e2; border-color: #f3ddb5; color: #8a6200; }
+.imp-note { background: #fff8e9; border: 1px solid #f2dca8; color: #7a6210; border-radius: var(--radius-sm); padding: 10px 13px; font-size: 12.5px; margin-bottom: 14px; line-height: 1.5; }
+.imp-drop { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 64px 30px; text-align: center; cursor: pointer; transition: border-color .14s, background .14s; }
+.imp-drop:hover, .imp-drag { border-color: var(--accent); background: var(--accent-tint); }
+.imp-busy { cursor: default; }
+.imp-drop-ico { font-size: 34px; color: var(--accent); margin-bottom: 10px; }
+.imp-drop-title { font-size: 15.5px; font-weight: 700; color: var(--text); }
+.imp-drop-sub { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+.imp-spinner { width: 34px; height: 34px; margin: 0 auto 14px; border-radius: 50%; border: 3px solid var(--accent-tint-2); border-top-color: var(--accent); animation: impspin .8s linear infinite; }
+@keyframes impspin { to { transform: rotate(360deg); } }
+.imp-done { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 48px 30px; text-align: center; box-shadow: var(--shadow-sm); }
+.imp-done-mark { width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%; background: #e6f6ec; color: #1e7c45; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; }
+.imp-done-title { font-size: 18px; font-weight: 750; color: var(--text); }
+.imp-done-sub { font-size: 13px; color: var(--text-2); margin-top: 5px; }
+.imp-done-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+.imp-review { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.imp-review-hd { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 22px 12px; }
+.imp-review-title { font-size: 18px; font-weight: 750; color: var(--text); letter-spacing: -.02em; }
+.imp-review-sub { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+.imp-review-actions { display: flex; gap: 8px; }
+.imp-split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(320px, 44%) 1fr; gap: 14px; padding: 0 22px 18px; }
+.imp-pdf { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.imp-pdf iframe { width: 100%; height: 100%; border: none; }
+.imp-form { overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; box-shadow: var(--shadow-sm); }
+.imp-sec { display: flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--text-2); margin: 18px 0 10px; }
+.imp-sec:first-child { margin-top: 0; }
+.imp-sec .btn-sm { margin-left: auto; }
+.imp-hint { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.imp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.imp-field { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 650; color: var(--text-2); min-width: 0; }
+.imp-field-wide { grid-column: span 3; }
+.imp-field input, .imp-field select, .imp-field textarea { border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 8px 10px; font-family: inherit; font-size: 13px; color: var(--text); width: 100%; box-sizing: border-box; background: var(--surface); resize: vertical; }
+.imp-field input:focus, .imp-field select:focus, .imp-field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.imp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.imp-table th { text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.imp-table td { padding: 3px 3px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.imp-table input { width: 100%; border: 1px solid transparent; border-radius: 6px; padding: 6px 7px; font-family: inherit; font-size: 12.5px; color: var(--text); background: transparent; box-sizing: border-box; }
+.imp-table input:hover { border-color: var(--border-strong); }
+.imp-table input:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 2px var(--ring); }
+.imp-x { border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; padding: 6px 4px; border-radius: 6px; }
+.imp-x:hover { color: #c0392b; background: #fdecec; }
+@media (max-width: 980px) { .imp-split { grid-template-columns: 1fr; } .imp-pdf { min-height: 380px; } }
 @media (max-width: 640px) { .ai-sugs { grid-template-columns: 1fr; } }
 
 .itm-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--bg); overflow: hidden; }

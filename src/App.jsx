@@ -9,6 +9,7 @@ import Dashboard from './menus/Dashboard.jsx'
 import DocumentActionRequest from './menus/DocumentActionRequest.jsx'
 import GlobalSearch from './menus/GlobalSearch.jsx'
 import AskAI from './menus/AskAI.jsx'
+import DocumentImport from './menus/DocumentImport.jsx'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
@@ -60,6 +61,7 @@ const Icon = ({ d }) => (
 const MENUS = [
   { id: 'request', label: 'Document Action Request', d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
   { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
+  { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
   { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
   { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
   { id: 'ai', label: 'Ask AI', d: 'M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2zM9 10h.01M13 10h.01M17 10h.01' },
@@ -222,6 +224,7 @@ export default function App() {
             goRepository={() => setMenu('repository')}
           />
         )}
+        {menu === 'import' && <DocumentImport notify={notify} goRepository={() => setMenu('repository')} />}
         {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} rev={rev} />}
         {menu === 'search' && <GlobalSearch openDoc={openDoc} rev={rev} />}
         {menu === 'ai' && <AskAI />}

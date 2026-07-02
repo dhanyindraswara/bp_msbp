@@ -25,6 +25,22 @@ export function buildContext() {
     ;(p.ppi || []).forEach((r) => {
       if ((r.indicator || '').trim()) lines.push(`PPI (${r.process || '—'}): ${r.indicator}`)
     })
+    // Imported SOP payload (from Document Import) — expose the procedure to the AI.
+    if (d.sop) {
+      const s = d.sop
+      lines.push(`Document type: ${s.type || 'SOP'}${s.docNo ? ' — ' + s.docNo : ''}${s.revision ? ' rev ' + s.revision : ''}`)
+      if (s.owner) lines.push('Owner: ' + s.owner)
+      if (s.purpose) lines.push('Purpose: ' + s.purpose)
+      if (s.scope) lines.push('Scope: ' + s.scope)
+      if ((s.actors || []).length) lines.push('Actors: ' + s.actors.join('; '))
+      ;(s.steps || []).forEach((st) => {
+        lines.push(`Step ${st.no}. [${st.pic || '-'}] ${st.activity}${st.input ? ' | in: ' + st.input : ''}${st.output ? ' | out: ' + st.output : ''}`)
+      })
+      ;(s.rasci || []).forEach((r) => {
+        lines.push(`RASCI "${r.activity}": R=${(r.R || []).join(',') || '-'} A=${(r.A || []).join(',') || '-'} S=${(r.S || []).join(',') || '-'} C=${(r.C || []).join(',') || '-'} I=${(r.I || []).join(',') || '-'}`)
+      })
+      ;(s.ppi || []).forEach((x) => lines.push('PPI/SLA: ' + x))
+    }
     return lines.join('\n')
   })
   let text = blocks.join('\n\n')

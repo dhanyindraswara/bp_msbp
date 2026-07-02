@@ -1,98 +1,82 @@
-\# STONES — Business Process Suite (project memory)
-
-
+# STONES — Business Process Suite (project memory)
 
 Web app buat mengembangkan, mengelola, dan menyimpan Business Process (BP), SOP,
-
 dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio". Owner: dhanyindraswara.
 
+## Stack & deploy
+- **React 18 + Vite**, base path `/bp_msbp/`, Tailwind + design tokens (Inter font).
+- **reactflow v11** (process map), **xlsx@0.18.5**, **html-to-image** (export PNG).
+- **Firebase v12** — project **`stones-bp`** (Blaze plan, target biaya ~$0):
+  - **Firestore** (collection `bp_documents`, persistent IndexedDB cache, realtime onSnapshot).
+  - **Auth** (Google sign-in) — akses dikunci: Security Rules `request.auth != null`.
+  - **Storage** (upload PDF/PNG; file di Storage, metadata di subcollection `files/`).
+  - **Cloud Functions** (callable v2) — AI proxy (lihat bawah).
+- **Deploy web:** GitHub Pages, repo `dhanyindraswara/bp_msbp`, branch `gh-pages` (build `dist/`).
+  Live: https://dhanyindraswara.github.io/bp_msbp/
+- **Deploy function:** dari terminal PC (`firebase deploy --only functions`). User pakai
+  PowerShell — ingat: **nggak ada `&&`** (satu command per baris), jangan run dari `C:\WINDOWS\system32`.
 
+## Menu (STONES shell — src/App.jsx, MENUS array)
+1. **Document Action Request** (`request`) — daftar/permintaan + add new BP.
+2. **Document Development** (`develop`) — studio utama: SIPOC editor → auto business-process
+   map (ProcessMap.jsx) + RASCI, ITM title block (logo, Prepared/Reviewed/Approved, BP No,
+   revision), export PNG persis web.
+3. **Repository** (`repository`) — semua BP tersimpan (by id/name/version).
+4. **Global Search** (`search`).
+5. **Ask AI** (`ai`) — chat tanya/analisa BP (lihat bawah).
+6. **Dashboard** (`dashboard`).
 
-\## Stack \& deploy
+## Fase 1 (sudah jadi)
+Version history + audit trail, approval workflow (Draft→In Review→Approved→Published),
+comments. Deep-link share via `?doc=BP-xxxx`.
 
-\- \*\*React 18 + Vite\*\*, base path `/bp\_msbp/`, Tailwind + design tokens (Inter font).
+## Ask AI — SETUP FINAL (penting, ini yang paling banyak dioprek)
+- Arsitektur: web app → **Cloud Function `askAI`** (us-central1, auth-protected) → **Google Gemini API**.
+  Kode: `functions/index.js`. Client: `src/lib/ai.js` (httpsCallable `askAI`, kirim `{question, context}`).
+- **Provider = Google Gemini** (model `gemini-2.5-flash`), BUKAN Grok/xAI lagi.
+  - Alasan pindah: Grok/xAI API berbayar, team user $0 kredit. Gemini punya free tier beneran.
+- **API key** disimpan sebagai Firebase secret **`GEMINI_API_KEY`** (server-side, TIDAK di repo).
+  Set ulang: `firebase functions:secrets:set GEMINI_API_KEY` (paste di prompt ber-mask) lalu
+  `firebase deploy --only functions`. Key gratis dari https://aistudio.google.com/apikey.
+- **System prompt** sudah diperlonggar jadi "senior business-process analyst/consultant" —
+  bisa analisa (bottleneck, gap, ownership, PPI lemah) + kasih rekomendasi perbaikan, bukan
+  cuma lookup. `temperature: 0.4`. (Kalau jawaban terlalu dangkal → kualitas tergantung
+  kelengkapan SIPOC/PPI di BP-nya.)
+- Free tier Gemini: no expiry, tapi ada rate limit (~10 req/min, ~250 req/hari) dan **data free
+  tier bisa dipakai Google buat training** → kalau BP sensitif, pertimbangkan upgrade paid tier.
 
-\- \*\*reactflow v11\*\* (process map), \*\*xlsx@0.18.5\*\*, \*\*html-to-image\*\* (export PNG).
+## Keamanan (sudah dibereskan)
+- **Firebase Web apiKey** (`AIzaSyD_Wn...` di `src/lib/firebaseConfig.js`) ke-flag GitHub secret
+  scanning — ini **normal & by design** (key publik client Firebase). Proteksi asli = Security
+  Rules + Auth, bukan nyembunyiin key. Sudah di-hardening: **API key restriction** di GCP
+  (Application restrictions → Websites: `dhanyindraswara.github.io/*`, `localhost/*`).
+  Alert GitHub boleh di-close "Won't fix".
+- Jangan pernah hardcode API key sensitif (Gemini/xAI) ke repo — selalu via Firebase secret.
 
-\- \*\*Firebase v12\*\* — project \*\*`stones-bp`\*\* (Blaze plan, target biaya \~$0):
+## Catatan kerja
+- Container Claude (web) TIDAK bisa push ke repo (git proxy 403) — perubahan kode function
+  dikasih ke user buat di-paste + deploy manual dari PC-nya. Web app deploy tetap via GitHub Pages.
+- Model layout map: max 4 kotak proses per baris (wrap ke bawah), aktor distribusi 4 sisi,
+  legend font 8px + 2 kolom, "Data/Document/Information Flow" baca `derived.flows`.
 
-&#x20; - \*\*Firestore\*\* (collection `bp\_documents`, persistent cache, realtime onSnapshot).
+## Document Import (Fase A — dibangun)
+- Menu **Document Import** (`import`): upload PDF (SOP/BP/policy, maks ±7MB) →
+  Cloud Function **`extractDoc`** (Gemini baca PDF native, responseMimeType JSON,
+  timeout 300s) → draft terstruktur → layar review side-by-side (PDF kiri, form
+  kanan: metadata, tujuan/scope, aktor, steps, RASCI, PPI) → simpan ke store
+  sebagai doc dengan `docType` + payload `sop`, PDF asli dilampirkan via Storage.
+- `createDoc(project, extra)` menerima field ekstra; Ask AI `buildContext()` ikut
+  baca payload `sop` (steps/RASCI/PPI). Repository nampilin chip tipe (SOP dsb).
+- Skema ekstraksi: type, docNo, title, revision, effectiveDate, owner,
+  approvals{prepared/reviewed/approvedBy}, purpose, scope, definitions[],
+  actors[], steps[{no,activity,pic,input,output,docRef}], rasci[{activity,R,A,S,C,I}],
+  ppi[], notes. RASCI diturunkan dari PIC kalau tak ada matriks eksplisit.
+- Deploy web dari PC user: `npm run build` lalu `npm run deploy` (gh-pages -d dist).
 
-&#x20; - \*\*Auth\*\* (Google) — Security Rules `request.auth != null`.
-
-&#x20; - \*\*Storage\*\* (file di Storage, metadata di subcollection `files/`).
-
-&#x20; - \*\*Cloud Functions\*\* (callable v2) — AI proxy.
-
-\- \*\*Deploy web:\*\* GitHub Pages, repo `dhanyindraswara/bp\_msbp`, branch `gh-pages`.
-
-&#x20; Live: https://dhanyindraswara.github.io/bp\_msbp/
-
-\- \*\*Deploy function:\*\* dari terminal PC `firebase deploy --only functions`.
-
-&#x20; PowerShell: nggak ada `\&\&`, jangan run dari C:\\WINDOWS\\system32.
-
-
-
-\## Menu (src/App.jsx MENUS)
-
-1\. Document Action Request  2. Document Development (studio SIPOC→map+RASCI, ITM title block, export PNG)
-
-3\. Repository  4. Global Search  5. Ask AI  6. Dashboard
-
-
-
-\## Fase 1 (jadi)
-
-Versions + audit trail, approval (Draft→In Review→Approved→Published), comments, deep-link `?doc=BP-xxxx`.
-
-
-
-\## Ask AI — SETUP FINAL
-
-\- web → Cloud Function `askAI` (us-central1, auth) → \*\*Google Gemini API\*\* (`gemini-2.5-flash`).
-
-&#x20; Kode: functions/index.js. Client: src/lib/ai.js (httpsCallable, kirim {question, context}).
-
-\- Provider = \*\*Gemini\*\* (BUKAN Grok/xAI — xAI berbayar, kredit $0).
-
-\- Key = Firebase secret \*\*`GEMINI\_API\_KEY`\*\* (server-side, TIDAK di repo). Gratis di https://aistudio.google.com/apikey.
-
-&#x20; Ganti: `firebase functions:secrets:set GEMINI\_API\_KEY` → `firebase deploy --only functions`.
-
-\- System prompt = "senior BP analyst/consultant" (bisa analisa + rekomendasi, bukan lookup doang), temp 0.4.
-
-\- Free tier: no expiry, rate limit \~10 req/min \& \~250/hari, data free tier bisa dipakai training
-
-&#x20; (kalau BP sensitif → pertimbangin paid tier).
-
-
-
-\## Keamanan (beres)
-
-\- Firebase Web apiKey (AIzaSyD\_Wn... di src/lib/firebaseConfig.js) ke-flag GitHub = NORMAL (key publik by design).
-
-&#x20; Proteksi = Rules + Auth. Sudah di-restrict di GCP (Websites: dhanyindraswara.github.io/\*, localhost/\*).
-
-&#x20; Alert GitHub close "Won't fix".
-
-\- Jangan hardcode key sensitif (Gemini/xAI) ke repo — selalu via Firebase secret.
-
-
-
-\## Catatan
-
-\- Container Claude web TIDAK bisa push (git proxy 403) — perubahan function dikasih ke user buat deploy manual.
-
-\- Map: max 4 kotak proses/baris, aktor 4 sisi, legend 8px 2 kolom, flow baca derived.flows.
-
-
-
-\## TODO besok
-
-\- Build menu lainnya (tanya user yang mana).
-
-\- Cek deploy function terakhir (prompt analyst + temp 0.4) udah jalan.
-
-\- Kandidat di-skip: RBAC/role admin (siapa boleh akses).
-
+## TODO / next
+- **Fase B**: batch upload (banyak PDF sekaligus, antrian + status per dokumen).
+- **Fase C**: tombol "Generate BP from SOP" — naikin level SOP → draft SIPOC/BP
+  di Document Development.
+- AI answer di web: render blok "Alur:"/"Flow:" sebagai diagram visual (butuh deploy web).
+- Kandidat lama yang di-skip: **RBAC/role admin** (setup siapa yang boleh akses).
+- Privasi: untuk impor massal dokumen internal, pertimbangkan Gemini paid tier.

@@ -1,7 +1,9 @@
 // STONES › Ask AI — chat assistant that answers questions about your business
-// processes (powered by Grok via a Cloud Function).
-import { useState, useRef, useEffect } from 'react'
+// processes (powered by Google Gemini via a Cloud Function). It also reads the
+// reference documents added in the AI Knowledge Base.
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { askAI, aiEnabled } from '../lib/ai.js'
+import { activeKnowledgeCount } from '../lib/knowledge.js'
 
 const SUGGESTIONS = [
   'Flow untuk request security information technology dimana dan gimana?',
@@ -10,7 +12,8 @@ const SUGGESTIONS = [
   'Siapa customer dari output "Monthly Report"?',
 ]
 
-export default function AskAI() {
+export default function AskAI({ rev }) {
+  const kbCount = useMemo(() => activeKnowledgeCount(), [rev])
   const [msgs, setMsgs] = useState([])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
@@ -43,9 +46,12 @@ export default function AskAI() {
       <div className="ai-hd">
         <div>
           <h1>Ask AI</h1>
-          <p>Tanya apa saja tentang Business Process kamu — flow, proses, aktor, PPI.</p>
+          <p>
+            Tanya apa saja tentang Business Process kamu — flow, proses, aktor, PPI.
+            {kbCount ? ` Memakai ${kbCount} referensi dari Knowledge Base.` : ''}
+          </p>
         </div>
-        <span className="ai-badge">Grok</span>
+        <span className="ai-badge">Gemini</span>
       </div>
 
       <div className="ai-chat">
@@ -53,7 +59,9 @@ export default function AskAI() {
           <div className="ai-empty">
             <div className="ai-empty-mark">✦</div>
             <div className="ai-empty-title">Mau tanya apa?</div>
-            <div className="ai-empty-sub">AI membaca semua BP yang tersimpan untuk menjawab.</div>
+            <div className="ai-empty-sub">
+              AI membaca semua BP yang tersimpan{kbCount ? ` + ${kbCount} dokumen referensi` : ''} untuk menjawab.
+            </div>
             <div className="ai-sugs">
               {SUGGESTIONS.map((s) => (
                 <button key={s} className="ai-sug" onClick={() => send(s)} disabled={!aiEnabled}>
@@ -83,7 +91,7 @@ export default function AskAI() {
         <div className="ai-err">
           {err}
           {/functions|not-?found|internal|unavailable/i.test(err) ? (
-            <span> · Kalau ini pertama kali, pastikan Cloud Function <b>askAI</b> sudah di-deploy &amp; secret XAI_API_KEY di-set.</span>
+            <span> · Kalau ini pertama kali, pastikan Cloud Function <b>askAI</b> sudah di-deploy &amp; secret GEMINI_API_KEY di-set.</span>
           ) : null}
         </div>
       ) : null}

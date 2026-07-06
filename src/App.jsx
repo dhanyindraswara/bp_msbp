@@ -11,6 +11,7 @@ import GlobalSearch from './menus/GlobalSearch.jsx'
 import AskAI from './menus/AskAI.jsx'
 import DocumentImport from './menus/DocumentImport.jsx'
 import AutoFlow from './menus/AutoFlow.jsx'
+import KnowledgeBase from './menus/KnowledgeBase.jsx'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
@@ -79,6 +80,7 @@ const NAV = [
   { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
   { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
   { id: 'ai', label: 'Ask AI', d: 'M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2zM9 10h.01M13 10h.01M17 10h.01' },
+  { id: 'knowledge', label: 'AI Knowledge Base', d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z' },
 ]
 
 export default function App() {
@@ -259,7 +261,8 @@ export default function App() {
         {menu === 'flow' && <AutoFlow openId={flowOpenId} setOpenId={setFlowOpenId} notify={notify} />}
         {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} rev={rev} />}
         {menu === 'search' && <GlobalSearch openDoc={openDoc} rev={rev} />}
-        {menu === 'ai' && <AskAI />}
+        {menu === 'ai' && <AskAI rev={rev} />}
+        {menu === 'knowledge' && <KnowledgeBase notify={notify} rev={rev} />}
         {menu === 'dashboard' && <Dashboard goRepository={() => setMenu('repository')} rev={rev} />}
       </main>
 

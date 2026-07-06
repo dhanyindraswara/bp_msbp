@@ -59,15 +59,26 @@ const Icon = ({ d }) => (
   </svg>
 )
 
-const MENUS = [
+// Sidebar navigation. Entries are either a standalone { id } item or a
+// { group, items } section with a heading. Dashboard sits on top; the two work
+// modules are grouped; the rest stand alone.
+const NAV = [
+  { id: 'dashboard', label: 'Dashboard', d: 'M4 13h6V4H4v9zm10 7h6V10h-6v10zM4 20h6v-4H4v4zM14 4v3h6V4h-6z' },
+  {
+    group: 'Business Process',
+    items: [
+      { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
+      { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
+    ],
+  },
+  {
+    group: 'Flow Process',
+    items: [{ id: 'flow', label: 'Auto Flow Process', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9' }],
+  },
   { id: 'request', label: 'Document Action Request', d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
-  { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
-  { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
-  { id: 'flow', label: 'Auto Flow Process', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9' },
   { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
   { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
   { id: 'ai', label: 'Ask AI', d: 'M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2zM9 10h.01M13 10h.01M17 10h.01' },
-  { id: 'dashboard', label: 'Dashboard', d: 'M4 13h6V4H4v9zm10 7h6V10h-6v10zM4 20h6v-4H4v4zM14 4v3h6V4h-6z' },
 ]
 
 export default function App() {
@@ -199,16 +210,27 @@ export default function App() {
         </div>
         <nav className="stones-nav">
           <div className="stones-navlabel">Workspace</div>
-          {MENUS.map((m) => (
-            <button
-              key={m.id}
-              className={'stones-navitem' + (menu === m.id ? ' active' : '')}
-              onClick={() => setMenu(m.id)}
-            >
-              <Icon d={m.d} />
-              {m.label}
-            </button>
-          ))}
+          {NAV.map((entry, i) => {
+            const NavItem = (m) => (
+              <button
+                key={m.id}
+                className={'stones-navitem' + (menu === m.id ? ' active' : '')}
+                onClick={() => setMenu(m.id)}
+              >
+                <Icon d={m.d} />
+                {m.label}
+              </button>
+            )
+            if (entry.group) {
+              return (
+                <div key={'g' + i} className="stones-navgroup">
+                  <div className="stones-navgroup-label">{entry.group}</div>
+                  {entry.items.map((m) => NavItem(m))}
+                </div>
+              )
+            }
+            return NavItem(entry)
+          })}
         </nav>
         <div className="stones-side-foot">
           <div style={{ fontWeight: 700, color: '#aebfd0' }}>

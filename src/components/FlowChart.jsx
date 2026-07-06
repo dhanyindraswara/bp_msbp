@@ -1,8 +1,8 @@
 // Auto Flow Process — renders a laid-out swimlane flowchart inside the company
 // document template (title block + symbol legend + lane columns), matching the
-// reference SOP flow. Pure presentation: it draws whatever layoutFlow() returns.
-// Exports the whole document to PNG (same html-to-image approach as ProcessMap).
-import { useMemo, useRef } from 'react'
+// reference SOP flow. When `interactive`, boxes can be dragged to reposition and
+// double-clicked to rename. Exports the whole document to PNG (html-to-image).
+import { useMemo, useRef, useState } from 'react'
 import * as htmlToImage from 'html-to-image'
 import { layoutFlow, pointsToPath, LANE_W } from '../lib/flow.js'
 import { download } from '../lib/generate.js'
@@ -100,18 +100,26 @@ function SymbolLegend() {
 }
 
 // --- a single laid-out step, drawn as its shape ---
-function StepNode({ n }) {
+function StepNode({ n, interactive, dragging, onPointerDown, onRename }) {
   const style = { left: n.x, top: n.y, width: n.w, height: n.h }
+  const common = {
+    style,
+    onPointerDown: interactive ? (e) => onPointerDown(e, n) : undefined,
+    onDoubleClick: interactive ? (e) => { e.stopPropagation(); onRename(n) } : undefined,
+    title: interactive ? 'Geser untuk pindah · klik dua kali untuk ganti nama' : undefined,
+  }
+  const cls = (base) => 'fl-node ' + base + (interactive ? ' fl-node-i' : '') + (dragging ? ' fl-node-drag' : '')
+
   if (n.type === 'start' || n.type === 'end') {
     return (
-      <div className="fl-node fl-pill" style={style}>
+      <div className={cls('fl-pill')} {...common}>
         {n.activity || (n.type === 'start' ? 'Start' : 'End')}
       </div>
     )
   }
   if (n.type === 'decision') {
     return (
-      <div className="fl-node fl-decision" style={style}>
+      <div className={cls('fl-decision')} {...common}>
         <div className="fl-decision-inner" />
         <div className="fl-decision-text">{n.activity}</div>
       </div>
@@ -119,14 +127,14 @@ function StepNode({ n }) {
   }
   if (n.type === 'offpage' || n.type === 'onpage') {
     return (
-      <div className={'fl-node fl-ref fl-ref-' + n.type} style={style}>
+      <div className={cls('fl-ref fl-ref-' + n.type)} {...common}>
         <span>{n.ref || n.no || n.activity}</span>
       </div>
     )
   }
   if (n.type === 'inform') {
     return (
-      <div className="fl-node fl-inform" style={style}>
+      <div className={cls('fl-inform')} {...common}>
         <PersonIcon />
         <div className="fl-inform-text">{n.activity}</div>
       </div>
@@ -135,7 +143,7 @@ function StepNode({ n }) {
   // process / system / subprocess: 3-cell header + activity body
   const rc = RASCI_COLOR[(n.rasci || '').replace('/', '').charAt(0)] || null
   return (
-    <div className={'fl-node fl-box' + (n.type === 'subprocess' ? ' fl-box-sub' : '')} style={style}>
+    <div className={cls('fl-box' + (n.type === 'subprocess' ? ' fl-box-sub' : ''))} {...common}>
       <div className="fl-box-head">
         <span className="fl-box-no">{n.no}</span>
         <span className="fl-box-rasci" style={rc ? { background: rc.bg, color: rc.fg } : undefined}>
@@ -149,15 +157,59 @@ function StepNode({ n }) {
   )
 }
 
-export default function FlowChart({ flow, template, onExportName, notify }) {
+export default function FlowChart({ flow, template, onExportName, notify, interactive, onUpdateStep, onResetLayout }) {
   const layout = useMemo(() => layoutFlow(flow), [flow])
   const captureRef = useRef(null)
+  const canvasRef = useRef(null)
+  const [showHeader, setShowHeader] = useState(true)
+  const [drag, setDrag] = useState(null) // { id, x, y }
   const tpl = template || {}
+
+  // Drag a box to reposition it. Deltas map 1:1 (canvas isn't scaled).
+  const onNodePointerDown = (e, n) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    const startX = e.clientX
+    const startY = e.clientY
+    const ox = n.x
+    const oy = n.y
+    let moved = false
+    const move = (ev) => {
+      const nx = ox + (ev.clientX - startX)
+      const ny = oy + (ev.clientY - startY)
+      if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > 3) moved = true
+      setDrag({ id: n.id, x: Math.max(0, nx), y: Math.max(0, ny) })
+    }
+    const up = (ev) => {
+      document.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerup', up)
+      setDrag(null)
+      if (moved) {
+        const nx = Math.round(Math.max(0, ox + (ev.clientX - startX)))
+        const ny = Math.round(Math.max(0, oy + (ev.clientY - startY)))
+        onUpdateStep && onUpdateStep(n.id, { pos: { x: nx, y: ny } })
+      }
+    }
+    document.addEventListener('pointermove', move)
+    document.addEventListener('pointerup', up)
+  }
+
+  const onRename = (n) => {
+    const nv = window.prompt('Ganti nama aktivitas', n.activity || '')
+    if (nv == null) return
+    onUpdateStep && onUpdateStep(n.id, { activity: nv.trim() })
+  }
 
   const exportPng = async () => {
     try {
       const el = captureRef.current
-      const dataUrl = await htmlToImage.toPng(el, { backgroundColor: '#ffffff', pixelRatio: 2, cacheBust: true })
+      const dataUrl = await htmlToImage.toPng(el, {
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+        cacheBust: true,
+        filter: (node) => !(node.classList && node.classList.contains('fl-noexport')),
+      })
       const res = await fetch(dataUrl)
       const blob = await res.blob()
       download((onExportName || 'flow-process') + '.png', blob)
@@ -172,10 +224,19 @@ export default function FlowChart({ flow, template, onExportName, notify }) {
 
   return (
     <div className="fl-wrap">
-      <div className="fl-toolbar">
+      <div className="fl-toolbar fl-noexport">
         <span style={{ fontWeight: 800, color: '#0f2a43', fontSize: 13.5 }}>{titleText || 'Flow process'}</span>
-        <span className="map-hint">Auto-generated from your steps · drawn to the SOP flow template</span>
-        <div style={{ marginLeft: 'auto' }}>
+        {interactive ? <span className="map-hint">Geser kotak untuk atur posisi · klik dua kali untuk ganti nama</span> : null}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center' }}>
+          <label className="fl-toggle" title="Tampilkan / sembunyikan kepala dokumen">
+            <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} />
+            Kepala dokumen
+          </label>
+          {interactive && onResetLayout ? (
+            <button className="btn btn-sm" onClick={onResetLayout} title="Kembalikan posisi otomatis">
+              Rapikan ulang
+            </button>
+          ) : null}
           <button className="btn btn-sm btn-primary" onClick={exportPng}>
             Export PNG
           </button>
@@ -184,36 +245,38 @@ export default function FlowChart({ flow, template, onExportName, notify }) {
 
       <div className="doc-scroll">
         <div ref={captureRef} className="fl-doc">
-          {/* title block */}
-          <div className="tb">
-            <div className="tb-row1">
-              <div className="tb-logo">{tpl.logo ? <img className="tb-logo-img" src={tpl.logo} alt="logo" /> : <DefaultLogo />}</div>
-              <div className="tb-title">
-                <div className="tb-level">{tpl.level || 'BUSINESS PROCESS LEVEL 3'}</div>
-                <div className="tb-name">{titleText || 'FLOW TITLE'}</div>
-              </div>
-              {[
-                ['Prepared by,', tpl.preparedBy],
-                ['Reviewed by,', tpl.reviewedBy],
-                ['Approved by,', tpl.approvedBy],
-              ].map(([lb, v]) => (
-                <div key={lb} className="tb-appr">
-                  <div className="tb-appr-lb">{lb}</div>
-                  <div className="tb-appr-val">{v || '—'}</div>
+          {/* title block (toggleable) */}
+          {showHeader ? (
+            <div className="tb">
+              <div className="tb-row1">
+                <div className="tb-logo">{tpl.logo ? <img className="tb-logo-img" src={tpl.logo} alt="logo" /> : <DefaultLogo />}</div>
+                <div className="tb-title">
+                  <div className="tb-level">{tpl.level || 'BUSINESS PROCESS LEVEL 3'}</div>
+                  <div className="tb-name">{titleText || 'FLOW TITLE'}</div>
                 </div>
-              ))}
-            </div>
-            <div className="tb-row2">
-              <div className="tb-c tb-c-lb">Business Process No.</div>
-              <div className="tb-c tb-c-val">{tpl.bpNo || '—'}</div>
-              <div className="tb-c tb-c-lb">Effective Date:</div>
-              <div className="tb-c tb-c-val">{tpl.effectiveDate || '—'}</div>
-              <div className="tb-c tb-c-lb">Revision :</div>
-              <div className="tb-c tb-c-val" style={{ flex: '0 0 70px' }}>
-                {tpl.revision || '00'}
+                {[
+                  ['Prepared by,', tpl.preparedBy],
+                  ['Reviewed by,', tpl.reviewedBy],
+                  ['Approved by,', tpl.approvedBy],
+                ].map(([lb, v]) => (
+                  <div key={lb} className="tb-appr">
+                    <div className="tb-appr-lb">{lb}</div>
+                    <div className="tb-appr-val">{v || '—'}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="tb-row2">
+                <div className="tb-c tb-c-lb">Business Process No.</div>
+                <div className="tb-c tb-c-val">{tpl.bpNo || '—'}</div>
+                <div className="tb-c tb-c-lb">Effective Date:</div>
+                <div className="tb-c tb-c-val">{tpl.effectiveDate || '—'}</div>
+                <div className="tb-c tb-c-lb">Revision :</div>
+                <div className="tb-c tb-c-val" style={{ flex: '0 0 70px' }}>
+                  {tpl.revision || '00'}
+                </div>
               </div>
             </div>
-          </div>
+          ) : null}
 
           {/* symbol legend */}
           <SymbolLegend />
@@ -230,7 +293,7 @@ export default function FlowChart({ flow, template, onExportName, notify }) {
             ))}
           </div>
 
-          <div className="fl-canvas" style={{ width: layout.width, height: layout.height }}>
+          <div ref={canvasRef} className="fl-canvas" style={{ width: layout.width, height: layout.height }}>
             {/* lane divider columns */}
             {layout.lanes.map((ln, i) => (
               <div key={i} className="fl-lane-col" style={{ left: i * LANE_W, width: LANE_W }} />
@@ -244,12 +307,13 @@ export default function FlowChart({ flow, template, onExportName, notify }) {
                 </marker>
               </defs>
               {layout.edges.map((e) => {
-                const mid = e.points[Math.floor(e.points.length / 2) - 1] || e.points[0]
+                // While a box is being dragged, dim its edges (they'll snap on drop).
+                const live = drag && (e.from === drag.id || e.to === drag.id)
                 return (
-                  <g key={e.id}>
+                  <g key={e.id} opacity={live ? 0.25 : 1}>
                     <path d={pointsToPath(e.points)} fill="none" stroke="#333" strokeWidth="1.4" markerEnd="url(#fl-arrow)" />
                     {e.label ? (
-                      <text className="fl-edge-label" x={mid[0] + 4} y={mid[1] - 4}>
+                      <text className="fl-edge-label" x={e.labelAt[0] + 5} y={e.labelAt[1] - 5}>
                         {e.label}
                       </text>
                     ) : null}
@@ -259,9 +323,19 @@ export default function FlowChart({ flow, template, onExportName, notify }) {
             </svg>
 
             {/* nodes */}
-            {layout.nodes.map((n) => (
-              <StepNode key={n.id} n={n} />
-            ))}
+            {layout.nodes.map((n) => {
+              const nn = drag && drag.id === n.id ? { ...n, x: drag.x, y: drag.y } : n
+              return (
+                <StepNode
+                  key={n.id}
+                  n={nn}
+                  interactive={interactive}
+                  dragging={!!(drag && drag.id === n.id)}
+                  onPointerDown={onNodePointerDown}
+                  onRename={onRename}
+                />
+              )
+            })}
           </div>
         </div>
       </div>

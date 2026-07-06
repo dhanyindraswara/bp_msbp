@@ -108,8 +108,12 @@ function parseNext(raw) {
     .filter(Boolean)
 }
 
+const STUB = 20 // how far a connector sticks out of a box before it turns
+
 // Compute the full layout: node rectangles + orthogonal connector paths, plus
 // the canvas size and lane column x-offsets. Pure function of the flow doc.
+// Each step may carry a manual { pos: {x, y} } override (from dragging); when
+// present it wins over the auto grid position.
 export function layoutFlow(flow) {
   const lanes = (flow.lanes || []).map(norm).filter(Boolean)
   const laneIndex = (name) => {
@@ -121,83 +125,127 @@ export function layoutFlow(flow) {
   const nodes = steps.map((st, row) => {
     const li = laneIndex(st.lane)
     const { w, h } = sizeOf(st.type)
-    const cx = li * LANE_W + LANE_W / 2
-    const cy = PAD_TOP + row * ROW_H + h / 2
-    return {
-      ...st,
-      row,
-      laneIndex: li,
-      w,
-      h,
-      cx,
-      cy,
-      x: cx - w / 2,
-      y: cy - h / 2,
-    }
+    const hasPos = st.pos && typeof st.pos.x === 'number' && typeof st.pos.y === 'number'
+    const x = hasPos ? st.pos.x : li * LANE_W + LANE_W / 2 - w / 2
+    const y = hasPos ? st.pos.y : PAD_TOP + row * ROW_H
+    return { ...st, row, laneIndex: li, w, h, x, y, cx: x + w / 2, cy: y + h / 2 }
   })
   const byNo = {}
   nodes.forEach((n) => {
     if (norm(n.no)) byNo[norm(n.no)] = n
   })
 
-  // Connectors. An explicit "next" wins; otherwise link to the following step
-  // in sequence (so a plain top-to-bottom list wires itself up automatically).
-  const edges = []
+  // 1) Resolve relations. An explicit "next" wins; otherwise link to the next
+  //    step in sequence so a plain top-to-bottom list wires itself up.
+  const rels = []
   nodes.forEach((n, i) => {
     if (n.type === 'end') return
     let targets = parseNext(n.next)
     if (!targets.length) {
       const nxt = nodes[i + 1]
-      if (nxt) targets = [{ to: norm(nxt.no) || '#' + (i + 1), label: '' }]
-      // fall through with a positional pointer when the next step has no number
-      if (nxt && !norm(nxt.no)) {
-        edges.push(makeEdge(n, nxt, '', edges.length))
-        return
-      }
+      if (!nxt) return
+      rels.push({ from: n, to: nxt, label: '' })
+      return
     }
     targets.forEach((t) => {
       const tn = byNo[t.to]
-      if (tn) edges.push(makeEdge(n, tn, t.label, edges.length))
+      if (tn && tn !== n) rels.push({ from: n, to: tn, label: t.label })
     })
   })
 
-  const width = Math.max(1, lanes.length) * LANE_W
-  const height = PAD_TOP + Math.max(1, nodes.length) * ROW_H + PAD_BOTTOM
+  // 2) Pick which side of each box every connector leaves / enters, from the
+  //    geometry (dominant axis between the two centres).
+  const routed = rels.map((r) => {
+    const dx = r.to.cx - r.from.cx
+    const dy = r.to.cy - r.from.cy
+    let sSide, tSide
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      sSide = dx >= 0 ? 'right' : 'left'
+      tSide = dx >= 0 ? 'left' : 'right'
+    } else {
+      sSide = dy >= 0 ? 'bottom' : 'top'
+      tSide = dy >= 0 ? 'top' : 'bottom'
+    }
+    return { ...r, sSide, tSide }
+  })
+
+  // 3) Every endpoint that lands on the same (box, side) gets its own slot, so
+  //    an incoming and an outgoing line never stack on the same point. Order
+  //    the slots by the opposite endpoint so the fan-out doesn't cross.
+  const groups = {}
+  routed.forEach((r, idx) => {
+    const push = (node, side, end, other) => {
+      const k = node.id + '|' + side
+      ;(groups[k] || (groups[k] = [])).push({ idx, end, other })
+    }
+    push(r.from, r.sSide, 's', r.to)
+    push(r.to, r.tSide, 't', r.from)
+  })
+  const frac = {}
+  Object.keys(groups).forEach((k) => {
+    const horizontal = k.endsWith('|top') || k.endsWith('|bottom')
+    const arr = groups[k]
+    arr.sort((a, b) => (horizontal ? a.other.cx - b.other.cx : a.other.cy - b.other.cy))
+    const N = arr.length
+    arr.forEach((it, i) => {
+      frac[it.idx + '|' + it.end] = (i + 1) / (N + 1)
+    })
+  })
+
+  // 4) Build each connector's orthogonal polyline between its slotted points.
+  const edges = routed.map((r, idx) => {
+    const sp = attach(r.from, r.sSide, frac[idx + '|s'] ?? 0.5)
+    const tp = attach(r.to, r.tSide, frac[idx + '|t'] ?? 0.5)
+    const points = elbow(sp, r.sSide, tp, r.tSide)
+    const mid = points[Math.max(1, Math.floor(points.length / 2) - 1)]
+    return { id: 'fe' + idx, from: r.from.id, to: r.to.id, points, label: r.label || '', labelAt: mid }
+  })
+
+  const maxX = nodes.reduce((m, n) => Math.max(m, n.x + n.w), 0)
+  const maxY = nodes.reduce((m, n) => Math.max(m, n.y + n.h), 0)
+  const width = Math.max(Math.max(1, lanes.length) * LANE_W, maxX + 20)
+  const height = Math.max(PAD_TOP + Math.max(1, nodes.length) * ROW_H + PAD_BOTTOM, maxY + PAD_BOTTOM)
   return { lanes, nodes, edges, width, height, laneW: LANE_W }
 }
 
-// Build one orthogonal (elbow) connector between two laid-out nodes.
-function makeEdge(s, t, label, i) {
-  let pts
-  let dir // arrowhead direction at the target
-  if (s.laneIndex === t.laneIndex) {
-    // vertical within a lane
-    const down = t.cy >= s.cy
-    const sy = down ? s.y + s.h : s.y
-    const ty = down ? t.y : t.y + t.h
-    const midY = (sy + ty) / 2
-    pts = [
-      [s.cx, sy],
-      [s.cx, midY],
-      [t.cx, midY],
-      [t.cx, ty],
-    ]
-    dir = down ? 'down' : 'up'
-  } else {
-    // horizontal across lanes (enter the side facing the source)
-    const right = t.laneIndex > s.laneIndex
-    const sx = right ? s.x + s.w : s.x
-    const tx = right ? t.x : t.x + t.w
-    const midX = (sx + tx) / 2
-    pts = [
-      [sx, s.cy],
-      [midX, s.cy],
-      [midX, t.cy],
-      [tx, t.cy],
-    ]
-    dir = right ? 'right' : 'left'
+// A point on a box side at the given fraction along it.
+function attach(n, side, f) {
+  switch (side) {
+    case 'top':
+      return [n.x + n.w * f, n.y]
+    case 'bottom':
+      return [n.x + n.w * f, n.y + n.h]
+    case 'left':
+      return [n.x, n.y + n.h * f]
+    default:
+      return [n.x + n.w, n.y + n.h * f]
   }
-  return { id: 'fe' + i, from: s.id, to: t.id, points: pts, label: label || '', dir }
+}
+
+const NORMAL = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }
+
+// Orthogonal elbow between two side points: each end sticks straight out of its
+// box for STUB px, then the two stubs are joined with right-angle segments.
+function elbow(sp, sSide, tp, tSide) {
+  const sn = NORMAL[sSide]
+  const tn = NORMAL[tSide]
+  const p1 = [sp[0] + sn[0] * STUB, sp[1] + sn[1] * STUB]
+  const p2 = [tp[0] + tn[0] * STUB, tp[1] + tn[1] * STUB]
+  const sHoriz = sSide === 'left' || sSide === 'right'
+  const tHoriz = tSide === 'left' || tSide === 'right'
+  let mids
+  if (sHoriz && tHoriz) {
+    const mx = (p1[0] + p2[0]) / 2
+    mids = [[mx, p1[1]], [mx, p2[1]]]
+  } else if (!sHoriz && !tHoriz) {
+    const my = (p1[1] + p2[1]) / 2
+    mids = [[p1[0], my], [p2[0], my]]
+  } else if (sHoriz) {
+    mids = [[p2[0], p1[1]]]
+  } else {
+    mids = [[p1[0], p2[1]]]
+  }
+  return [sp, p1, ...mids, p2, tp]
 }
 
 // Turn a list of points into an SVG polyline path string.

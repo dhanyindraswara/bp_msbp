@@ -510,3 +510,18 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .fl-ref { display: flex; align-items: center; justify-content: center; background: #eef1f4; border: 1px solid #8a929c; font-size: 11px; font-weight: 700; color: #253242; }
 .fl-ref-offpage { border: none; background: #eef1f4; clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); box-shadow: 0 0 0 1px #8a929c; }
 .fl-ref-onpage { border-radius: 50%; }
+
+/* ---- interactive editing additions ---- */
+.fl-sec { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
+.fl-sec:hover { color: #2f6fb0; }
+.fl-sec-caret { font-size: 10px; color: #8a94a0; width: 12px; }
+.fl-sec-right { margin-left: auto; }
+.fl-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #445; cursor: pointer; user-select: none; }
+.fl-toggle input { margin: 0; }
+.fl-node-i { cursor: grab; user-select: none; }
+.fl-node-i:hover { outline: 2px solid #6ea8e4; outline-offset: 1px; }
+.fl-node-drag { cursor: grabbing; opacity: 0.85; box-shadow: 0 6px 16px rgba(0,0,0,.22) !important; z-index: 20; }
+.fl-node-i.fl-decision:hover { outline: none; }
+.fl-node-i.fl-decision:hover .fl-decision-inner { outline: 2px solid #6ea8e4; }
+/* keep the lane dropdown legible instead of clipping long names */
+.fl-steps select { text-overflow: ellipsis; }

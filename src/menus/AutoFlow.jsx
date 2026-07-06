@@ -28,10 +28,24 @@ const Field = ({ label, value, onChange, placeholder, wide }) => (
   </label>
 )
 
+// A collapsible form section: click the header to hide / show its body.
+const Section = ({ title, open, onToggle, right, children }) => (
+  <>
+    <div className="imp-sec fl-sec" onClick={onToggle}>
+      <span className="fl-sec-caret">{open ? '▾' : '▸'}</span>
+      {title}
+      {right ? <span className="fl-sec-right" onClick={(e) => e.stopPropagation()}>{right}</span> : null}
+    </div>
+    {open ? children : null}
+  </>
+)
+
 export default function AutoFlow({ openId, setOpenId, notify }) {
   const [flow, setFlow] = useState(() => (openId ? getDoc(openId)?.flow || blankFlow() : blankFlow()))
   const [tpl, setTpl] = useState(() => ({ ...DEFAULT_TPL, ...(openId ? getDoc(openId)?.project?.template : null) }))
   const [savedId, setSavedId] = useState(openId || '')
+  const [secOpen, setSecOpen] = useState({ header: false, section: true }) // Kepala dokumen collapsed by default
+  const toggleSec = (k) => setSecOpen((s) => ({ ...s, [k]: !s[k] }))
   const logoRef = useRef(null)
 
   // Reload when the caller opens a different flow document.
@@ -82,6 +96,12 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
       ;[steps[i], steps[j]] = [steps[j], steps[i]]
       return { ...f, steps }
     })
+  // Applied when a box is dragged or renamed in the preview.
+  const updateStepById = (id, patch) =>
+    setFlow((f) => ({ ...f, steps: f.steps.map((s) => (s.id === id ? { ...s, ...patch } : s)) }))
+  // Drop all manual positions so every box falls back to the auto grid.
+  const resetLayout = () =>
+    setFlow((f) => ({ ...f, steps: f.steps.map(({ pos, ...rest }) => rest) })) // eslint-disable-line no-unused-vars
 
   const onLogoFile = (file) => {
     if (!file) return
@@ -138,29 +158,31 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
       <div className="fl-split">
         {/* ---- input form ---- */}
         <div className="fl-form">
-          <div className="imp-sec">Kepala dokumen</div>
-          <div className="imp-grid">
-            <Field label="Judul flow" value={tpl.title} onChange={(v) => setT('title', v)} placeholder="C3.2 Fuel Supply" wide />
-            <Field label="Level" value={tpl.level} onChange={(v) => setT('level', v)} />
-            <Field label="Business Process No." value={tpl.bpNo} onChange={(v) => setT('bpNo', v)} />
-            <Field label="Effective date" value={tpl.effectiveDate} onChange={(v) => setT('effectiveDate', v)} />
-            <Field label="Revisi" value={tpl.revision} onChange={(v) => setT('revision', v)} />
-            <Field label="Prepared by" value={tpl.preparedBy} onChange={(v) => setT('preparedBy', v)} />
-            <Field label="Reviewed by" value={tpl.reviewedBy} onChange={(v) => setT('reviewedBy', v)} />
-            <Field label="Approved by" value={tpl.approvedBy} onChange={(v) => setT('approvedBy', v)} />
-            <label className="imp-field">
-              <span>Logo</span>
-              <button className="btn btn-sm" onClick={() => logoRef.current && logoRef.current.click()}>
-                {tpl.logo ? 'Ganti logo' : 'Upload logo'}
-              </button>
-              <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { onLogoFile(e.target.files[0]); e.target.value = '' }} />
-            </label>
-          </div>
+          <Section title="Kepala dokumen" open={secOpen.header} onToggle={() => toggleSec('header')}>
+            <div className="imp-grid">
+              <Field label="Judul flow" value={tpl.title} onChange={(v) => setT('title', v)} placeholder="C3.2 Fuel Supply" wide />
+              <Field label="Level" value={tpl.level} onChange={(v) => setT('level', v)} />
+              <Field label="Business Process No." value={tpl.bpNo} onChange={(v) => setT('bpNo', v)} />
+              <Field label="Effective date" value={tpl.effectiveDate} onChange={(v) => setT('effectiveDate', v)} />
+              <Field label="Revisi" value={tpl.revision} onChange={(v) => setT('revision', v)} />
+              <Field label="Prepared by" value={tpl.preparedBy} onChange={(v) => setT('preparedBy', v)} />
+              <Field label="Reviewed by" value={tpl.reviewedBy} onChange={(v) => setT('reviewedBy', v)} />
+              <Field label="Approved by" value={tpl.approvedBy} onChange={(v) => setT('approvedBy', v)} />
+              <label className="imp-field">
+                <span>Logo</span>
+                <button className="btn btn-sm" onClick={() => logoRef.current && logoRef.current.click()}>
+                  {tpl.logo ? 'Ganti logo' : 'Upload logo'}
+                </button>
+                <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { onLogoFile(e.target.files[0]); e.target.value = '' }} />
+              </label>
+            </div>
+          </Section>
 
-          <div className="imp-sec">Judul section (band)</div>
-          <div className="imp-grid">
-            <Field label="Nama proses / section" value={flow.section} onChange={(v) => setFlow((f) => ({ ...f, section: v }))} placeholder="C3.2 Fuel Supply" wide />
-          </div>
+          <Section title="Judul section (band)" open={secOpen.section} onToggle={() => toggleSec('section')}>
+            <div className="imp-grid">
+              <Field label="Nama proses / section" value={flow.section} onChange={(v) => setFlow((f) => ({ ...f, section: v }))} placeholder="C3.2 Fuel Supply" wide />
+            </div>
+          </Section>
 
           <div className="imp-sec">Lane / kolom (satu per baris)</div>
           <div className="imp-grid">
@@ -184,14 +206,14 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
           </div>
           <table className="fl-steps">
             <colgroup>
-              <col style={{ width: 42 }} />
-              <col style={{ width: 128 }} />
+              <col style={{ width: 38 }} />
+              <col style={{ width: 96 }} />
+              <col style={{ width: '26%' }} />
+              <col style={{ width: 52 }} />
+              <col style={{ width: 58 }} />
               <col />
-              <col style={{ width: 62 }} />
-              <col style={{ width: 74 }} />
-              <col />
-              <col style={{ width: 92 }} />
-              <col style={{ width: 64 }} />
+              <col style={{ width: 66 }} />
+              <col style={{ width: 60 }} />
             </colgroup>
             <thead>
               <tr>
@@ -249,7 +271,15 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
         {/* ---- live preview ---- */}
         <div className="fl-preview">
           {lanesArr.length ? (
-            <FlowChart flow={flow} template={tpl} notify={notify} onExportName={flow.section || tpl.title || 'flow-process'} />
+            <FlowChart
+              flow={flow}
+              template={tpl}
+              notify={notify}
+              onExportName={flow.section || tpl.title || 'flow-process'}
+              interactive
+              onUpdateStep={updateStepById}
+              onResetLayout={resetLayout}
+            />
           ) : (
             <div className="fl-empty">Tambahkan minimal satu lane untuk mulai menggambar flow.</div>
           )}

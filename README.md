@@ -1,89 +1,76 @@
 # STONES — Business Process Suite
 
-STONES is a small suite shell with four modules:
+Web app untuk **mengembangkan, mengelola, dan menyimpan** Business Process (BP), SOP, dan
+dokumen perusahaan — dengan approval workflow, versioning, import PDF, generator flowchart SOP,
+dan asisten AI yang bisa membaca knowledge base internal. (Evolusi dari "ITM SIPOC Studio".)
 
-1. **Document Action Request** — review/approve/publish requests _(placeholder for now)_.
-2. **Document Development** — the core studio: turn a **single SIPOC table** into an
-   editable **ITM-style business process map** (React Flow) + a **RASCI matrix**.
-   You can develop many Business Processes, each saved by **ID + name + version**.
-3. **Repository** — stores every BP document (ID, name, version, last updated) with
-   open / duplicate / delete.
-4. **Dashboard** — reporting _(live counts now; charts to come)_.
+- **Live:** https://dhanyindraswara.github.io/bp_msbp/
+- 📖 **Panduan pengguna:** [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
+- 🏗️ **Arsitektur / dev:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
-## Document Development
+## Menu (sidebar bergrup)
 
-Everything downstream — processes, suppliers/customers, handoffs, numbered
-document flows, and the RASCI grid — is generated automatically from the SIPOC
-input, then can be edited by hand. Edits **autosave** into the repository under the
-document's ID; the BP name and version come from the header fields.
+- **Dashboard** — reporting (hitungan live; chart menyusul).
+- **Business Process**
+  - **Document Development** — studio inti: satu tabel **SIPOC** → **Business Process Map**
+    (React Flow) + **RASCI** otomatis, title block ITM, export PNG. Plus workflow
+    (Draft→In Review→Approved→Published), versi + audit trail, dan komentar.
+  - **Document Import** — upload PDF SOP/BP/policy → AI (Gemini) ekstrak jadi data terstruktur →
+    review → simpan.
+- **Flow Process**
+  - **Auto Flow Process** — generator **flowchart swimlane SOP** dari input lane + langkah; kotak
+    bisa di-drag & rename, export PNG.
+- **Document Action Request** — antrian review (approve/reject) + New BP.
+- **Repository** — semua dokumen (open/duplicate/delete).
+- **Global Search** — cari lintas dokumen.
+- **Ask AI** — chat tanya/analisa BP (Gemini), membaca semua BP + referensi aktif.
+- **AI Knowledge Base** — upload dokumen referensi sebagai sumber pengetahuan Ask AI.
 
 ## Stack
 
-- **React 18** + **Vite**
-- **[reactflow](https://reactflow.dev) v11** for the process map
-- **SheetJS (xlsx)** for `.xlsx` / `.csv` import and XLSX/CSV export
-- **html-to-image** for PNG export
-- **Tailwind CSS** (+ ported component styles) for the corporate visual style
+- **React 18** + **Vite** (base path `/bp_msbp/`)
+- **[React Flow](https://reactflow.dev) v11** untuk Business Process Map
+- **SheetJS (`xlsx`)** untuk import/export `.xlsx`/`.csv`
+- **html-to-image** untuk export PNG
+- **Firebase v12** — **Auth** (Google sign-in), **Cloud Firestore** (realtime + offline cache),
+  **Cloud Storage** (lampiran PDF/PNG), **Cloud Functions** (proxy ke **Google Gemini**)
+- **Tailwind CSS** + CSS komponen custom
 
-## Run
+## Menjalankan
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build    # production build → dist/
-npm run preview  # preview the production build
+npm run dev       # dev server → http://localhost:5173/bp_msbp/
+npm run build     # build produksi → dist/
+npm run preview   # preview build produksi
+npm run deploy    # publish dist/ ke branch gh-pages (GitHub Pages)
 ```
 
-## The three views
+Cloud Functions di-deploy terpisah dari terminal PC: `firebase deploy --only functions`
+(butuh secret `GEMINI_API_KEY`). Perubahan **frontend saja tidak** butuh deploy function.
 
-- **SIPOC editor** (default) — header fields (Process name / owner / version), a
-  5-column editable grid (Suppliers · Inputs · Process · Outputs · Customers)
-  with add/delete rows and multi-row paste from Excel, a separate PPI editor,
-  and `.xlsx` / `.csv` import following the ITM template layout. **Generate →**
-  jumps to the map.
-- **Business process map** — process boxes grouped in a light-blue Level-2 band,
-  suppliers on the left (blue IN arrows), customers on the right (green OUT
-  arrows), grey dashed handoff arrows between processes. Edge labels toggle
-  between numbered flows (**Flow #**) and full **Text**, wired to the right-side
-  legend (numbered Data/Document/Information Flow + PPI grouped per process).
-  Drag to arrange, double-click to rename, hover a grey box for the remove ✕.
-  Export **PNG** / **JSON**.
-- **RASCI matrix** — rows = sub-processes, columns = actors (non-process
-  suppliers + customers + process owner). Auto-rules: owner → **A/R**,
-  advisory/regulator → **C**, input suppliers → **S**, customers → **I**;
-  every cell is overridable via dropdown, with exactly-one-Accountable
-  validation warnings. Export **CSV** / **XLSX** and copy-to-clipboard.
+## Backend & data
 
-## Persistence
+Model **serverless / client-first**: browser bicara langsung ke Firebase; satu-satunya kode
+server adalah Cloud Functions (proxy AI). Semua dokumen ada di collection Firestore
+`bp_documents` (1 dokumen = 1 entitas; tipe dibedakan `docType`: `BP`/`SOP`/`FLOW`/`KNOWLEDGE`).
+Baca bersifat realtime + sinkron dari cache in-memory; tanpa `apiKey` app jalan di
+`localStorage`. Detail lengkap ada di [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-The whole project (header + SIPOC + PPI + node positions + RASCI overrides) is a
-single JSON object. **New / Save / Load** use `localStorage`; **Import JSON /
-Export JSON** move it as a file. A filled-in **"HSE Marine & Logistic"** sample
-(matching the reference attachment) loads on first open.
+## Keamanan
 
-## Data model
+Akses dikunci **Firebase Auth** (login Google) + **Security Rules** (`request.auth != null`).
+Firebase Web `apiKey` di repo adalah key publik client (by design) — proteksi asli = Rules +
+Auth, plus API key restriction di GCP. API key AI sensitif disimpan sebagai **Firebase secret**,
+tidak pernah di repo.
 
-```
-header:  { processName, processOwner, version }
-sipoc:   [{ id, supplier, input, process, output, customer }]   // 1 row = 1 relation
-ppi:     [{ id, process, indicator }]                           // blank process = continues the one above
-flows:   [{ n, text }]                                          // numbered document/data flows
-positions, rasciOverrides, flowLabelMode, highlight
-```
+## Catatan SheetJS
 
-Derived at runtime (never stored as source): distinct processes (split into
-`{code, name}`), actor boxes, process→process handoffs, and the flow-numbered
-edges.
-
-## Note on SheetJS
-
-The original design pinned `xlsx@0.20.3` from the SheetJS CDN. That CDN is
-unreachable here, so this build uses `xlsx@0.18.5` from the npm registry — the
-same API for every call the app makes (`read`, `sheet_to_json`, `aoa_to_sheet`,
-`writeFile`). If you want the newest SheetJS, install it from
-`https://cdn.sheetjs.com` per their docs.
+Build ini memakai `xlsx@0.18.5` dari npm registry (CDN SheetJS tidak terjangkau di lingkungan
+build) — API-nya sama untuk semua pemanggilan yang dipakai app (`read`, `sheet_to_json`,
+`aoa_to_sheet`, `writeFile`).
 
 ---
 
-The original Claude Design export lives in `project/` (the `.dc.html` prototype
-and reference screenshots) for reference.
+Prototype desain asli (Claude Design export) ada di `project/` (`.dc.html` + screenshot) untuk
+referensi historis.

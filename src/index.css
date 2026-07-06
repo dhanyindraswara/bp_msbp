@@ -525,3 +525,7 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .fl-node-i.fl-decision:hover .fl-decision-inner { outline: 2px solid #6ea8e4; }
 /* keep the lane dropdown legible instead of clipping long names */
 .fl-steps select { text-overflow: ellipsis; }
+
+/* ---- sidebar menu groups ---- */
+.stones-navgroup { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 2px; padding-top: 6px; border-top: 1px solid var(--border, #e6e9ee); }
+.stones-navgroup-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 2px 12px 4px; }

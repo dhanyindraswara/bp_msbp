@@ -1,51 +1,62 @@
-# STONES — Arsitektur & Dokumentasi
+# STONES — Arsitektur & Dokumentasi Developer
 
-**STONES** (Business Process Suite) — aplikasi untuk **mengembangkan** dan **menyimpan**
-dokumen Business Process (BP), lengkap dengan approval workflow, versioning, dan komentar.
-Backend memakai **Cloud Firestore** (Firebase), frontend **React** yang di-host di **GitHub Pages**.
+**STONES** (Business Process Suite) — aplikasi untuk **mengembangkan, mengelola, dan
+menyimpan** dokumen Business Process (BP), SOP, dan dokumen perusahaan. Termasuk approval
+workflow, versioning, komentar, import PDF, generator flowchart SOP, dan asisten AI yang bisa
+membaca knowledge base internal.
 
 - **Live:** https://dhanyindraswara.github.io/bp_msbp/
 - **Repo:** https://github.com/dhanyindraswara/bp_msbp
-- **Firebase project:** `stones-bp`
+- **Firebase project:** `stones-bp` (Blaze plan, target biaya ~$0)
+
+> Dokumen ini untuk **developer**. Untuk panduan pemakaian aplikasi, lihat
+> [`USER_GUIDE.md`](./USER_GUIDE.md).
 
 ---
 
 ## 1. Gambaran Arsitektur
 
+Model: **serverless / client-first**. Tidak ada backend server yang dikelola sendiri.
+Browser bicara **langsung** ke Firestore/Storage/Auth lewat Firebase SDK. Satu-satunya kode
+sisi-server adalah **Cloud Functions** yang berfungsi sebagai **proxy aman ke Google Gemini**
+(supaya API key AI tidak pernah ada di browser).
+
 ```mermaid
 flowchart TB
   subgraph Browser["🖥️ Browser (klien) — tidak ada server sendiri"]
-    UI["React UI<br/>STONES shell + 5 menu"]
-    Studio["Studio:<br/>SIPOC editor · Process Map (React Flow) · RASCI"]
-    Gen["generate.js<br/>(SIPOC → diagram + RASCI otomatis)"]
-    Store["store.js<br/>in-memory cache + subscribers"]
-    FB["firebase.js<br/>SDK init + offline cache"]
+    UI["React UI — STONES shell (sidebar bergrup)"]
+    Studio["Studio: SIPOC editor · Process Map (React Flow) · RASCI"]
+    Flow["Auto Flow Process — FlowChart.jsx + flow.js (layout engine)"]
+    Import["Document Import — extract.js"]
+    KB["AI Knowledge Base — knowledge.js"]
+    AI["Ask AI — ai.js (buildContext)"]
+    Store["store.js — in-memory cache + subscribers"]
+    FB["firebase.js — SDK init + offline cache"]
     UI --> Store
-    Studio --> Gen --> Store
+    Studio --> Store
+    Flow --> Store
+    Import --> Store
+    KB --> Store
+    AI --> Store
     Store --> FB
   end
-  FB -->|"onSnapshot (realtime) / setDoc / deleteDoc"| FS[("☁️ Cloud Firestore<br/>project: stones-bp<br/>collection: bp_documents")]
-  Store -.->|"fallback jika config kosong"| LS[("localStorage")]
-  Dev["Vite build → dist/"] --> Pages["GitHub Pages<br/>branch gh-pages"]
+
+  FB -->|"onSnapshot / setDoc / deleteDoc"| FS[("☁️ Cloud Firestore<br/>project: stones-bp<br/>collection: bp_documents")]
+  FB -->|"upload / getDownloadURL"| ST[("☁️ Cloud Storage<br/>PDF / PNG lampiran")]
+  FB -->|"Google sign-in"| AUTH[("🔐 Firebase Auth")]
+  Store -.->|"fallback jika apiKey kosong"| LS[("localStorage")]
+
+  Import -->|"httpsCallable extractDoc"| CF
+  AI -->|"httpsCallable askAI"| CF
+  KB -.->|"reuse extractDoc untuk PDF"| CF
+  CF["⚙️ Cloud Functions (v2, us-central1)<br/>askAI · extractDoc"] -->|"REST + secret GEMINI_API_KEY"| GEM[("🤖 Google Gemini API<br/>gemini-2.5-flash")]
+
+  Dev["Vite build → dist/"] --> Pages["GitHub Pages (branch gh-pages)"]
   Pages --> UI
 ```
 
-**Model:** *serverless / client-only*. Tidak ada backend server yang kamu kelola. Browser
-bicara **langsung** ke Firestore lewat Firebase SDK; keamanan diatur oleh **Firestore
-Security Rules**, bukan oleh server. Hosting cuma menyajikan file statis (HTML/JS/CSS).
-
-Diagram versi teks:
-
-```
-[ React App di browser ]
-   │  (baca sinkron dari cache, tulis lewat store)
-   ▼
-[ store.js ]  ──setDoc/onSnapshot──►  [ Cloud Firestore: bp_documents ]
-   │
-   └── fallback ──►  [ localStorage ]   (kalau Firebase config kosong / offline)
-
-[ Vite build ] ──► [ dist/ ] ──► [ GitHub Pages (gh-pages) ] ──► pengguna
-```
+Keamanan diatur oleh **Firebase Auth** (login wajib) + **Firestore/Storage Security Rules**
+(`request.auth != null`), bukan oleh server. Hosting hanya menyajikan file statis.
 
 ---
 
@@ -53,220 +64,295 @@ Diagram versi teks:
 
 | Lapisan | Teknologi |
 |---|---|
-| UI | **React 18** + **Vite** |
-| Diagram | **React Flow v11** (`reactflow`) |
-| Styling | **Tailwind CSS** + CSS komponen custom |
-| Import/Export Excel | **SheetJS** (`xlsx`) |
+| UI | **React 18** + **Vite** (base path `/bp_msbp/`) |
+| Diagram BP map | **React Flow v11** (`reactflow`) |
+| Flowchart SOP | Renderer HTML/SVG custom (`FlowChart.jsx`) + layout engine (`flow.js`) |
+| Styling | **Tailwind CSS** + CSS komponen custom (`index.css`) |
+| Import/Export Excel | **SheetJS** (`xlsx@0.18.5`) |
 | Export PNG | **html-to-image** |
-| Backend / Database | **Cloud Firestore** (`firebase` v12) |
-| Persistensi offline | Firestore IndexedDB cache (multi-tab) |
-| Hosting | **GitHub Pages** (branch `gh-pages`, base `/bp_msbp/`) |
-| Fallback | `localStorage` (kalau tanpa Firebase) |
+| Auth | **Firebase Auth** (Google sign-in) |
+| Database | **Cloud Firestore** (`firebase` v12) — realtime, offline IndexedDB cache |
+| File storage | **Cloud Storage** (PDF/PNG) |
+| AI | **Cloud Functions v2** (proxy) → **Google Gemini** (`gemini-2.5-flash`) |
+| Hosting web | **GitHub Pages** (branch `gh-pages`) |
+| Fallback | `localStorage` (kalau `apiKey` kosong / mode lokal) |
 
 ---
 
 ## 3. Struktur Kode
 
 ```
+functions/
+  index.js                 Cloud Functions: askAI (Gemini proxy) + extractDoc (PDF→JSON)
+
 src/
   main.jsx                 entry React
-  App.jsx                  STONES shell: sidebar 5 menu, boot store, loading gate
+  App.jsx                  STONES shell: sidebar bergrup (NAV), auth gate, boot store, routing
   index.css                Tailwind + semua style komponen
   lib/
     firebaseConfig.js      config Firebase (apiKey dst.) — publik, aman di repo
-    firebase.js            init Firebase App + Firestore (offline cache)
+    firebase.js            init App + Firestore(offline cache) + Auth + Storage + Functions
+    auth.js                Google sign-in (watchAuth / signInGoogle / signOutUser)
     store.js               ★ data layer backend-agnostic (Firestore / localStorage)
-    generate.js            SIPOC → processes/actors/flows/edges/positions
-    sample.js              data contoh + project kosong
-    constants.js           palet warna, ukuran, opsi RASCI, storage key
+    generate.js            SIPOC → processes/actors/flows/edges/positions (derivation engine)
+    sample.js              data contoh + blankProject()
+    constants.js           palet warna, ukuran, opsi RASCI
+    files.js               upload/hapus file ke Cloud Storage (subcollection files/)
+    extract.js             client extractDoc (PDF → draft SOP terstruktur)
+    ai.js                  Ask AI: buildContext() dari semua BP + knowledge, panggil askAI
+    flow.js                Auto Flow Process: model + layout engine (node + konektor)
+    knowledge.js           AI Knowledge Base: CRUD referensi + buildKnowledgeContext()
   components/
     SipocEditor.jsx        editor tabel SIPOC + PPI + import xlsx/csv
     ProcessMap.jsx         React Flow + title-block ITM + legend + export PNG
     Rasci.jsx              matriks RASCI + auto-rules + export CSV/XLSX
     nodes.jsx              node React Flow (box / process / band)
+    FlowChart.jsx          renderer swimlane flowchart SOP + drag/rename + export PNG
   menus/
-    DocumentDevelopment.jsx  studio + workflow + versi + komentar (drawer)
-    DocumentActionRequest.jsx antrian review (approve/reject) + New BP
-    Repository.jsx          daftar semua BP (open/duplicate/delete)
-    GlobalSearch.jsx        pencarian lintas dokumen
-    Dashboard.jsx           reporting (hitungan live + placeholder chart)
+    DocumentActionRequest.jsx  antrian review (approve/reject) + New BP
+    DocumentDevelopment.jsx    studio inti + workflow + versi + komentar (drawer)
+    DocumentImport.jsx         upload PDF → extractDoc → review → simpan (docType SOP)
+    AutoFlow.jsx               form lane+langkah → FlowChart (docType FLOW)
+    Repository.jsx             daftar semua BP (open/duplicate/delete)
+    GlobalSearch.jsx           pencarian lintas dokumen
+    AskAI.jsx                  chat AI (Gemini)
+    KnowledgeBase.jsx          upload/paste referensi (docType KNOWLEDGE)
+    Dashboard.jsx              reporting (hitungan live + placeholder chart)
 ```
 
-**`store.js` adalah inti.** Semua menu baca/tulis lewat sini, jadi ganti backend
-(localStorage ↔ Firestore) tidak menyentuh komponen UI.
+**`store.js` adalah inti data.** Semua menu baca/tulis lewat sini, jadi mengganti backend
+(localStorage ↔ Firestore) tidak menyentuh komponen UI. Baca bersifat **sinkron** dari cache.
 
 ---
 
-## 4. Data Model (Firestore)
+## 4. Menu (sidebar bergrup — `App.jsx`, array `NAV`)
 
-**Collection utama:** `bp_documents/{BP-000x}` — 1 dokumen = 1 Business Process.
+Sidebar dikelompokkan; `NAV` menerima item standalone `{ id, label, d }` maupun section
+`{ group, items }`.
+
+| Grup | Menu (`id`) | Fungsi |
+|---|---|---|
+| — | **Dashboard** (`dashboard`) | Reporting (hitungan status live; chart menyusul) |
+| **Business Process** | **Document Development** (`develop`) | Studio inti: SIPOC → Process Map (template ITM) + RASCI; workflow, versi, komentar |
+| **Business Process** | **Document Import** (`import`) | Upload PDF SOP/BP/policy → ekstraksi terstruktur (Gemini) → review → simpan |
+| **Flow Process** | **Auto Flow Process** (`flow`) | Generator flowchart swimlane SOP dari input lane + langkah |
+| — | **Document Action Request** (`request`) | Antrian review; Approve/Reject dokumen `In Review`; **+ New BP** |
+| — | **Repository** (`repository`) | Daftar semua BP (open/duplicate/delete) |
+| — | **Global Search** (`search`) | Cari lintas semua dokumen |
+| — | **Ask AI** (`ai`) | Chat tanya/analisa BP (Gemini) + baca knowledge base |
+| — | **AI Knowledge Base** (`knowledge`) | Upload dokumen referensi sebagai sumber pengetahuan AI |
+
+**Routing khusus:** `openDoc(id)` di `App.jsx` mengecek `docType` — dokumen **FLOW** dibuka di
+menu Auto Flow Process, dokumen lain dibuka di Document Development. Dokumen **KNOWLEDGE**
+di-filter keluar dari Repository/Dashboard/Global Search.
+
+---
+
+## 5. Data Model (Firestore)
+
+**Collection utama:** `bp_documents/{BP-000x}` — 1 dokumen = 1 entitas. Tipe dokumen dibedakan
+oleh field opsional **`docType`** (default `BP`).
 
 ```jsonc
 bp_documents/BP-0001 = {
   id: "BP-0001",
-  name: "HSE Marine & Logistic",     // diambil dari header.processName
-  version: "1.0",                    // header.version
+  name: "HSE Marine & Logistic",     // dari project.header.processName
+  version: "1.0",
   status: "draft" | "in_review" | "approved" | "published",
-  project: {                         // ← isi dokumen (yang diedit)
+  docType: "BP" | "SOP" | "FLOW" | "KNOWLEDGE",   // opsional; absen = BP
+
+  project: {                         // isi dokumen yang diedit (selalu valid untuk semua tipe)
     header:   { processName, processOwner, version },
     template: { logo, level, title, bpNo, effectiveDate, revision,
                 preparedBy, reviewedBy, approvedBy },
     sipoc:    [ { id, supplier, input, process, output, customer } ],
     ppi:      [ { id, process, indicator } ],
     flows:    [ { n, text } ],
-    positions:{ "P:...": {x,y}, "A:...": {x,y} },   // posisi node di map
+    positions:{ "P:...": {x,y}, "A:...": {x,y} },
     rasciOverrides: { "proc||actor": "A/R" },
     flowLabelMode: "number" | "text",
     highlight: "..."
   },
+
+  // ── payload tambahan sesuai docType ──
+  sop: {                             // docType SOP (Document Import)
+    type, docNo, title, revision, effectiveDate, owner,
+    approvals: { preparedBy, reviewedBy, approvedBy },
+    purpose, scope, definitions:[{term,meaning}], actors:[..],
+    steps:[{no,activity,pic,input,output,docRef}],
+    rasci:[{activity,R,A,S,C,I}], ppi:[..], notes
+  },
+  flow: {                            // docType FLOW (Auto Flow Process)
+    section, lanes:[..],
+    steps:[{ id, no, type, lane, rasci, ref, activity, next, pos?:{x,y} }]
+  },
+  knowledge: {                       // docType KNOWLEDGE (AI Knowledge Base)
+    title, content, kind:"pdf"|"text", enabled:bool, chars
+  },
+
   versions: [ { id, snapNo, bpVersion, note, data(snapshot project), author, createdAt } ],
-  comments: [ { id, author, body, resolved, createdAt } ],   // riwayat chat/diskusi
-  audit:    [ { id, ts, actor, action, detail } ],           // jejak audit
+  comments: [ { id, author, body, resolved, createdAt } ],
+  audit:    [ { id, ts, actor, action, detail } ],
   createdAt, updatedAt
 }
 
-app/meta = { seq: 12 }   // counter untuk ID BP-000x
+app/meta = { seq: 12 }               // counter untuk ID BP-000x
+
+// Subcollection lampiran file (Document Import / Development):
+bp_documents/{id}/files/{fileId} = { name, kind, url, path, size, uploadedBy, createdAt }
 ```
 
 **Data per-browser (localStorage, bukan Firestore):**
-- `stones-openid` — dokumen mana yang sedang kamu buka (state UI, per device).
-- `stones-user` — nama user aktif (dipakai untuk author komentar/audit).
+`stones-openid` (dokumen yang sedang dibuka) · `stones-user` (nama user untuk author komentar/audit).
 
-> **Catatan skalabilitas:** saat ini `versions`, `comments`, `audit` disimpan sebagai
-> **array di dalam dokumen**. Firestore membatasi **1 dokumen = maks 1 MB**. Kalau
-> chat/versi makin banyak, rencananya dipindah ke **subcollection**
-> (`bp_documents/{id}/comments`, `/versions`, `/audit`) + `files` untuk PDF/PNG.
+> **Catatan skalabilitas:** `versions`/`comments`/`audit` masih array di dalam dokumen
+> (limit Firestore 1 dokumen = 1 MB). Rencana: pindah ke subcollection kalau makin banyak.
+> `knowledge.content` dibatasi jauh di bawah 1 MB (isi teks ringkas).
 
 ---
 
-## 5. Cara Kerja Data (read / write / realtime)
+## 6. Cara Kerja Data (store.js)
 
-1. **Boot** — `App` memanggil `initStore()`. Kalau ada config Firebase → subscribe
-   `onSnapshot(collection('bp_documents'))`; kalau tidak → load `localStorage`.
-2. **Cache in-memory** — semua dokumen ditaruh di memori. **Baca** (getDoc/listDocs)
-   bersifat **sinkron** dari cache → UI cepat, tak perlu await di komponen.
-3. **Tulis** — fungsi seperti `saveDoc`, `saveVersion`, `approveDoc`, `addComment`:
-   update cache → `setDoc()` ke Firestore → `emit()` agar React re-render.
-4. **Realtime** — perubahan dari device lain masuk via `onSnapshot` → cache diperbarui
-   → semua menu ikut ter-update otomatis (tanpa refresh).
-5. **Autosave** — editan di studio disimpan otomatis (debounce ~700 ms) ke Firestore.
-6. **Offline** — Firestore cache IndexedDB menyimpan data lokal; saat online kembali,
-   perubahan otomatis tersinkron.
-
----
-
-## 6. Modul / Menu
-
-| Menu | Fungsi |
-|---|---|
-| **Document Action Request** | Antrian review; Approve/Reject dokumen `In Review`; tombol **+ New BP** |
-| **Document Development** | Studio inti: SIPOC → Process Map (template ITM) + RASCI; workflow, versi, komentar |
-| **Repository** | Daftar semua BP (ID, nama, versi, status, update) — open/duplicate/delete |
-| **Global Search** | Cari lintas semua dokumen (nama, SIPOC, aktor, flow, PPI, komentar) |
-| **Dashboard** | Reporting (hitungan status live; chart menyusul) |
-
-**Document control (Fase 1):** status lifecycle **Draft → In Review → Approved →
-Published**, version snapshot + restore, audit trail, dan komentar per dokumen.
+1. **Auth gate** — `App` memanggil `watchAuth()`. Kalau Firebase aktif dan belum login →
+   tampil **LoginScreen** (Google sign-in). Setelah login (atau mode lokal) → boot store.
+2. **Boot** — `initStore()`: kalau Firebase → subscribe `onSnapshot(collection('bp_documents'))`;
+   kalau `apiKey` kosong → load `localStorage`. Kalau Firestore error → fallback ke localStorage.
+3. **Cache in-memory** — semua dokumen di memori; **baca sinkron** (`getDoc`/`listDocs`).
+4. **Tulis** — `saveDoc`/`createDoc`/`saveVersion`/`approveDoc`/`addComment` dst: update cache →
+   `setDoc()` → `emit()` (React re-render). `saveDoc` menerima param opsional `extra` untuk
+   menyimpan payload custom (`sop`/`flow`/`knowledge`) tanpa menyentuh `project`.
+5. **Realtime** — perubahan dari device lain masuk via `onSnapshot` → cache diperbarui → UI update.
+6. **Autosave** — editan studio & flow disimpan otomatis (debounce ~700 ms).
+7. **Offline** — Firestore IndexedDB cache; saat online kembali otomatis sinkron.
 
 ---
 
-## 7. Build & Deploy
+## 7. AI: Ask AI + Knowledge Base
 
+**Alur:** web app → **Cloud Function `askAI`** (us-central1, auth-protected) → **Google Gemini**.
+
+- Client `ai.js`:
+  - `buildContext()` merangkum **semua dokumen BP** (SIPOC, PPI, payload SOP) jadi teks.
+    Dokumen `docType: KNOWLEDGE` **di-skip** di loop BP.
+  - Lalu **menambahkan** bagian berlabel `=== REFERENCE DOCUMENTS (uploaded knowledge base) ===`
+    dari `buildKnowledgeContext()` (hanya referensi yang `enabled`).
+  - `askAI(question)` memanggil `httpsCallable('askAI', { question, context })`.
+- Server `functions/index.js`:
+  - `askAI` menambahkan secret `GEMINI_API_KEY` dan sistem prompt "senior business-process
+    analyst/consultant" (`temperature: 0.4`), lalu memanggil Gemini `generateContent`.
+  - Output dibersihkan dari Markdown (`cleanText`) supaya bubble chat plain text rapi.
+
+**AI Knowledge Base (`knowledge.js`)** — sumber pengetahuan tambahan tanpa infra baru:
+- Referensi disimpan sebagai dokumen `docType: KNOWLEDGE` di **collection `bp_documents` yang
+  sudah ada** → ikut Security Rules, realtime cache, dan persistence yang sudah jalan.
+  **Tidak perlu collection baru, Security Rule baru, atau deploy function.**
+- **Upload PDF** → reuse fungsi `extractDoc` yang sudah ter-deploy → hasilnya diformat jadi teks
+  oleh `draftToKnowledgeText()`. **Paste teks** → langsung disimpan.
+- `addKnowledge()` mengembalikan `openId` yang tadinya terbuka supaya menambah referensi tidak
+  membajak dokumen yang sedang dibuka di Document Development.
+- Tiap referensi punya toggle `enabled` — user kontrol penuh apa yang masuk ke konteks AI.
+
+---
+
+## 8. Auto Flow Process (flowchart SOP)
+
+Generator **cross-functional swimlane flowchart** dari input sederhana (lane + langkah).
+
+- `flow.js` — **pure**: model (`blankFlow`, `sampleFlow`, `FLOW_TYPES`, `FLOW_RASCI`) +
+  **layout engine** `layoutFlow(flow)` yang menghitung posisi node dan konektor ortogonal.
+  - Node ditempatkan per kolom (lane) × baris (urutan langkah); tiap langkah bisa punya override
+    posisi manual `pos:{x,y}` (hasil drag).
+  - Konektor: tiap sisi kotak menyebar titik sambungnya ke **slot** berbeda (diurutkan by ujung
+    lawan) supaya garis in/out tidak numpuk di satu titik; `elbow()` membuat siku ortogonal.
+  - `next` per langkah: kosong = sambung otomatis ke langkah berikutnya; `"6:Yes, 3:No"` =
+    percabangan berlabel (untuk decision).
+- `FlowChart.jsx` — render HTML/SVG (symbol legend, title block, kolom lane, kotak 3-sel
+  `[no|RASCI|ref]`, diamond, pill start/end, off/on-page). Interaktif: **drag** untuk pindah,
+  **double-click** untuk rename; toggle **hide kepala dokumen**; **export PNG** (html-to-image).
+- Disimpan sebagai `docType: FLOW` (payload `flow`); `project` tetap `blankProject()` valid.
+
+---
+
+## 9. Cloud Functions
+
+Kode: `functions/index.js` (Firebase Functions **v2**, region `us-central1`).
+
+| Function | Input | Proses | Output |
+|---|---|---|---|
+| `askAI` | `{ question, context }` | + secret `GEMINI_API_KEY`, sistem prompt analyst, Gemini `generateContent`, `cleanText` | `{ answer }` |
+| `extractDoc` | `{ pdfBase64, fileName }` | Gemini baca PDF native (termasuk scan), `responseMimeType: JSON`, timeout 300s | `{ doc }` (skema SOP) |
+
+- **Provider = Google Gemini** (`gemini-2.5-flash`) — free tier beneran (rate limit ~10 req/min,
+  ~250 req/hari). Data free tier bisa dipakai Google untuk training → untuk dokumen sensitif
+  pertimbangkan paid tier.
+- **API key** = Firebase secret `GEMINI_API_KEY` (server-side, TIDAK di repo). Set ulang:
+  `firebase functions:secrets:set GEMINI_API_KEY` lalu `firebase deploy --only functions`.
+  Key gratis dari https://aistudio.google.com/apikey.
+
+---
+
+## 10. Build & Deploy
+
+**Web app** (dari mana saja, termasuk container Claude):
 ```bash
-npm install       # pasang dependency
-npm run dev       # dev server (http://localhost:5173/bp_msbp/)
+npm install
+npm run dev       # dev server → http://localhost:5173/bp_msbp/
 npm run build     # build produksi → dist/
+npm run deploy    # gh-pages -d dist  → publish ke branch gh-pages
 ```
+GitHub Pages menyajikan `dist/` di `/bp_msbp/` (Vite `base: '/bp_msbp/'`).
 
-Deploy: `dist/` di-push ke branch **`gh-pages`**; GitHub Pages menyajikannya di
-`/bp_msbp/`. (Vite `base: '/bp_msbp/'` supaya path aset benar di subfolder.)
-
----
-
-## 8. 💳 Cara Kerja Billing Firebase
-
-### Plan: **Blaze (pay-as-you-go)** dengan target **$0**
-Kita pakai Blaze karena **Cloud Storage wajib Blaze** sejak **3 Feb 2026**. Tapi Blaze
-punya **kuota gratis ("no-cost / Always Free")** — **selama pemakaian di bawah kuota,
-tagihan tetap $0.** Kamu hanya bayar kalau **melebihi** kuota.
-
-### Kuota gratis yang relevan
-
-**Cloud Firestore (reset harian):**
-| Metrik | Kuota gratis |
-|---|---|
-| Data tersimpan | **1 GiB** total |
-| **Reads** (baca dokumen) | **50.000 / hari** |
-| **Writes** (tulis dokumen) | **20.000 / hari** |
-| **Deletes** | **20.000 / hari** |
-| Egress jaringan | 10 GiB / bulan |
-
-**Cloud Storage (kalau nanti dipakai untuk PDF/PNG):**
-| Metrik | Kuota gratis |
-|---|---|
-| Penyimpanan | **5 GB** |
-| Download / egress | **1 GB / hari** |
-| Operasi upload | **20.000 / hari** |
-| Operasi download | **50.000 / hari** |
-
-*(Angka bisa berubah — sumber resmi: https://firebase.google.com/pricing)*
-
-### Apa yang "menghabiskan kuota" di STONES
-- **Buka aplikasi** → listener realtime membaca dokumen di collection = **reads**.
-  (mis. 80 dokumen × 40 sesi/hari ≈ 3.200 reads — jauh di bawah 50.000.)
-- **Autosave saat ngedit** → **writes** (di-debounce ~700 ms; 1 write per jeda edit).
-- **Approve / komentar / save version** → masing-masing 1 write.
-- **Hapus dokumen** → 1 delete.
-
-Untuk **tool internal** (puluhan user, ratusan dokumen) ini **sangat aman** di kuota gratis.
-
-### Kapan mulai kena biaya (kalau lewat kuota)
-Perkiraan harga Blaze (bervariasi per region):
-- Firestore: ~**$0,06 / 100 rb reads**, ~**$0,18 / 100 rb writes**, ~**$0,02 / 100 rb deletes**,
-  ~**$0,18 / GiB-bulan** penyimpanan.
-- Storage: ~**$0,026 / GB-bulan** simpan, ~**$0,12 / GB** download.
-
-Artinya walau lewat sedikit, biayanya **receh** (sen-senan) — bukan tiba-tiba jutaan.
-
-### Cara menjaga tetap $0 & aman
-1. **Budget alert** di *Google Cloud → Billing → Budgets & alerts* (mis. Rp 20.000,
-   alert 50/90/100%). ⚠️ Ini **notifikasi**, bukan pemutus otomatis.
-2. **Pantau pemakaian**: *Firebase Console → ⚙️ Usage and billing* — lihat reads/writes
-   vs kuota gratis.
-3. **Hard-stop (opsional, lanjutan)**: bikin Cloud Function yang menonaktifkan billing
-   saat budget tercapai (butuh setup tambahan). Untuk sekarang, kuota gratis + alert
-   sudah cukup.
-4. **Hindari boros reads**: nanti kalau dokumen ribuan, ganti listener "seluruh
-   collection" jadi **query berbatas / pagination** dan **subcollection** untuk chat.
-
-### Ringkas
-> Blaze = "kartu terpasang, tapi bayar hanya kalau lewat kuota gratis." Untuk skala
-> STONES sekarang, praktis **$0/bulan**. Kartu hanya jaring pengaman kalau pemakaian
-> melonjak — dan itu pun harganya bertahap/kecil, plus ada budget alert.
+**Cloud Functions** (harus dari terminal PC user — bukan container):
+```powershell
+firebase deploy --only functions
+```
+> User pakai **PowerShell** — tidak ada `&&` (satu command per baris), jangan jalankan dari
+> `C:\WINDOWS\system32`. Perubahan hanya di frontend **tidak** butuh deploy function.
 
 ---
 
-## 9. Keamanan (status & rencana)
+## 11. Keamanan
 
-**Sekarang:** Firestore **test mode** (Rules terbuka, expired ~30 hari). Cukup untuk
-konek & uji coba, **tapi belum aman** — siapa pun yang tahu URL bisa baca/tulis.
-
-**Rencana berikutnya (sangat disarankan):**
-1. **Firebase Auth (login Google)** — batasi akses ke domain/akun perusahaan.
-2. **Security Rules** — `allow read, write: if request.auth != null` (atau berdasarkan
-   role/email), plus `authorized domains` untuk `github.io`.
-3. **Storage Rules** serupa saat fitur upload aktif.
+- **Firebase Auth (Google sign-in)** wajib — `App.jsx` menampilkan LoginScreen sampai user login.
+- **Firestore/Storage Security Rules**: `allow read, write: if request.auth != null` (akses dikunci
+  ke akun yang login).
+- **Firebase Web `apiKey`** di `firebaseConfig.js` adalah **key publik client Firebase** — normal
+  & by design ada di browser. Proteksi asli = Rules + Auth, bukan menyembunyikan key. Sudah
+  di-hardening: **API key restriction** di GCP (Application restrictions → Websites:
+  `dhanyindraswara.github.io/*`, `localhost/*`). Alert GitHub secret-scanning boleh di-close "Won't fix".
+- **Jangan hardcode API key sensitif** (Gemini) ke repo — selalu via Firebase secret.
 
 ---
 
-## 10. Roadmap
+## 12. Biaya Firebase (ringkas)
+
+Plan **Blaze (pay-as-you-go)** dengan target **$0**: Blaze punya kuota gratis ("Always Free").
+Selama di bawah kuota, tagihan tetap $0.
+
+- **Firestore/hari:** 50.000 reads · 20.000 writes · 20.000 deletes · 1 GiB simpan.
+- **Storage:** 5 GB simpan · 1 GB/hari download.
+- **Cloud Functions:** 2 juta invocations/bulan (kuota gratis) — pemakaian AI STONES jauh di bawah.
+- **Gemini free tier:** ~10 req/min, ~250 req/hari.
+
+Untuk tool internal (puluhan user, ratusan dokumen) praktis **$0/bulan**. Pasang **budget alert**
+di Google Cloud Billing sebagai jaring pengaman. Detail angka: https://firebase.google.com/pricing.
+
+---
+
+## 13. Roadmap
 
 - [x] Studio SIPOC → Process Map (template ITM) + RASCI, export PNG/JSON/CSV/XLSX
 - [x] Multi-dokumen + Repository + Global Search
 - [x] Document control Fase 1: versi + audit + approval workflow + komentar
 - [x] Backend Cloud Firestore (realtime, offline cache)
-- [ ] **Firebase Auth + Security Rules** (kunci akses)
-- [ ] **Cloud Storage**: upload PDF/PNG (file di Storage, URL di Firestore, subcollection `files/`)
-- [ ] Pindah `comments`/`versions`/`audit` ke **subcollection** (skalabilitas)
-- [ ] SOP Builder, Forms Library, Dashboard reporting lanjutan
+- [x] **Firebase Auth + Security Rules** (akses dikunci)
+- [x] **Cloud Storage**: upload PDF/PNG (subcollection `files/`)
+- [x] **Ask AI** (Cloud Function proxy → Gemini)
+- [x] **Document Import** (Fase A): PDF → SOP terstruktur (`extractDoc`)
+- [x] **Auto Flow Process**: generator flowchart swimlane SOP
+- [x] **AI Knowledge Base**: dokumen referensi sebagai sumber pengetahuan AI
+- [ ] **Fase B**: batch upload banyak PDF (antrian + status per dokumen)
+- [ ] **Fase C**: tombol "Generate BP from SOP" (naikkan level SOP → draft SIPOC/BP)
+- [ ] Pindah `comments`/`versions`/`audit` ke subcollection (skalabilitas)
+- [ ] RBAC / role admin, Dashboard reporting lanjutan
 ```

@@ -16,7 +16,7 @@ const fmt = (ts) => {
 }
 
 export default function Repository({ openDoc, notify, rev }) {
-  const docs = useMemo(() => listDocs(), [rev])
+  const docs = useMemo(() => listDocs().filter((d) => d.docType !== 'KNOWLEDGE'), [rev])
 
   const onNew = () => {
     const d = createDoc(blankProject())

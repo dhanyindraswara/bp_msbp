@@ -16,15 +16,38 @@ dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio". Owner: dhanyindraswara.
 - **Deploy function:** dari terminal PC (`firebase deploy --only functions`). User pakai
   PowerShell — ingat: **nggak ada `&&`** (satu command per baris), jangan run dari `C:\WINDOWS\system32`.
 
-## Menu (STONES shell — src/App.jsx, MENUS array)
+## Menu (STONES shell — src/App.jsx, `NAV` array; nav dikelompokkan)
+Grup sidebar: **Dashboard** (atas, standalone) · grup **Business Process** (Document
+Development, Document Import) · grup **Flow Process** (Auto Flow Process) · lalu standalone
+(Document Action Request, Repository, Global Search, Ask AI, AI Knowledge Base).
 1. **Document Action Request** (`request`) — daftar/permintaan + add new BP.
 2. **Document Development** (`develop`) — studio utama: SIPOC editor → auto business-process
    map (ProcessMap.jsx) + RASCI, ITM title block (logo, Prepared/Reviewed/Approved, BP No,
    revision), export PNG persis web.
-3. **Repository** (`repository`) — semua BP tersimpan (by id/name/version).
-4. **Global Search** (`search`).
-5. **Ask AI** (`ai`) — chat tanya/analisa BP (lihat bawah).
-6. **Dashboard** (`dashboard`).
+3. **Document Import** (`import`) — impor PDF → SOP terstruktur (lihat Fase A).
+4. **Auto Flow Process** (`flow`) — generator flowchart swimlane SOP (lihat bawah).
+5. **Repository** (`repository`) — semua BP tersimpan (by id/name/version).
+6. **Global Search** (`search`).
+7. **Ask AI** (`ai`) — chat tanya/analisa BP (lihat bawah).
+8. **AI Knowledge Base** (`knowledge`) — upload dokumen referensi (lihat bawah).
+9. **Dashboard** (`dashboard`).
+
+## Auto Flow Process (`flow`) — menu generator flowchart SOP
+- `src/menus/AutoFlow.jsx` (form) + `src/components/FlowChart.jsx` (render) + `src/lib/flow.js`
+  (model + layout engine murni: node + konektor ortogonal ber-slot). Disimpan sebagai doc
+  `docType: 'FLOW'` (payload `flow`), `project`-nya tetap `blankProject()` valid. `openDoc` di
+  App merutekan doc FLOW ke menu ini. Kotak bisa di-drag (`step.pos`) & double-click rename;
+  kepala dokumen bisa di-hide via toggle.
+
+## AI Knowledge Base (`knowledge`) — source of knowledge buat Ask AI
+- `src/menus/KnowledgeBase.jsx` + `src/lib/knowledge.js`. Upload PDF (reuse fungsi `extractDoc`
+  yang sudah deploy → `draftToKnowledgeText`) atau paste teks. Disimpan sebagai doc
+  `docType: 'KNOWLEDGE'` di collection `bp_documents` (payload `knowledge:{title,content,kind,enabled}`)
+  → **tanpa collection/security-rule baru**. Tiap entri punya toggle aktif/nonaktif.
+- `ai.js buildContext()` skip doc KNOWLEDGE di loop BP, lalu **append** bagian
+  "REFERENCE DOCUMENTS" dari `buildKnowledgeContext()` (hanya entri enabled). Fungsi `askAI`
+  lama langsung pakai — **nggak perlu deploy function**. Doc KNOWLEDGE difilter keluar dari
+  Repository/Dashboard/Global Search.
 
 ## Fase 1 (sudah jadi)
 Version history + audit trail, approval workflow (Draft→In Review→Approved→Published),

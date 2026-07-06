@@ -3,12 +3,14 @@
 import { functions, firebaseEnabled } from './firebase.js'
 import { httpsCallable } from 'firebase/functions'
 import { listDocs } from './store.js'
+import { buildKnowledgeContext } from './knowledge.js'
 
 export const aiEnabled = firebaseEnabled && !!functions
 
-// Summarize every document into text the model can reason over.
+// Summarize every document into text the model can reason over. Reference
+// documents (docType KNOWLEDGE) are handled separately below.
 export function buildContext() {
-  const docs = listDocs()
+  const docs = listDocs().filter((d) => d.docType !== 'KNOWLEDGE')
   const blocks = docs.map((d) => {
     const p = d.project || {}
     const lines = [`### ${d.name} [${d.id}] — status: ${d.status}, v${d.version}`]
@@ -44,8 +46,13 @@ export function buildContext() {
     return lines.join('\n')
   })
   let text = blocks.join('\n\n')
-  if (text.length > 70000) text = text.slice(0, 70000) + '\n...(truncated)'
-  return text || '(no documents yet)'
+  if (text.length > 52000) text = text.slice(0, 52000) + '\n...(truncated)'
+  const bp = text || '(no documents yet)'
+
+  // Append the uploaded reference documents (knowledge base) as a clearly
+  // labelled section so the model treats it as authoritative source material.
+  const kb = buildKnowledgeContext()
+  return kb ? bp + '\n\n=== REFERENCE DOCUMENTS (uploaded knowledge base) ===\n' + kb : bp
 }
 
 export async function askAI(question) {

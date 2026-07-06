@@ -182,10 +182,17 @@ export function getDoc(id) {
 }
 
 // ---- writes ----
-export function saveDoc({ id, project }) {
+export function saveDoc({ id, project, extra }) {
   const prev = state.docs[id]
   if (!prev) return null
-  state.docs[id] = { ...normalize(prev), project, name: nameOf(project), version: versionOf(project), updatedAt: Date.now() }
+  state.docs[id] = {
+    ...normalize(prev),
+    project,
+    name: nameOf(project),
+    version: versionOf(project),
+    updatedAt: Date.now(),
+    ...(extra || {}), // e.g. { flow: {...} } from Auto Flow Process
+  }
   persistDoc(id)
   emit()
   return state.docs[id]

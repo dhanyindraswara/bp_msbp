@@ -340,7 +340,10 @@ function FlowInner({ project, setProject, derived, notify }) {
         const rel = r.rel
         const sh = r.sSide + '-s-' + (slotOf[idx + '|s'] ?? Math.floor(S / 2))
         const th = r.tSide + '-t-' + (slotOf[idx + '|t'] ?? Math.floor(S / 2))
-        const color = rel.kind === 'in' ? C.inC : rel.kind === 'out' ? C.outC : C.hoC
+        // Handoffs between main processes (output of one = input of the next) are
+        // drawn SOLID BLACK; connectors to/from external actors stay dashed & colored.
+        const isHandoff = rel.kind === 'handoff'
+        const color = isHandoff ? '#1f2937' : rel.kind === 'in' ? C.inC : C.outC
         const label = labelMode === 'number' ? (rel.nums.length ? rel.nums.join(',') : '') : rel.texts.join(', ')
         return {
           id: rel.id,
@@ -355,8 +358,8 @@ function FlowInner({ project, setProject, derived, notify }) {
           labelBgBorderRadius: 3,
           labelBgStyle: { fill: '#ffffff', fillOpacity: 0.92 },
           labelStyle: { fontSize: 11, fontWeight: 700, fill: '#1f2937' },
-          style: { stroke: color, strokeWidth: 1.7, strokeDasharray: rel.kind === 'handoff' ? '7 4' : '3 3' },
-          markerEnd: { type: MarkerType.ArrowClosed, color, width: 15, height: 15 },
+          style: { stroke: color, strokeWidth: isHandoff ? 2 : 1.7, ...(isHandoff ? {} : { strokeDasharray: '3 3' }) },
+          markerEnd: { type: MarkerType.ArrowClosed, color, width: isHandoff ? 16 : 15, height: isHandoff ? 16 : 15 },
         }
       })
       .filter(Boolean)

@@ -50,7 +50,9 @@ Membuat Business Process dari **satu tabel SIPOC**. Ada 3 tampilan (tab di atas)
 Bisa juga lampirkan file (PDF/PNG) dan share **deep-link** (`?doc=BP-xxxx`).
 
 ### 📥 Document Import — PDF jadi data terstruktur
-Ubah PDF SOP/BP/policy jadi dokumen terstruktur:
+Ubah PDF SOP/BP/policy jadi dokumen terstruktur. (Butuh **OpenRouter API key** — sama seperti
+Ask AI, isi di kotak di layar ini; ada juga **pemilih Model** di kanan atas, default model gratis
+yang bisa baca scan.)
 1. Klik/drag **PDF** (maks ±7MB; hasil scan juga bisa).
 2. AI (Gemini) membaca & mengekstrak isinya (biasanya 20–60 detik).
 3. Muncul layar **review side-by-side** (PDF kiri, form kanan): metadata, tujuan/scope, aktor,
@@ -92,7 +94,14 @@ untuk membuka dokumennya.
 ### ✦ Ask AI
 Chat untuk **tanya, ringkas, dan analisa** Business Process kamu (bottleneck, gap, ownership,
 PPI lemah, rekomendasi perbaikan). AI membaca **semua BP tersimpan** + **referensi aktif** di
-AI Knowledge Base. Header menampilkan berapa referensi yang sedang dipakai.
+AI Knowledge Base.
+
+**Setup (sekali):**
+- **Masukkan OpenRouter API key** di kotak yang muncul di atas chat → **Simpan**. Key disimpan
+  **cuma di browser ini** (tidak dikirim ke mana pun selain OpenRouter). Dapatkan key gratis di
+  https://openrouter.ai/keys. Saran: set limit kredit di dashboard OpenRouter.
+- **Pilih Model** di kanan atas. Ada opsi **gratis** (`:free`) — **kalau limit/model habis,
+  tinggal ganti model** dari dropdown ini.
 
 Tips: makin lengkap SIPOC/PPI/SOP di dokumen, makin dalam analisanya. Jawaban mengikuti bahasa
 pertanyaan (Indonesia/Inggris).

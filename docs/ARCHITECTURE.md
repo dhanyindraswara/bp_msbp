@@ -46,14 +46,17 @@ flowchart TB
   FB -->|"Google sign-in"| AUTH[("🔐 Firebase Auth")]
   Store -.->|"fallback jika apiKey kosong"| LS[("localStorage")]
 
-  Import -->|"httpsCallable extractDoc"| CF
-  AI -->|"httpsCallable askAI"| CF
-  KB -.->|"reuse extractDoc untuk PDF"| CF
-  CF["⚙️ Cloud Functions (v2, us-central1)<br/>askAI · extractDoc"] -->|"REST + secret GEMINI_API_KEY"| GEM[("🤖 Google Gemini API<br/>gemini-2.5-flash")]
+  AI -->|"fetch (BYO key)"| OR
+  Import -->|"fetch + file-parser (BYO key)"| OR
+  KB -.->|"extractFromPdf untuk PDF"| OR
+  OR["🤖 OpenRouter API<br/>chat/completions (client-side)"]
 
   Dev["Vite build → dist/"] --> Pages["GitHub Pages (branch gh-pages)"]
   Pages --> UI
 ```
+
+> **Catatan:** AI kini dipanggil **langsung dari browser ke OpenRouter** dengan API key milik user
+> (disimpan hanya di browser). `functions/` (Gemini) masih ada tapi **tidak dipakai** — lihat §7/§9.
 
 Keamanan diatur oleh **Firebase Auth** (login wajib) + **Firestore/Storage Security Rules**
 (`request.auth != null`), bukan oleh server. Hosting hanya menyajikan file statis.
@@ -73,7 +76,7 @@ Keamanan diatur oleh **Firebase Auth** (login wajib) + **Firestore/Storage Secur
 | Auth | **Firebase Auth** (Google sign-in) |
 | Database | **Cloud Firestore** (`firebase` v12) — realtime, offline IndexedDB cache |
 | File storage | **Cloud Storage** (PDF/PNG) |
-| AI | **Cloud Functions v2** (proxy) → **Google Gemini** (`gemini-2.5-flash`) |
+| AI | **OpenRouter** (OpenAI-compatible), dipanggil client-side, BYO API key di browser |
 | Hosting web | **GitHub Pages** (branch `gh-pages`) |
 | Fallback | `localStorage` (kalau `apiKey` kosong / mode lokal) |
 
@@ -227,30 +230,34 @@ bp_documents/{id}/files/{fileId} = { name, kind, url, path, size, uploadedBy, cr
 
 ---
 
-## 7. AI: Ask AI + Knowledge Base
+## 7. AI: Ask AI + Document Import + Knowledge Base
 
-**Alur:** web app → **Cloud Function `askAI`** (us-central1, auth-protected) → **Google Gemini**.
+**Provider = OpenRouter, dipanggil LANGSUNG dari browser (client-side).** Tidak ada Cloud
+Function di jalur AI. Alasan: limit Gemini habis + user tidak bisa deploy function (laptop
+kantor, tanpa terminal). `functions/index.js` (askAI/extractDoc lama, Gemini) **sudah tidak
+dipakai** — dibiarkan untuk referensi.
 
-- Client `ai.js`:
-  - `buildContext()` merangkum **semua dokumen BP** (SIPOC, PPI, payload SOP) jadi teks.
-    Dokumen `docType: KNOWLEDGE` **di-skip** di loop BP.
-  - Lalu **menambahkan** bagian berlabel `=== REFERENCE DOCUMENTS (uploaded knowledge base) ===`
-    dari `buildKnowledgeContext()` (hanya referensi yang `enabled`).
-  - `askAI(question)` memanggil `httpsCallable('askAI', { question, context })`.
-- Server `functions/index.js`:
-  - `askAI` menambahkan secret `GEMINI_API_KEY` dan sistem prompt "senior business-process
-    analyst/consultant" (`temperature: 0.4`), lalu memanggil Gemini `generateContent`.
-  - Output dibersihkan dari Markdown (`cleanText`) supaya bubble chat plain text rapi.
+- `src/lib/openrouter.js` — `getApiKey`/`setApiKey`/`hasApiKey` (localStorage
+  `stones-openrouter-key`) + `orChat(body)` → `fetch('openrouter.ai/api/v1/chat/completions')`
+  (OpenAI-compatible; header `HTTP-Referer` + `X-Title`). **API key = BYO, disimpan hanya di
+  browser user** — tidak di repo, tidak di bundle. Komponen `ApiKeyField.jsx` untuk input/ganti.
+- **Ask AI** (`ai.js`): `askAI(question, model)` → `orChat` dengan `SYSTEM_PROMPT` (senior
+  business-process analyst, `temperature 0.4`) + `buildContext()`. `buildContext()` merangkum
+  semua BP (SIPOC/PPI/payload SOP; `docType: KNOWLEDGE` di-skip) lalu menambahkan bagian
+  `=== REFERENCE DOCUMENTS ... ===` dari `buildKnowledgeContext()` (hanya referensi `enabled`).
+  `cleanText()` strip Markdown → bubble plain text.
+- **Document Import** (`extract.js`): `extractFromPdf(file, model)` → `orChat` dengan content part
+  `type:'file'` (PDF base64) + `plugins:[{id:'file-parser', pdf:{engine:'native'}}]` → model
+  vision baca PDF/scan, balikin JSON (skema SOP), lalu `normalizeDraft`.
+- **Pemilih model di layar** (persist localStorage): `AI_MODELS` (chat) & `EXTRACT_MODELS`
+  (import, model vision) di `ai.js`. Default = model `:free`. Ganti model kalau limit habis.
 
 **AI Knowledge Base (`knowledge.js`)** — sumber pengetahuan tambahan tanpa infra baru:
 - Referensi disimpan sebagai dokumen `docType: KNOWLEDGE` di **collection `bp_documents` yang
-  sudah ada** → ikut Security Rules, realtime cache, dan persistence yang sudah jalan.
-  **Tidak perlu collection baru, Security Rule baru, atau deploy function.**
-- **Upload PDF** → reuse fungsi `extractDoc` yang sudah ter-deploy → hasilnya diformat jadi teks
-  oleh `draftToKnowledgeText()`. **Paste teks** → langsung disimpan.
-- `addKnowledge()` mengembalikan `openId` yang tadinya terbuka supaya menambah referensi tidak
-  membajak dokumen yang sedang dibuka di Document Development.
-- Tiap referensi punya toggle `enabled` — user kontrol penuh apa yang masuk ke konteks AI.
+  sudah ada** → ikut Security Rules, realtime cache, persistence. **Tanpa collection/Rule baru.**
+- **Upload PDF** → `extractFromPdf` (OpenRouter) → diformat jadi teks oleh `draftToKnowledgeText()`.
+  **Paste teks** → langsung disimpan. `addKnowledge()` mengembalikan `openId` yang tadinya terbuka
+  supaya tidak membajak dokumen aktif. Tiap referensi punya toggle `enabled`.
 
 ---
 
@@ -273,21 +280,12 @@ Generator **cross-functional swimlane flowchart** dari input sederhana (lane + l
 
 ---
 
-## 9. Cloud Functions
+## 9. Cloud Functions (DEPRECATED — tidak dipakai app)
 
-Kode: `functions/index.js` (Firebase Functions **v2**, region `us-central1`).
-
-| Function | Input | Proses | Output |
-|---|---|---|---|
-| `askAI` | `{ question, context }` | + secret `GEMINI_API_KEY`, sistem prompt analyst, Gemini `generateContent`, `cleanText` | `{ answer }` |
-| `extractDoc` | `{ pdfBase64, fileName }` | Gemini baca PDF native (termasuk scan), `responseMimeType: JSON`, timeout 300s | `{ doc }` (skema SOP) |
-
-- **Provider = Google Gemini** (`gemini-2.5-flash`) — free tier beneran (rate limit ~10 req/min,
-  ~250 req/hari). Data free tier bisa dipakai Google untuk training → untuk dokumen sensitif
-  pertimbangkan paid tier.
-- **API key** = Firebase secret `GEMINI_API_KEY` (server-side, TIDAK di repo). Set ulang:
-  `firebase functions:secrets:set GEMINI_API_KEY` lalu `firebase deploy --only functions`.
-  Key gratis dari https://aistudio.google.com/apikey.
+`functions/index.js` (Firebase Functions v2) berisi `askAI` + `extractDoc` versi lama yang
+memanggil **Google Gemini** server-side. **Sejak AI dipindah client-side ke OpenRouter (lihat §7),
+kedua function ini TIDAK lagi dipanggil app.** Dibiarkan untuk referensi / opsi mode server-side.
+Boleh dihapus. Tidak ada deploy function yang dibutuhkan untuk menjalankan app.
 
 ---
 
@@ -302,12 +300,9 @@ npm run deploy    # gh-pages -d dist  → publish ke branch gh-pages
 ```
 GitHub Pages menyajikan `dist/` di `/bp_msbp/` (Vite `base: '/bp_msbp/'`).
 
-**Cloud Functions** (harus dari terminal PC user — bukan container):
-```powershell
-firebase deploy --only functions
-```
-> User pakai **PowerShell** — tidak ada `&&` (satu command per baris), jangan jalankan dari
-> `C:\WINDOWS\system32`. Perubahan hanya di frontend **tidak** butuh deploy function.
+**Cloud Functions:** tidak dibutuhkan (AI sudah client-side via OpenRouter). Kalau nanti mau
+mengaktifkan mode server-side lagi, deploy `functions/` dengan `firebase deploy --only functions`
+dari terminal PC.
 
 ---
 

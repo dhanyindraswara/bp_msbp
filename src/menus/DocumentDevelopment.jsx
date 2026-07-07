@@ -24,6 +24,27 @@ import { subscribeFiles, uploadFile, deleteFile, filesEnabled } from '../lib/fil
 import SipocEditor from '../components/SipocEditor.jsx'
 import ProcessMap from '../components/ProcessMap.jsx'
 import Rasci from '../components/Rasci.jsx'
+import { sopToSipoc, sopToPpi, hasSipocData } from '../lib/sopMap.js'
+
+// Load a document's project (pure). If it's an imported SOP whose SIPOC is still
+// empty (data lives only in the `sop` payload), derive the SIPOC/PPI so imported
+// documents show their content instead of a blank table. `backfilled` tells the
+// caller to persist the derived data (done in an effect, never during render).
+function loadProject(id) {
+  if (!id) return { project: null, backfilled: false }
+  const d = getDoc(id)
+  if (!d) return { project: null, backfilled: false }
+  let proj = d.project || null
+  let backfilled = false
+  if (proj && d.sop && !d.sopBackfilled && !hasSipocData(proj)) {
+    const sipoc = sopToSipoc(d.sop)
+    if (sipoc.length) {
+      proj = { ...proj, sipoc, ppi: proj.ppi && proj.ppi.length ? proj.ppi : sopToPpi(d.sop) }
+      backfilled = true
+    }
+  }
+  return { project: proj, backfilled }
+}
 
 const fmt = (ts) => {
   if (!ts) return ''
@@ -46,7 +67,7 @@ function StatusBadge({ status }) {
 
 export default function DocumentDevelopment({ openId, setOpenId, notify, goRepository }) {
   const [view, setView] = useState('sipoc')
-  const [project, setProject] = useState(() => (openId ? getDoc(openId)?.project || null : null))
+  const [project, setProject] = useState(() => loadProject(openId).project)
   const [meta, setMeta] = useState(() => loadMeta(openId))
   const [drawer, setDrawer] = useState(null) // 'comments' | 'history' | 'files' | null
   const [commentText, setCommentText] = useState('')
@@ -64,7 +85,10 @@ export default function DocumentDevelopment({ openId, setOpenId, notify, goRepos
   const refreshMeta = () => setMeta(loadMeta(openId))
 
   useEffect(() => {
-    setProject(openId ? getDoc(openId)?.project || null : null)
+    const { project: proj, backfilled } = loadProject(openId)
+    setProject(proj)
+    // Persist the SIPOC derived from an imported SOP (once), outside of render.
+    if (backfilled && openId) saveDoc({ id: openId, project: proj, extra: { sopBackfilled: true } })
     setMeta(loadMeta(openId))
     setView('sipoc')
     setDrawer(null)

@@ -168,6 +168,38 @@ export function layoutFlow(flow) {
     return { ...r, sSide, tSide }
   })
 
+  // 2.5) Decision (diamond) nodes: spread their connectors across the FOUR
+  //      vertices — incoming from the top, branches out to left/right/bottom —
+  //      so an incoming and an outgoing line never meet at the same point. Each
+  //      side then holds one edge → it attaches exactly at a diamond vertex.
+  nodes.forEach((node) => {
+    if (node.type !== 'decision') return
+    const touch = []
+    routed.forEach((r, idx) => {
+      if (!r) return
+      if (r.from.id === node.id) touch.push({ idx, end: 's', other: r.to, out: true })
+      if (r.to.id === node.id) touch.push({ idx, end: 't', other: r.from, out: false })
+    })
+    if (touch.length < 2) return
+    const desired = (o) => {
+      const dx = o.cx - node.cx
+      const dy = o.cy - node.cy
+      if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left'
+      return dy >= 0 ? 'bottom' : 'top'
+    }
+    const ALL = ['top', 'right', 'bottom', 'left']
+    const used = new Set()
+    touch.sort((a, b) => (a.out ? 1 : 0) - (b.out ? 1 : 0)) // incoming claims its side first
+    touch.forEach((t) => {
+      // incoming prefers the TOP vertex (SOP decisions receive from above)
+      let side = !t.out && t.other.cy <= node.cy ? 'top' : desired(t.other)
+      if (used.has(side)) side = ALL.find((s) => !used.has(s)) || side
+      used.add(side)
+      if (t.end === 's') routed[t.idx].sSide = side
+      else routed[t.idx].tSide = side
+    })
+  })
+
   // 3) Every endpoint that lands on the same (box, side) gets its own slot, so
   //    an incoming and an outgoing line never stack on the same point. Order
   //    the slots by the opposite endpoint so the fan-out doesn't cross.

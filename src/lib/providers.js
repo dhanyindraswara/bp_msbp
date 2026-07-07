@@ -60,6 +60,17 @@ export const PROVIDERS = [
     extractModels: [],
   },
   {
+    id: 'jatevo',
+    label: 'Jatevo',
+    base: 'https://api.jatevo.ai/v1',
+    keyHint: 'sk-jvo-…',
+    keyUrl: '',
+    hasPricing: false,
+    supportsPdf: false,
+    chatModels: ['cerebras/gemma-4-31b'],
+    extractModels: [],
+  },
+  {
     id: 'custom',
     label: 'Custom (OpenAI-compatible)',
     base: '', // user supplies the base URL

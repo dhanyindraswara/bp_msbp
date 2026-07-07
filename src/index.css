@@ -249,7 +249,10 @@ table.stones-table td:last-child { overflow: visible; }
 .keybar-ok { font-size: 12.5px; font-weight: 600; color: #256d33; }
 .keybar-edit { flex-direction: column; align-items: stretch; gap: 7px; background: #fff; border-color: #cddaee; }
 .keybar-hd { font-size: 12.5px; font-weight: 800; color: #0f2a43; }
-.keybar-row { display: flex; gap: 8px; align-items: center; }
+.keybar-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.keybar-lb { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.keybar-prov { border: 1px solid #d4d9e0; border-radius: 8px; padding: 7px 9px; font-size: 13px; font-weight: 600; background: #fff; color: var(--text); cursor: pointer; }
+.keybar-prov:focus { outline: none; border-color: var(--accent, #2f6fb0); }
 .keybar-row input { flex: 1; border: 1px solid #d4d9e0; border-radius: 8px; padding: 8px 10px; font-size: 13px; background: #fff; }
 .keybar-row input:focus { outline: none; border-color: var(--accent, #2f6fb0); }
 .keybar-note { font-size: 11.5px; color: #8a94a0; }

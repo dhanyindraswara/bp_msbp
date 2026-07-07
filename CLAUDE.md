@@ -54,14 +54,15 @@ Version history + audit trail, approval workflow (Draft→In Review→Approved�
 comments. Deep-link share via `?doc=BP-xxxx`.
 
 ## Ask AI + Document Import AI — SETUP FINAL (penting, ini yang paling banyak dioprek)
-- **Provider = OpenRouter, dipanggil LANGSUNG dari browser (client-side)** — BUKAN lewat Cloud
-  Function lagi, BUKAN Gemini/Grok lagi. Alasan pindah: limit Gemini free habis, dan user cuma
-  bisa akses dari laptop kantor (nggak bisa buka terminal buat deploy function).
-- **API key OpenRouter di-input user di dalam app**, disimpan **cuma di browser (localStorage
-  `stones-openrouter-key`)** — TIDAK di repo, TIDAK di bundle, TIDAK di-handle Claude. Tiap orang
-  pakai key sendiri. `src/lib/openrouter.js` = key mgmt + `orChat()` (fetch ke
-  `openrouter.ai/api/v1/chat/completions`, OpenAI-compatible, header HTTP-Referer + X-Title).
-  Komponen `src/components/ApiKeyField.jsx` (field password + tombol Simpan/Ganti).
+- **Multi-provider, dipanggil LANGSUNG dari browser (client-side)** — BUKAN lewat Cloud Function.
+  `src/lib/providers.js` = registry provider (OpenRouter, Google Gemini, Groq, OpenAI, Custom
+  OpenAI-compatible) + `chat(body)` generik (semua endpoint OpenAI-compatible `/chat/completions`)
+  + key mgmt + `fetchModels()` per provider. Tiap provider simpan key sendiri (localStorage
+  `stones-aikey-<id>`), provider aktif di `stones-ai-provider`, model per-provider di
+  `stones-aimodel-<kind>-<id>`. Custom base URL di `stones-ai-custombase`.
+- **API key di-input user di dalam app**, disimpan **cuma di browser** — TIDAK di repo/bundle,
+  TIDAK di-handle Claude. Komponen `src/components/ApiKeyField.jsx` = dropdown provider + field
+  key (password) + custom base URL. User bisa isi banyak provider & ganti-ganti.
 - **Pemilih model di layar** (`src/components/ModelPicker.jsx`): **fetch daftar model LIVE** dari
   `openrouter.ai/api/v1/models` (`openrouter.fetchModels`, cache localStorage), ada search +
   toggle **"Gratis saja"** (`isFreeModel`), extract difilter ke model vision (`supportsFiles`).
@@ -70,9 +71,10 @@ comments. Deep-link share via `?doc=BP-xxxx`.
 - **Ask AI** (`ai.js`): `askAI(question, model)` → `orChat` dengan SYSTEM_PROMPT "senior
   business-process analyst" (`temperature 0.4`) + `buildContext()` (semua BP + REFERENCE dari
   knowledge base). `cleanText()` strip markdown biar bubble plain text.
-- **Document Import** (`extract.js`): `extractFromPdf(file, model)` → `orChat` dengan
-  content part `type:'file'` (PDF base64) + `plugins:[{id:'file-parser', pdf:{engine:'native'}}]`
-  → model vision baca PDF (scan pun bisa), balikin JSON (skema SOP), `normalizeDraft`.
+- **Document Import** (`extract.js`): `extractFromPdf(file, model)` — provider-aware. OpenRouter →
+  `chat` + `plugins:[{file-parser, pdf:{engine:'pdf-text'}}]`; Google Gemini → endpoint native
+  `generateContent` (inline_data PDF, baca scan). Provider tanpa dukungan PDF (Groq/OpenAI) →
+  error jelas suruh pilih OpenRouter/Gemini. Balikin JSON (skema SOP) → `normalizeDraft`.
 - **Cloud Functions (`functions/index.js`) sekarang TIDAK dipakai app** (askAI/extractDoc lama).
   Dibiarkan untuk referensi; boleh dihapus nanti. Nggak perlu deploy function sama sekali.
 - OpenRouter free tier: ada rate limit per model; kalau kena, ganti model atau top-up saldo.

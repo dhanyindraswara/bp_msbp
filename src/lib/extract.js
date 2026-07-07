@@ -1,8 +1,7 @@
-// Document Import client — reads an uploaded PDF via OpenRouter (called directly
-// from the browser with the user's API key + the file-parser plugin) and returns
-// the structured draft for review. No Cloud Function involved.
-import { orChat, hasApiKey } from './openrouter.js'
-import { getExtractModel } from './ai.js'
+// Document Import client — reads an uploaded PDF into a structured draft, using
+// the active AI provider (OpenRouter's file-parser, or Google Gemini's native
+// PDF support). Called directly from the browser with the user's key.
+import { chat, hasApiKey, getExtractModel, getActiveProvider, getApiKey } from './providers.js'
 
 // Extraction is always available client-side; the actual call needs an API key.
 export const extractEnabled = true
@@ -84,35 +83,62 @@ function normalizeDraft(d) {
   }
 }
 
-export async function extractFromPdf(file, model) {
-  if (!hasApiKey()) throw new Error('Belum ada OpenRouter API key. Isi dulu di "Set API key".')
-  if (!file || !/pdf/i.test(file.type || '')) throw new Error('Pilih file PDF.')
-  if (file.size > MAX_BYTES) throw new Error('PDF terlalu besar (maks ±7MB). Kompres dulu atau pecah per bagian.')
-  const pdfBase64 = await fileToBase64(file)
-  const content = await orChat({
+function parseJsonLoose(content) {
+  try {
+    return JSON.parse(content)
+  } catch (e) {
+    const s = content.indexOf('{')
+    const t = content.lastIndexOf('}')
+    if (s >= 0 && t > s) return JSON.parse(content.slice(s, t + 1))
+    throw new Error('Ekstraksi tidak mengembalikan JSON yang valid. Coba ganti Model.')
+  }
+}
+
+// Gemini reads PDFs natively (incl. scans) via its own generateContent endpoint.
+async function geminiExtract(pdfBase64, fileName, model) {
+  const key = getApiKey('gemini')
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + (model || 'gemini-2.0-flash') + ':generateContent'
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'application/pdf', data: pdfBase64 } }, { text: EXTRACT_PROMPT }] }],
+      generationConfig: { temperature: 0.1, responseMimeType: 'application/json' },
+    }),
+  })
+  if (!resp.ok) throw new Error('Gemini ' + resp.status + ': ' + (await resp.text().catch(() => '')).slice(0, 300))
+  const data = await resp.json()
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+}
+
+// OpenRouter reads PDFs via the file-parser plugin (pdf-text engine, free).
+async function openrouterExtract(pdfBase64, fileName, model) {
+  return chat({
     model: model || getExtractModel(),
     messages: [
       {
         role: 'user',
         content: [
           { type: 'text', text: EXTRACT_PROMPT },
-          { type: 'file', file: { filename: file.name || 'document.pdf', file_data: 'data:application/pdf;base64,' + pdfBase64 } },
+          { type: 'file', file: { filename: fileName || 'document.pdf', file_data: 'data:application/pdf;base64,' + pdfBase64 } },
         ],
       },
     ],
-    // 'pdf-text' = OpenRouter extracts the PDF text first, then sends it as text
-    // to the model — free and works with any model (no native file support needed).
     plugins: [{ id: 'file-parser', pdf: { engine: 'pdf-text' } }],
     temperature: 0.1,
   })
-  let parsed
-  try {
-    parsed = JSON.parse(content)
-  } catch (e) {
-    const sIdx = content.indexOf('{')
-    const eIdx = content.lastIndexOf('}')
-    if (sIdx >= 0 && eIdx > sIdx) parsed = JSON.parse(content.slice(sIdx, eIdx + 1))
-    else throw new Error('Ekstraksi tidak mengembalikan JSON yang valid. Coba ganti Model.')
+}
+
+export async function extractFromPdf(file, model) {
+  const prov = getActiveProvider()
+  if (!prov.supportsPdf) {
+    throw new Error('Import PDF belum didukung untuk provider "' + prov.label + '". Pilih OpenRouter atau Google Gemini di Set API key.')
   }
-  return normalizeDraft(parsed)
+  if (!hasApiKey()) throw new Error('Belum ada API key untuk ' + prov.label + '. Isi dulu di "Set API key".')
+  if (!file || !/pdf/i.test(file.type || '')) throw new Error('Pilih file PDF.')
+  if (file.size > MAX_BYTES) throw new Error('PDF terlalu besar (maks ±7MB). Kompres dulu atau pecah per bagian.')
+  const pdfBase64 = await fileToBase64(file)
+  const content =
+    prov.id === 'gemini' ? await geminiExtract(pdfBase64, file.name, model) : await openrouterExtract(pdfBase64, file.name, model)
+  return normalizeDraft(parseJsonLoose(content))
 }

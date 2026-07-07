@@ -2,10 +2,13 @@
 // extract it into structured data, review & correct it side-by-side with the
 // original, then save it into the repository. The AI drafts, a human approves.
 import { useState, useRef, useEffect } from 'react'
-import { extractFromPdf, extractEnabled } from '../lib/extract.js'
+import { extractFromPdf } from '../lib/extract.js'
+import { EXTRACT_MODELS, getExtractModel, setExtractModel } from '../lib/ai.js'
+import { hasApiKey } from '../lib/openrouter.js'
 import { createDoc, blankProject } from '../lib/store.js'
 import { uploadFile, filesEnabled } from '../lib/files.js'
 import { sopToSipoc, sopToPpi } from '../lib/sopMap.js'
+import ApiKeyField from '../components/ApiKeyField.jsx'
 
 const TYPES = ['SOP', 'BP', 'POLICY', 'OTHER']
 
@@ -31,6 +34,12 @@ export default function DocumentImport({ notify, goRepository }) {
   const [err, setErr] = useState('')
   const [savedId, setSavedId] = useState('')
   const [drag, setDrag] = useState(false)
+  const [model, setModelState] = useState(getExtractModel())
+  const [keyed, setKeyed] = useState(hasApiKey())
+  const changeModel = (m) => {
+    setModelState(m)
+    setExtractModel(m)
+  }
   const inputRef = useRef(null)
 
   useEffect(() => () => pdfUrl && URL.revokeObjectURL(pdfUrl), [pdfUrl])
@@ -58,7 +67,7 @@ export default function DocumentImport({ notify, goRepository }) {
     setPdfUrl(url)
     setPhase('extracting')
     try {
-      const doc = await extractFromPdf(f)
+      const doc = await extractFromPdf(f, model)
       setDraft(doc)
       setPhase('review')
     } catch (e) {
@@ -117,25 +126,26 @@ export default function DocumentImport({ notify, goRepository }) {
   }
 
   // ---- screens ----
-  if (!extractEnabled) {
-    return (
-      <div className="stones-page">
-        <div className="stones-page-hd">
-          <h1>Document Import</h1>
-          <p>Ubah PDF SOP/BP/policy jadi data terstruktur.</p>
-        </div>
-        <div className="imp-note">Document Import butuh Firebase (mode online) — fitur ini nonaktif di mode lokal.</div>
-      </div>
-    )
-  }
-
   if (phase === 'idle' || phase === 'extracting') {
     return (
       <div className="stones-page">
-        <div className="stones-page-hd">
-          <h1>Document Import</h1>
-          <p>Upload PDF (SOP, BP, policy) — AI mengekstrak isinya jadi data terstruktur, kamu review sebelum disimpan.</p>
+        <div className="stones-page-hd stones-page-hd-row">
+          <div>
+            <h1>Document Import</h1>
+            <p>Upload PDF (SOP, BP, policy) — AI mengekstrak isinya jadi data terstruktur, kamu review sebelum disimpan.</p>
+          </div>
+          <label className="ai-model" title="Model AI untuk baca PDF (ganti kalau limit habis)">
+            <span className="ai-model-lb">Model</span>
+            <select value={model} onChange={(e) => changeModel(e.target.value)}>
+              {EXTRACT_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+          </label>
         </div>
+
+        <ApiKeyField onChange={() => setKeyed(hasApiKey())} />
+
         {phase === 'extracting' ? (
           <div className="imp-drop imp-busy">
             <div className="imp-spinner" />
@@ -144,9 +154,10 @@ export default function DocumentImport({ notify, goRepository }) {
           </div>
         ) : (
           <div
-            className={'imp-drop' + (drag ? ' imp-drag' : '')}
-            onClick={() => inputRef.current && inputRef.current.click()}
+            className={'imp-drop' + (drag ? ' imp-drag' : '') + (keyed ? '' : ' imp-drop-off')}
+            onClick={() => keyed && inputRef.current && inputRef.current.click()}
             onDragOver={(e) => {
+              if (!keyed) return
               e.preventDefault()
               setDrag(true)
             }}
@@ -154,11 +165,13 @@ export default function DocumentImport({ notify, goRepository }) {
             onDrop={(e) => {
               e.preventDefault()
               setDrag(false)
-              pick(e.dataTransfer.files && e.dataTransfer.files[0])
+              if (keyed) pick(e.dataTransfer.files && e.dataTransfer.files[0])
             }}
           >
             <div className="imp-drop-ico">⇪</div>
-            <div className="imp-drop-title">Klik untuk pilih PDF, atau drag &amp; drop ke sini</div>
+            <div className="imp-drop-title">
+              {keyed ? 'Klik untuk pilih PDF, atau drag & drop ke sini' : 'Isi OpenRouter API key dulu di atas'}
+            </div>
             <div className="imp-drop-sub">Maks ±7MB per file · hasil scan juga bisa · PDF asli ikut tersimpan sebagai lampiran</div>
             <input
               ref={inputRef}

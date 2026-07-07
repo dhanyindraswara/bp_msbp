@@ -53,20 +53,28 @@ Development, Document Import) · grup **Flow Process** (Auto Flow Process) · la
 Version history + audit trail, approval workflow (Draft→In Review→Approved→Published),
 comments. Deep-link share via `?doc=BP-xxxx`.
 
-## Ask AI — SETUP FINAL (penting, ini yang paling banyak dioprek)
-- Arsitektur: web app → **Cloud Function `askAI`** (us-central1, auth-protected) → **Google Gemini API**.
-  Kode: `functions/index.js`. Client: `src/lib/ai.js` (httpsCallable `askAI`, kirim `{question, context}`).
-- **Provider = Google Gemini** (model `gemini-2.5-flash`), BUKAN Grok/xAI lagi.
-  - Alasan pindah: Grok/xAI API berbayar, team user $0 kredit. Gemini punya free tier beneran.
-- **API key** disimpan sebagai Firebase secret **`GEMINI_API_KEY`** (server-side, TIDAK di repo).
-  Set ulang: `firebase functions:secrets:set GEMINI_API_KEY` (paste di prompt ber-mask) lalu
-  `firebase deploy --only functions`. Key gratis dari https://aistudio.google.com/apikey.
-- **System prompt** sudah diperlonggar jadi "senior business-process analyst/consultant" —
-  bisa analisa (bottleneck, gap, ownership, PPI lemah) + kasih rekomendasi perbaikan, bukan
-  cuma lookup. `temperature: 0.4`. (Kalau jawaban terlalu dangkal → kualitas tergantung
-  kelengkapan SIPOC/PPI di BP-nya.)
-- Free tier Gemini: no expiry, tapi ada rate limit (~10 req/min, ~250 req/hari) dan **data free
-  tier bisa dipakai Google buat training** → kalau BP sensitif, pertimbangkan upgrade paid tier.
+## Ask AI + Document Import AI — SETUP FINAL (penting, ini yang paling banyak dioprek)
+- **Provider = OpenRouter, dipanggil LANGSUNG dari browser (client-side)** — BUKAN lewat Cloud
+  Function lagi, BUKAN Gemini/Grok lagi. Alasan pindah: limit Gemini free habis, dan user cuma
+  bisa akses dari laptop kantor (nggak bisa buka terminal buat deploy function).
+- **API key OpenRouter di-input user di dalam app**, disimpan **cuma di browser (localStorage
+  `stones-openrouter-key`)** — TIDAK di repo, TIDAK di bundle, TIDAK di-handle Claude. Tiap orang
+  pakai key sendiri. `src/lib/openrouter.js` = key mgmt + `orChat()` (fetch ke
+  `openrouter.ai/api/v1/chat/completions`, OpenAI-compatible, header HTTP-Referer + X-Title).
+  Komponen `src/components/ApiKeyField.jsx` (field password + tombol Simpan/Ganti).
+- **Pemilih model di layar** (persist di localStorage): Ask AI (`src/lib/ai.js` `AI_MODELS`) &
+  Document Import (`EXTRACT_MODELS`, model vision buat baca PDF). Default = model `:free`. Ganti
+  model dari dropdown kanan-atas kalau limit habis.
+- **Ask AI** (`ai.js`): `askAI(question, model)` → `orChat` dengan SYSTEM_PROMPT "senior
+  business-process analyst" (`temperature 0.4`) + `buildContext()` (semua BP + REFERENCE dari
+  knowledge base). `cleanText()` strip markdown biar bubble plain text.
+- **Document Import** (`extract.js`): `extractFromPdf(file, model)` → `orChat` dengan
+  content part `type:'file'` (PDF base64) + `plugins:[{id:'file-parser', pdf:{engine:'native'}}]`
+  → model vision baca PDF (scan pun bisa), balikin JSON (skema SOP), `normalizeDraft`.
+- **Cloud Functions (`functions/index.js`) sekarang TIDAK dipakai app** (askAI/extractDoc lama).
+  Dibiarkan untuk referensi; boleh dihapus nanti. Nggak perlu deploy function sama sekali.
+- OpenRouter free tier: ada rate limit per model; kalau kena, ganti model atau top-up saldo.
+  Saran: set **limit kredit** di dashboard OpenRouter buat key-nya.
 
 ## Keamanan (sudah dibereskan)
 - **Firebase Web apiKey** (`AIzaSyD_Wn...` di `src/lib/firebaseConfig.js`) ke-flag GitHub secret
@@ -74,20 +82,26 @@ comments. Deep-link share via `?doc=BP-xxxx`.
   Rules + Auth, bukan nyembunyiin key. Sudah di-hardening: **API key restriction** di GCP
   (Application restrictions → Websites: `dhanyindraswara.github.io/*`, `localhost/*`).
   Alert GitHub boleh di-close "Won't fix".
-- Jangan pernah hardcode API key sensitif (Gemini/xAI) ke repo — selalu via Firebase secret.
+- Jangan pernah hardcode API key sensitif ke repo/bundle. **OpenRouter key = BYO, disimpan di
+  browser user** (localStorage), bukan di repo. Jangan minta user paste key ke chat; suruh
+  input di field "Set API key" di app.
 
 ## Catatan kerja
-- Container Claude (web) TIDAK bisa push ke repo (git proxy 403) — perubahan kode function
-  dikasih ke user buat di-paste + deploy manual dari PC-nya. Web app deploy tetap via GitHub Pages.
+- Container Claude **bisa push ke repo & deploy web** (`npm run deploy` → gh-pages) — dipakai
+  buat semua perubahan frontend. Yang TIDAK bisa dari container: deploy Cloud Functions (butuh
+  Firebase CLI + auth). Makanya AI dipindah client-side (nggak butuh function).
 - Model layout map: max 4 kotak proses per baris (wrap ke bawah), aktor distribusi 4 sisi,
   legend font 8px + 2 kolom, "Data/Document/Information Flow" baca `derived.flows`.
 
 ## Document Import (Fase A — dibangun)
 - Menu **Document Import** (`import`): upload PDF (SOP/BP/policy, maks ±7MB) →
-  Cloud Function **`extractDoc`** (Gemini baca PDF native, responseMimeType JSON,
-  timeout 300s) → draft terstruktur → layar review side-by-side (PDF kiri, form
+  **OpenRouter client-side** (`extractFromPdf`, model vision + file-parser plugin baca PDF
+  native/scan, balikin JSON) → draft terstruktur → layar review side-by-side (PDF kiri, form
   kanan: metadata, tujuan/scope, aktor, steps, RASCI, PPI) → simpan ke store
   sebagai doc dengan `docType` + payload `sop`, PDF asli dilampirkan via Storage.
+- Saat simpan, `sopToSipoc`/`sopToPpi` (`src/lib/sopMap.js`) mengisi `project.sipoc`/`ppi` dari
+  steps hasil ekstraksi (PIC→Supplier, PIC berikutnya→Customer) supaya SIPOC editor tidak kosong.
+  Document Development juga backfill on-open (flag `sopBackfilled`) buat doc import lama.
 - `createDoc(project, extra)` menerima field ekstra; Ask AI `buildContext()` ikut
   baca payload `sop` (steps/RASCI/PPI). Repository nampilin chip tipe (SOP dsb).
 - Skema ekstraksi: type, docNo, title, revision, effectiveDate, owner,
@@ -100,6 +114,8 @@ comments. Deep-link share via `?doc=BP-xxxx`.
 - **Fase B**: batch upload (banyak PDF sekaligus, antrian + status per dokumen).
 - **Fase C**: tombol "Generate BP from SOP" — naikin level SOP → draft SIPOC/BP
   di Document Development.
-- AI answer di web: render blok "Alur:"/"Flow:" sebagai diagram visual (butuh deploy web).
+- AI answer di web: render blok "Alur:"/"Flow:" sebagai diagram visual.
 - Kandidat lama yang di-skip: **RBAC/role admin** (setup siapa yang boleh akses).
-- Privasi: untuk impor massal dokumen internal, pertimbangkan Gemini paid tier.
+- Privasi: OpenRouter free tier bisa dipakai provider buat training — untuk dokumen sangat
+  sensitif pilih model/endpoint paid yang no-logging.
+- (Opsional) hapus `functions/index.js` yang sudah tidak dipakai, atau jadikan mode server-side alternatif.

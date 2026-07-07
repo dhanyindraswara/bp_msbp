@@ -1,9 +1,11 @@
 // STONES › Ask AI — chat assistant that answers questions about your business
-// processes (powered by Google Gemini via a Cloud Function). It also reads the
-// reference documents added in the AI Knowledge Base.
+// processes (OpenRouter, called client-side with the user's own API key). It also
+// reads the reference documents added in the AI Knowledge Base.
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { askAI, aiEnabled } from '../lib/ai.js'
+import { askAI, AI_MODELS, getModel, setModel } from '../lib/ai.js'
+import { hasApiKey } from '../lib/openrouter.js'
 import { activeKnowledgeCount } from '../lib/knowledge.js'
+import ApiKeyField from '../components/ApiKeyField.jsx'
 
 const SUGGESTIONS = [
   'Flow untuk request security information technology dimana dan gimana?',
@@ -18,6 +20,12 @@ export default function AskAI({ rev }) {
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [model, setModelState] = useState(getModel())
+  const [keyed, setKeyed] = useState(hasApiKey())
+  const changeModel = (m) => {
+    setModelState(m)
+    setModel(m)
+  }
   const endRef = useRef(null)
   useEffect(() => {
     endRef.current && endRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -31,7 +39,7 @@ export default function AskAI({ rev }) {
     setMsgs((m) => [...m, { role: 'user', text: question }])
     setBusy(true)
     try {
-      const answer = await askAI(question)
+      const answer = await askAI(question, model)
       setMsgs((m) => [...m, { role: 'assistant', text: answer }])
     } catch (e) {
       setErr(e && e.message ? e.message : 'Request failed')
@@ -51,8 +59,19 @@ export default function AskAI({ rev }) {
             {kbCount ? ` Memakai ${kbCount} referensi dari Knowledge Base.` : ''}
           </p>
         </div>
-        <span className="ai-badge">Gemini</span>
+        <label className="ai-model" title="Pilih model AI (ganti kalau limit habis)">
+          <span className="ai-model-lb">Model</span>
+          <select value={model} onChange={(e) => changeModel(e.target.value)}>
+            {AI_MODELS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
+
+      <ApiKeyField onChange={() => setKeyed(hasApiKey())} />
 
       <div className="ai-chat">
         {msgs.length === 0 ? (
@@ -64,7 +83,7 @@ export default function AskAI({ rev }) {
             </div>
             <div className="ai-sugs">
               {SUGGESTIONS.map((s) => (
-                <button key={s} className="ai-sug" onClick={() => send(s)} disabled={!aiEnabled}>
+                <button key={s} className="ai-sug" onClick={() => send(s)} disabled={!keyed}>
                   {s}
                 </button>
               ))}
@@ -90,8 +109,8 @@ export default function AskAI({ rev }) {
       {err ? (
         <div className="ai-err">
           {err}
-          {/functions|not-?found|internal|unavailable/i.test(err) ? (
-            <span> · Kalau ini pertama kali, pastikan Cloud Function <b>askAI</b> sudah di-deploy &amp; secret GEMINI_API_KEY di-set.</span>
+          {/rate|limit|quota|402|429|insufficient|credit/i.test(err) ? (
+            <span> · Kuota/model habis? Ganti <b>Model</b> di kanan atas (ada opsi gratis), atau cek saldo OpenRouter kamu.</span>
           ) : null}
         </div>
       ) : null}
@@ -99,9 +118,9 @@ export default function AskAI({ rev }) {
       <div className="ai-inputbar">
         <textarea
           className="ai-input"
-          placeholder={aiEnabled ? 'Tulis pertanyaan… (Enter untuk kirim)' : 'AI butuh Firebase (mode online).'}
+          placeholder={keyed ? 'Tulis pertanyaan… (Enter untuk kirim)' : 'Isi OpenRouter API key dulu di atas.'}
           value={q}
-          disabled={!aiEnabled}
+          disabled={!keyed}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -110,7 +129,7 @@ export default function AskAI({ rev }) {
             }
           }}
         />
-        <button className="btn btn-primary" onClick={() => send()} disabled={busy || !aiEnabled || !q.trim()}>
+        <button className="btn btn-primary" onClick={() => send()} disabled={busy || !keyed || !q.trim()}>
           {busy ? '…' : 'Kirim'}
         </button>
       </div>

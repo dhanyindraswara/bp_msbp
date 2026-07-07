@@ -2,8 +2,7 @@
 // processes (OpenRouter, called client-side with the user's own API key). It also
 // reads the reference documents added in the AI Knowledge Base.
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { askAI, getModel, setModel } from '../lib/ai.js'
-import { hasApiKey } from '../lib/openrouter.js'
+import { askAI, getModel, setModel, hasApiKey, getActiveProviderId } from '../lib/ai.js'
 import { activeKnowledgeCount } from '../lib/knowledge.js'
 import ApiKeyField from '../components/ApiKeyField.jsx'
 import ModelPicker from '../components/ModelPicker.jsx'
@@ -23,9 +22,16 @@ export default function AskAI({ rev }) {
   const [err, setErr] = useState('')
   const [model, setModelState] = useState(getModel())
   const [keyed, setKeyed] = useState(hasApiKey())
+  const [pnonce, setPnonce] = useState(0) // bump to refetch models on provider/key change
   const changeModel = (m) => {
     setModelState(m)
     setModel(m)
+  }
+  // Called when the provider or key changes: sync key state, model, refetch list.
+  const onProviderChange = () => {
+    setKeyed(hasApiKey())
+    setModelState(getModel())
+    setPnonce((n) => n + 1)
   }
   const endRef = useRef(null)
   useEffect(() => {
@@ -60,10 +66,10 @@ export default function AskAI({ rev }) {
             {kbCount ? ` Memakai ${kbCount} referensi dari Knowledge Base.` : ''}
           </p>
         </div>
-        <ModelPicker kind="chat" value={model} onChange={changeModel} />
+        <ModelPicker kind="chat" value={model} onChange={changeModel} providerId={getActiveProviderId() + ':' + pnonce} />
       </div>
 
-      <ApiKeyField onChange={() => setKeyed(hasApiKey())} />
+      <ApiKeyField onChange={onProviderChange} />
 
       <div className="ai-chat">
         {msgs.length === 0 ? (
@@ -110,7 +116,7 @@ export default function AskAI({ rev }) {
       <div className="ai-inputbar">
         <textarea
           className="ai-input"
-          placeholder={keyed ? 'Tulis pertanyaan… (Enter untuk kirim)' : 'Isi OpenRouter API key dulu di atas.'}
+          placeholder={keyed ? 'Tulis pertanyaan… (Enter untuk kirim)' : 'Isi API key provider dulu di atas.'}
           value={q}
           disabled={!keyed}
           onChange={(e) => setQ(e.target.value)}

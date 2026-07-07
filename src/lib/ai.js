@@ -1,61 +1,31 @@
-// AI assistant client — builds a compact context from all BP documents and calls
-// OpenRouter directly from the browser (the user provides their own API key,
-// stored only in their browser — see openrouter.js). No Cloud Function involved.
+// AI assistant client — builds a compact context from all app documents and
+// calls the active AI provider directly from the browser (the user picks the
+// provider and supplies its own key, stored only in their browser — see
+// providers.js). Works with OpenRouter, Google Gemini, Groq, OpenAI or any
+// custom OpenAI-compatible endpoint. No Cloud Function involved.
 import { listDocs } from './store.js'
 import { buildKnowledgeContext } from './knowledge.js'
-import { orChat, hasApiKey } from './openrouter.js'
+import { chat, getModel } from './providers.js'
 
-// AI works whenever the user has set an OpenRouter key (independent of Firebase).
+// AI works whenever the user has set an API key for the active provider.
 export const aiEnabled = true
-export { hasApiKey, getApiKey, setApiKey } from './openrouter.js'
-
-// ── fallback model list (dipakai kalau fetch katalog OpenRouter gagal) ──
-// IDs = slug OpenRouter. Gemini di atas biar sama seperti setup Google AI dulu.
-// Catatan: model `:free` di OpenRouter itu shared-pool & sering kena rate limit
-// ("Provider returned error"/429). Yang paling stabil = `google/gemini-2.5-flash`
-// (berbayar, murah) ATAU pasang Google API key sendiri di OpenRouter (BYOK) supaya
-// pakai kuota Google gratis kamu.
-export const AI_MODELS = [
-  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash — free' },
-  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash — stabil (sama kayak dulu, berbayar)' },
-  { id: 'google/gemini-flash-1.5', label: 'Gemini 1.5 Flash — murah' },
-  { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek V3 — free' },
-  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B — free' },
-  { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini — murah' },
-]
-export const DEFAULT_MODEL = AI_MODELS[0].id
-
-// Baca PDF pakai engine 'pdf-text' (teks diekstrak server-side) → model apa pun bisa.
-export const EXTRACT_MODELS = [
-  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash — free' },
-  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash — stabil (berbayar)' },
-  { id: 'google/gemini-flash-1.5', label: 'Gemini 1.5 Flash — murah' },
-  { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek V3 — free' },
-]
-export const DEFAULT_EXTRACT_MODEL = EXTRACT_MODELS[0].id
-
-const MODEL_KEY = 'stones-ai-model'
-const EXTRACT_MODEL_KEY = 'stones-ai-extract-model'
-// Any model id the user picks is kept as-is (the full catalogue is fetched live
-// from OpenRouter — see openrouter.fetchModels), falling back to a sane default.
-const read = (k, def) => {
-  try {
-    return localStorage.getItem(k) || def
-  } catch (e) {
-    return def
-  }
-}
-const write = (k, v) => {
-  try {
-    if (v) localStorage.setItem(k, v)
-  } catch (e) {
-    /* ignore */
-  }
-}
-export const getModel = () => read(MODEL_KEY, DEFAULT_MODEL)
-export const setModel = (m) => write(MODEL_KEY, m)
-export const getExtractModel = () => read(EXTRACT_MODEL_KEY, DEFAULT_EXTRACT_MODEL)
-export const setExtractModel = (m) => write(EXTRACT_MODEL_KEY, m)
+// Re-export the provider helpers the menus/components use.
+export {
+  hasApiKey,
+  getApiKey,
+  setApiKey,
+  getModel,
+  setModel,
+  getExtractModel,
+  setExtractModel,
+  PROVIDERS,
+  getProvider,
+  getActiveProvider,
+  getActiveProviderId,
+  setActiveProviderId,
+  getCustomBase,
+  setCustomBase,
+} from './providers.js'
 
 const SYSTEM_PROMPT = [
   'You are a senior business-process analyst and consultant inside STONES, a business-process management app.',
@@ -190,7 +160,7 @@ export function buildContext() {
 }
 
 export async function askAI(question, model) {
-  const content = await orChat({
+  const content = await chat({
     model: model || getModel(),
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },

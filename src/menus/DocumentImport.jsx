@@ -3,8 +3,7 @@
 // original, then save it into the repository. The AI drafts, a human approves.
 import { useState, useRef, useEffect } from 'react'
 import { extractFromPdf } from '../lib/extract.js'
-import { getExtractModel, setExtractModel } from '../lib/ai.js'
-import { hasApiKey } from '../lib/openrouter.js'
+import { getExtractModel, setExtractModel, hasApiKey, getActiveProviderId } from '../lib/ai.js'
 import { createDoc, blankProject } from '../lib/store.js'
 import { uploadFile, filesEnabled } from '../lib/files.js'
 import { sopToSipoc, sopToPpi } from '../lib/sopMap.js'
@@ -37,9 +36,15 @@ export default function DocumentImport({ notify, goRepository }) {
   const [drag, setDrag] = useState(false)
   const [model, setModelState] = useState(getExtractModel())
   const [keyed, setKeyed] = useState(hasApiKey())
+  const [pnonce, setPnonce] = useState(0)
   const changeModel = (m) => {
     setModelState(m)
     setExtractModel(m)
+  }
+  const onProviderChange = () => {
+    setKeyed(hasApiKey())
+    setModelState(getExtractModel())
+    setPnonce((n) => n + 1)
   }
   const inputRef = useRef(null)
 
@@ -135,10 +140,10 @@ export default function DocumentImport({ notify, goRepository }) {
             <h1>Document Import</h1>
             <p>Upload PDF (SOP, BP, policy) — AI mengekstrak isinya jadi data terstruktur, kamu review sebelum disimpan.</p>
           </div>
-          <ModelPicker kind="extract" value={model} onChange={changeModel} />
+          <ModelPicker kind="extract" value={model} onChange={changeModel} providerId={getActiveProviderId() + ':' + pnonce} />
         </div>
 
-        <ApiKeyField onChange={() => setKeyed(hasApiKey())} />
+        <ApiKeyField onChange={onProviderChange} />
 
         {phase === 'extracting' ? (
           <div className="imp-drop imp-busy">
@@ -164,7 +169,7 @@ export default function DocumentImport({ notify, goRepository }) {
           >
             <div className="imp-drop-ico">⇪</div>
             <div className="imp-drop-title">
-              {keyed ? 'Klik untuk pilih PDF, atau drag & drop ke sini' : 'Isi OpenRouter API key dulu di atas'}
+              {keyed ? 'Klik untuk pilih PDF, atau drag & drop ke sini' : 'Isi API key provider dulu di atas'}
             </div>
             <div className="imp-drop-sub">Maks ±7MB · PDF digital (ada teksnya) paling akurat · PDF asli ikut tersimpan sebagai lampiran</div>
             <input

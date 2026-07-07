@@ -71,6 +71,39 @@ export default function SipocEditor({ project, setProject, notify, goGenerate })
   const addPpi = () => setProject((p) => ({ ...p, ppi: [...(p.ppi || []), { id: uid(), process: '', indicator: '' }] }))
   const delPpi = (ri) => setProject((p) => ({ ...p, ppi: p.ppi.filter((_, i) => i !== ri) }))
 
+  // Export the current SIPOC + PPI + header to an .xlsx file. The layout mirrors
+  // what doImport() reads, so an exported file round-trips cleanly back in.
+  const doExport = () => {
+    try {
+      const h = project.header || {}
+      const head = [
+        ['Process name', h.processName || ''],
+        ['Process owner', h.processOwner || ''],
+        ['Version', h.version || ''],
+        [],
+        ['Suppliers', 'Inputs', 'Process', 'Outputs', 'Customers'],
+      ]
+      const rows = (project.sipoc || []).map((r) => [r.supplier || '', r.input || '', r.process || '', r.output || '', r.customer || ''])
+      const ws = XLSX.utils.aoa_to_sheet([...head, ...rows])
+      ws['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 26 }, { wch: 26 }, { wch: 26 }]
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'SIPOC')
+
+      const ppi = project.ppi || []
+      const pws = XLSX.utils.aoa_to_sheet([['Process', 'Indicator'], ...ppi.map((r) => [r.process || '', r.indicator || ''])])
+      pws['!cols'] = [{ wch: 32 }, { wch: 60 }]
+      XLSX.utils.book_append_sheet(wb, pws, 'PPI')
+
+      const base = (h.processName || 'sipoc').replace(/[\\/:*?"<>|]+/g, '').trim() || 'sipoc'
+      XLSX.writeFile(wb, base + ' - SIPOC.xlsx')
+      notify('Exported ' + rows.length + ' SIPOC rows to Excel')
+    } catch (err) {
+      console.error(err)
+      notify('Export failed: ' + err.message)
+    }
+  }
+
   const fileRef = useRef(null)
   const doImport = async (file) => {
     try {
@@ -217,6 +250,9 @@ export default function SipocEditor({ project, setProject, notify, goGenerate })
           />
           <button className="btn btn-sm" onClick={() => fileRef.current && fileRef.current.click()}>
             Import .xlsx / .csv
+          </button>
+          <button className="btn btn-sm" onClick={doExport}>
+            Export .xlsx
           </button>
           <button className="btn btn-sm" onClick={addRow}>
             + Add row

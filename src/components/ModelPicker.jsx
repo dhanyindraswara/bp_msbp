@@ -3,7 +3,7 @@
 // the list to models that can read a PDF/image. Falls back to a small curated
 // list if the catalogue can't be fetched.
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { fetchModels, isFreeModel, supportsFiles } from '../lib/openrouter.js'
+import { fetchModels, isFreeModel } from '../lib/openrouter.js'
 import { AI_MODELS, EXTRACT_MODELS } from '../lib/ai.js'
 
 const fallbackFor = (kind) =>
@@ -45,19 +45,20 @@ export default function ModelPicker({ kind = 'chat', value, onChange }) {
   }, [])
 
   const list = useMemo(() => {
+    // PDF reading uses OpenRouter's 'pdf-text' engine (text extracted server-side),
+    // so any model works for extraction — no vision-only filter needed.
     let l = models
-    if (kind === 'extract') l = l.filter(supportsFiles)
     if (freeOnly) l = l.filter(isFreeModel)
     if (q.trim()) {
       const s = q.toLowerCase()
       l = l.filter((m) => (m.name + ' ' + m.id).toLowerCase().includes(s))
     }
     return [...l].sort((a, b) => Number(isFreeModel(b)) - Number(isFreeModel(a)) || a.name.localeCompare(b.name))
-  }, [models, kind, freeOnly, q])
+  }, [models, freeOnly, q])
 
   const current = models.find((m) => m.id === value)
   const label = current ? current.name : value || 'pilih model…'
-  const freeCount = useMemo(() => models.filter((m) => (kind !== 'extract' || supportsFiles(m)) && isFreeModel(m)).length, [models, kind])
+  const freeCount = useMemo(() => models.filter(isFreeModel).length, [models])
 
   return (
     <div className="mp" ref={ref}>

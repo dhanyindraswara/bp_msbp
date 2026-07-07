@@ -33,24 +33,25 @@ export const DEFAULT_EXTRACT_MODEL = EXTRACT_MODELS[0].id
 
 const MODEL_KEY = 'stones-ai-model'
 const EXTRACT_MODEL_KEY = 'stones-ai-extract-model'
-const read = (k, list, def) => {
+// Any model id the user picks is kept as-is (the full catalogue is fetched live
+// from OpenRouter — see openrouter.fetchModels), falling back to a sane default.
+const read = (k, def) => {
   try {
-    const m = localStorage.getItem(k)
-    return m && list.some((x) => x.id === m) ? m : def
+    return localStorage.getItem(k) || def
   } catch (e) {
     return def
   }
 }
 const write = (k, v) => {
   try {
-    localStorage.setItem(k, v)
+    if (v) localStorage.setItem(k, v)
   } catch (e) {
     /* ignore */
   }
 }
-export const getModel = () => read(MODEL_KEY, AI_MODELS, DEFAULT_MODEL)
+export const getModel = () => read(MODEL_KEY, DEFAULT_MODEL)
 export const setModel = (m) => write(MODEL_KEY, m)
-export const getExtractModel = () => read(EXTRACT_MODEL_KEY, EXTRACT_MODELS, DEFAULT_EXTRACT_MODEL)
+export const getExtractModel = () => read(EXTRACT_MODEL_KEY, DEFAULT_EXTRACT_MODEL)
 export const setExtractModel = (m) => write(EXTRACT_MODEL_KEY, m)
 
 const SYSTEM_PROMPT = [

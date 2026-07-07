@@ -94,6 +94,11 @@ comments. Deep-link share via `?doc=BP-xxxx`.
   Firebase CLI + auth). Makanya AI dipindah client-side (nggak butuh function).
 - Model layout map: max 4 kotak proses per baris (wrap ke bawah), aktor distribusi 4 sisi,
   legend font 8px + 2 kolom, "Data/Document/Information Flow" baca `derived.flows`.
+- **Routing garis map** (`src/lib/router.js` + custom `RoutedEdge` di ProcessMap): garis
+  antar-proses/aktor pakai A* ortogonal yang **menghindari kotak** (Hanan grid, obstacle =
+  semua node kecuali source/target, margin 15px). Auto re-route pas node digeser; saat drag
+  pakai `simpleRoute` (elbow cepat), A* jalan pas drop. Handoff = solid hitam, in/out = dashed
+  biru/hijau; angka flow = label di titik tengah path.
 
 ## Document Import (Fase A — dibangun)
 - Menu **Document Import** (`import`): upload PDF (SOP/BP/policy, maks ±7MB) →

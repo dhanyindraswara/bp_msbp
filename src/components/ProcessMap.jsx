@@ -11,13 +11,38 @@ import ReactFlow, {
   useUpdateNodeInternals,
   useViewport,
   applyNodeChanges,
+  BaseEdge,
+  EdgeLabelRenderer,
 } from 'reactflow'
 import * as htmlToImage from 'html-to-image'
 import { C, PROC_W, PROC_H, BOX_W, BOX_H } from '../lib/constants.js'
 import { parseProcess, download } from '../lib/generate.js'
+import { routeOrthogonal, simpleRoute, sidePoint, polyMidpoint, roundedPath } from '../lib/router.js'
 import { BoxNode, ProcessNode, BandNode, SLOTS } from './nodes.jsx'
 
 const nodeTypesDef = { box: BoxNode, process: ProcessNode, band: BandNode }
+
+// Custom edge that renders a pre-computed obstacle-avoiding polyline (data.points)
+// with rounded corners + the flow-number label at its midpoint.
+function RoutedEdge({ id, data, style, markerEnd }) {
+  const d = roundedPath(data.points, 9)
+  return (
+    <>
+      <BaseEdge id={id} path={d} style={style} markerEnd={markerEnd} />
+      {data.label ? (
+        <EdgeLabelRenderer>
+          <div
+            className="rf-elabel"
+            style={{ transform: `translate(-50%,-50%) translate(${data.labelPos.x}px,${data.labelPos.y}px)` }}
+          >
+            {data.label}
+          </div>
+        </EdgeLabelRenderer>
+      ) : null}
+    </>
+  )
+}
+const edgeTypesDef = { routed: RoutedEdge }
 
 // Defaults for the document title block. Stored per project under project.template.
 export const DEFAULT_TEMPLATE = {
@@ -131,6 +156,8 @@ function FlowInner({ project, setProject, derived, notify }) {
   const rf = useReactFlow()
   const updateNI = useUpdateNodeInternals()
   const nodeTypes = useMemo(() => nodeTypesDef, [])
+  const edgeTypes = useMemo(() => edgeTypesDef, [])
+  const [dragging, setDragging] = useState(false)
   const labelMode = project.flowLabelMode || 'number'
 
   const renameEntity = useCallback(
@@ -333,15 +360,36 @@ function FlowInner({ project, setProject, derived, notify }) {
       })
     })
 
-    // 4) Build the edges with their assigned handles.
+    // Slot index → fraction along the side (from the SLOTS percentages).
+    const frac = (i) => parseFloat(SLOTS[i ?? Math.floor(S / 2)]) / 100
+
+    // Inflate all boxes by a clearance margin; used as obstacles to route around.
+    const MARGIN = 15
+    const rects = {}
+    Object.keys(posMap).forEach((id) => {
+      const r = posMap[id]
+      rects[id] = { x: r.x - MARGIN, y: r.y - MARGIN, w: r.w + 2 * MARGIN, h: r.h + 2 * MARGIN }
+    })
+    const allIds = Object.keys(rects)
+    // A* is only worth running when things are settled; while dragging use the
+    // fast elbow so the map stays responsive, then reroute cleanly on drop.
+    const useAStar = !dragging && allIds.length <= 40
+
+    // 4) Build each edge: spread its endpoints into slots, then route around boxes.
     return routed
       .map((r, idx) => {
         if (!r) return null
         const rel = r.rel
-        const sh = r.sSide + '-s-' + (slotOf[idx + '|s'] ?? Math.floor(S / 2))
-        const th = r.tSide + '-t-' + (slotOf[idx + '|t'] ?? Math.floor(S / 2))
-        // Handoffs between main processes (output of one = input of the next) are
-        // drawn SOLID BLACK; connectors to/from external actors stay dashed & colored.
+        const sNode = posMap[rel.source]
+        const tNode = posMap[rel.target]
+        const sPt = sidePoint(sNode, r.sSide, frac(slotOf[idx + '|s']))
+        const tPt = sidePoint(tNode, r.tSide, frac(slotOf[idx + '|t']))
+        // Obstacles = every OTHER box (never the two this edge connects).
+        const obstacles = useAStar ? allIds.filter((id) => id !== rel.source && id !== rel.target).map((id) => rects[id]) : []
+        const points =
+          (useAStar && routeOrthogonal(sPt, r.sSide, tPt, r.tSide, obstacles)) || simpleRoute(sPt, r.sSide, tPt, r.tSide)
+
+        // Handoffs between main processes are SOLID BLACK; actor connectors stay dashed & colored.
         const isHandoff = rel.kind === 'handoff'
         const color = isHandoff ? '#1f2937' : rel.kind === 'in' ? C.inC : C.outC
         const label = labelMode === 'number' ? (rel.nums.length ? rel.nums.join(',') : '') : rel.texts.join(', ')
@@ -349,27 +397,22 @@ function FlowInner({ project, setProject, derived, notify }) {
           id: rel.id,
           source: rel.source,
           target: rel.target,
-          sourceHandle: sh,
-          targetHandle: th,
-          type: 'smoothstep',
-          pathOptions: { borderRadius: 10 },
-          label: label || undefined,
-          labelBgPadding: [5, 2],
-          labelBgBorderRadius: 3,
-          labelBgStyle: { fill: '#ffffff', fillOpacity: 0.92 },
-          labelStyle: { fontSize: 11, fontWeight: 700, fill: '#1f2937' },
+          type: 'routed',
+          data: { points, label: label || '', labelPos: polyMidpoint(points) },
           style: { stroke: color, strokeWidth: isHandoff ? 2 : 1.7, ...(isHandoff ? {} : { strokeDasharray: '3 3' }) },
           markerEnd: { type: MarkerType.ArrowClosed, color, width: isHandoff ? 16 : 15, height: isHandoff ? 16 : 15 },
         }
       })
       .filter(Boolean)
-  }, [derived.relations, posMap, labelMode])
+  }, [derived.relations, posMap, labelMode, dragging])
 
   const onNodesChange = useCallback((changes) => {
     setNodes((ns) => applyNodeChanges(changes.filter((c) => c.id !== '__band'), ns))
   }, [])
+  const onNodeDragStart = useCallback(() => setDragging(true), [])
   const onNodeDragStop = useCallback(
     (e, node) => {
+      setDragging(false) // triggers a clean obstacle-avoiding reroute
       if (node.id === '__band') return
       setProject((p) => ({
         ...p,
@@ -573,7 +616,9 @@ function FlowInner({ project, setProject, derived, notify }) {
                 nodes={allNodes}
                 edges={edges}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 onNodesChange={onNodesChange}
+                onNodeDragStart={onNodeDragStart}
                 onNodeDragStop={onNodeDragStop}
                 onInit={(inst) => {
                   setTimeout(() => {

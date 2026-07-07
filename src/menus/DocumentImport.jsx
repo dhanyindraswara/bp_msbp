@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react'
 import { extractFromPdf, extractEnabled } from '../lib/extract.js'
 import { createDoc, blankProject } from '../lib/store.js'
 import { uploadFile, filesEnabled } from '../lib/files.js'
+import { sopToSipoc, sopToPpi } from '../lib/sopMap.js'
 
 const TYPES = ['SOP', 'BP', 'POLICY', 'OTHER']
 
@@ -92,7 +93,13 @@ export default function DocumentImport({ notify, goRepository }) {
       project.template.reviewedBy = draft.approvals.reviewedBy
       project.template.approvedBy = draft.approvals.approvedBy
       if (draft.type === 'SOP') project.template.level = 'STANDARD OPERATING PROCEDURE'
-      const d = createDoc(project, { docType: draft.type, sop: draft })
+      // Populate the editable SIPOC/PPI from the extracted procedure so the
+      // document isn't blank when opened in Document Development.
+      const sipoc = sopToSipoc(draft)
+      if (sipoc.length) project.sipoc = sipoc
+      const ppi = sopToPpi(draft)
+      if (ppi.length) project.ppi = ppi
+      const d = createDoc(project, { docType: draft.type, sop: draft, sopBackfilled: true })
       if (filesEnabled && file) {
         try {
           await uploadFile(d.id, file) // keep the original PDF attached for traceability

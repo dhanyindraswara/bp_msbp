@@ -509,9 +509,10 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .fl-g-box .fl-g-hdr::before, .fl-g-box .fl-g-hdr::after { content: ''; position: absolute; top: 0; height: 10px; border-left: 1px solid #8a929c; }
 .fl-g-box .fl-g-hdr::before { left: 33%; }
 .fl-g-box .fl-g-hdr::after { left: 66%; }
-.fl-g-sys { position: absolute; left: 8px; right: 8px; bottom: 6px; height: 12px; border: 1px solid #8a929c; background: #fff; }
-.fl-g-sub { box-shadow: inset 3px 0 0 #fff, inset 4px 0 0 #8a929c, inset -3px 0 0 #fff, inset -4px 0 0 #8a929c, 0 1px 2px rgba(0,0,0,.12); }
-.fl-g-dec { width: 34px; height: 34px; border: 1px solid #8a929c; background: #eef1f4; transform: rotate(45deg); }
+.fl-g-system { box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #8a929c, 0 1px 2px rgba(0,0,0,.12); }
+.fl-g-sub::before, .fl-g-sub::after { content: ''; position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid #8a929c; }
+.fl-g-sub::before { left: 6px; }
+.fl-g-sub::after { right: 6px; }
 .fl-g-offpage { width: 30px; height: 34px; background: #eef1f4; border: 1px solid #8a929c; clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); }
 .fl-g-onpage { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #8a929c; background: #eef1f4; }
 
@@ -532,18 +533,23 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .fl-node { position: absolute; box-sizing: border-box; }
 .fl-pill { display: flex; align-items: center; justify-content: center; border: 1px solid #7a828c; border-radius: 16px; background: #f3f5f7; font-size: 12px; font-weight: 600; color: #263140; }
 .fl-box { background: #eef1f4; border: 1px solid #8a929c; box-shadow: 0 1px 3px rgba(0,0,0,.14); display: flex; flex-direction: column; }
-.fl-box-sub { box-shadow: inset 4px 0 0 #eef1f4, inset 5px 0 0 #8a929c, inset -4px 0 0 #eef1f4, inset -5px 0 0 #8a929c, 0 1px 3px rgba(0,0,0,.14); }
-.fl-box-head { display: flex; height: 22px; border-bottom: 1px solid #8a929c; background: #fbfcfd; }
+/* Sub Process (predefined process): a vertical bar just inside each side. */
+.fl-box-sub::before, .fl-box-sub::after { content: ''; position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid #8a929c; z-index: 1; }
+.fl-box-sub::before { left: 6px; }
+.fl-box-sub::after { right: 6px; }
+/* Process (by/to System): a double outline (frame within a frame). */
+.fl-box-system { box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #8a929c, 0 1px 3px rgba(0,0,0,.14); }
+.fl-box-head { display: flex; height: 22px; border-bottom: 1px solid #8a929c; background: #fbfcfd; position: relative; z-index: 2; }
 .fl-box-no, .fl-box-rasci, .fl-box-ref { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #253242; }
 .fl-box-no { width: 30px; border-right: 1px solid #b9c1cb; }
 .fl-box-rasci { width: 34px; border-right: 1px solid #b9c1cb; color: #1f4f86; }
 .fl-box-ref { flex: 1; color: #7a5a12; }
-.fl-box-sysbar { height: 3px; background: repeating-linear-gradient(90deg, #b9c1cb 0 6px, transparent 6px 10px); }
-.fl-box-body { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; font-weight: 600; color: #1f2937; padding: 4px 6px; line-height: 1.2; }
+.fl-box-body { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; font-weight: 600; color: #1f2937; padding: 4px 6px; line-height: 1.2; position: relative; z-index: 2; }
 
-.fl-decision { display: flex; align-items: center; justify-content: center; }
-.fl-decision-inner { position: absolute; left: 50%; top: 50%; width: 66px; height: 66px; transform: translate(-50%, -50%) rotate(45deg); background: #eef1f4; border: 1px solid #8a929c; box-shadow: 0 1px 3px rgba(0,0,0,.14); }
-.fl-decision-text { position: relative; text-align: center; font-size: 11px; font-weight: 600; color: #1f2937; line-height: 1.15; padding: 0 6px; z-index: 1; }
+.fl-decision { position: relative; }
+.fl-dec-svg { position: absolute; inset: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,.14)); }
+.fl-decision-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.fl-decision-text span { max-width: 62%; text-align: center; font-size: 10.5px; font-weight: 600; color: #1f2937; line-height: 1.14; }
 
 .fl-inform { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: #fff; }
 .fl-inform-text { text-align: center; font-size: 11px; font-weight: 600; color: #1f2937; line-height: 1.15; }
@@ -563,7 +569,7 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .fl-node-i:hover { outline: 2px solid #6ea8e4; outline-offset: 1px; }
 .fl-node-drag { cursor: grabbing; opacity: 0.85; box-shadow: 0 6px 16px rgba(0,0,0,.22) !important; z-index: 20; }
 .fl-node-i.fl-decision:hover { outline: none; }
-.fl-node-i.fl-decision:hover .fl-decision-inner { outline: 2px solid #6ea8e4; }
+.fl-node-i.fl-decision:hover .fl-dec-svg polygon { stroke: #6ea8e4; stroke-width: 2; }
 /* keep the lane dropdown legible instead of clipping long names */
 .fl-steps select { text-overflow: ellipsis; }
 

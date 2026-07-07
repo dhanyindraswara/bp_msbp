@@ -5,6 +5,7 @@
 // Everything downstream (FlowChart.jsx) is a pure render of what this returns.
 
 import { uid } from './constants.js'
+import { routeOrthogonal, simpleRoute, sidePoint } from './router.js'
 
 // Shape types a step can take. Mirrors the symbol legend on the template.
 export const FLOW_TYPES = [
@@ -23,17 +24,17 @@ export const FLOW_TYPES = [
 export const FLOW_RASCI = ['', 'R', 'A', 'A/R', 'S', 'C', 'I']
 
 // --- layout geometry (all in px) ---
-export const LANE_W = 214
+export const LANE_W = 220
 export const LANE_HEAD_H = 52
-export const ROW_H = 150
-export const PAD_TOP = 34
-export const PAD_BOTTOM = 40
+export const ROW_H = 168
+export const PAD_TOP = 36
+export const PAD_BOTTOM = 48
 export const BOX_W = 152
 export const BOX_H = 84
 export const PILL_W = 104
 export const PILL_H = 34
-export const DEC_W = 132
-export const DEC_H = 92
+export const DEC_W = 168
+export const DEC_H = 104
 export const REF_W = 74 // off/on-page reference glyph size
 
 // Dimensions of a node given its type.
@@ -107,8 +108,6 @@ function parseNext(raw) {
     })
     .filter(Boolean)
 }
-
-const STUB = 20 // how far a connector sticks out of a box before it turns
 
 // Compute the full layout: node rectangles + orthogonal connector paths, plus
 // the canvas size and lane column x-offsets. Pure function of the flow doc.
@@ -192,13 +191,22 @@ export function layoutFlow(flow) {
     })
   })
 
-  // 4) Build each connector's orthogonal polyline between its slotted points.
+  // 4) Route each connector so it goes AROUND the other boxes instead of through
+  //    them (A* on a Hanan grid); fall back to a plain elbow if no path is found.
+  const MARGIN = 13
+  const rects = {}
+  nodes.forEach((n) => {
+    rects[n.id] = { x: n.x - MARGIN, y: n.y - MARGIN, w: n.w + 2 * MARGIN, h: n.h + 2 * MARGIN }
+  })
+  const useAStar = nodes.length <= 30 // keep form typing snappy on very large flows
   const edges = routed.map((r, idx) => {
-    const sp = attach(r.from, r.sSide, frac[idx + '|s'] ?? 0.5)
-    const tp = attach(r.to, r.tSide, frac[idx + '|t'] ?? 0.5)
-    const points = elbow(sp, r.sSide, tp, r.tSide)
-    const mid = points[Math.max(1, Math.floor(points.length / 2) - 1)]
-    return { id: 'fe' + idx, from: r.from.id, to: r.to.id, points, label: r.label || '', labelAt: mid }
+    const sp = sidePoint(r.from, r.sSide, frac[idx + '|s'] ?? 0.5)
+    const tp = sidePoint(r.to, r.tSide, frac[idx + '|t'] ?? 0.5)
+    const obstacles = useAStar ? nodes.filter((n) => n.id !== r.from.id && n.id !== r.to.id).map((n) => rects[n.id]) : []
+    const points = (useAStar && routeOrthogonal(sp, r.sSide, tp, r.tSide, obstacles)) || simpleRoute(sp, r.sSide, tp, r.tSide)
+    // Put a branch label (Yes/No) just off the source box, in open space.
+    const labelAt = pointAlong(points, 30)
+    return { id: 'fe' + idx, from: r.from.id, to: r.to.id, points, label: r.label || '', labelAt }
   })
 
   const maxX = nodes.reduce((m, n) => Math.max(m, n.x + n.w), 0)
@@ -208,47 +216,22 @@ export function layoutFlow(flow) {
   return { lanes, nodes, edges, width, height, laneW: LANE_W }
 }
 
-// A point on a box side at the given fraction along it.
-function attach(n, side, f) {
-  switch (side) {
-    case 'top':
-      return [n.x + n.w * f, n.y]
-    case 'bottom':
-      return [n.x + n.w * f, n.y + n.h]
-    case 'left':
-      return [n.x, n.y + n.h * f]
-    default:
-      return [n.x + n.w, n.y + n.h * f]
+// Point at a given distance along a polyline (used to place branch labels).
+function pointAlong(pts, dist) {
+  if (!pts || pts.length < 2) return pts && pts[0] ? pts[0] : { x: 0, y: 0 }
+  let d = dist
+  for (let i = 1; i < pts.length; i++) {
+    const seg = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+    if (d <= seg) {
+      const t = seg ? d / seg : 0
+      return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t }
+    }
+    d -= seg
   }
+  return pts[pts.length - 1]
 }
 
-const NORMAL = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }
-
-// Orthogonal elbow between two side points: each end sticks straight out of its
-// box for STUB px, then the two stubs are joined with right-angle segments.
-function elbow(sp, sSide, tp, tSide) {
-  const sn = NORMAL[sSide]
-  const tn = NORMAL[tSide]
-  const p1 = [sp[0] + sn[0] * STUB, sp[1] + sn[1] * STUB]
-  const p2 = [tp[0] + tn[0] * STUB, tp[1] + tn[1] * STUB]
-  const sHoriz = sSide === 'left' || sSide === 'right'
-  const tHoriz = tSide === 'left' || tSide === 'right'
-  let mids
-  if (sHoriz && tHoriz) {
-    const mx = (p1[0] + p2[0]) / 2
-    mids = [[mx, p1[1]], [mx, p2[1]]]
-  } else if (!sHoriz && !tHoriz) {
-    const my = (p1[1] + p2[1]) / 2
-    mids = [[p1[0], my], [p2[0], my]]
-  } else if (sHoriz) {
-    mids = [[p2[0], p1[1]]]
-  } else {
-    mids = [[p1[0], p2[1]]]
-  }
-  return [sp, p1, ...mids, p2, tp]
-}
-
-// Turn a list of points into an SVG polyline path string.
+// Turn a list of {x,y} points into an SVG polyline path string.
 export function pointsToPath(points) {
-  return points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ' ' + p[1]).join(' ')
+  return points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ' ' + p.y).join(' ')
 }

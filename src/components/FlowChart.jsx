@@ -4,7 +4,8 @@
 // double-clicked to rename. Exports the whole document to PNG (html-to-image).
 import { useMemo, useRef, useState } from 'react'
 import * as htmlToImage from 'html-to-image'
-import { layoutFlow, pointsToPath, LANE_W } from '../lib/flow.js'
+import { layoutFlow, LANE_W } from '../lib/flow.js'
+import { roundedPath } from '../lib/router.js'
 import { download } from '../lib/generate.js'
 import { RASCI_COLOR } from '../lib/constants.js'
 
@@ -46,9 +47,8 @@ function SymbolGlyph({ k }) {
       )
     case 'system':
       return (
-        <div className="fl-g fl-g-box">
+        <div className="fl-g fl-g-box fl-g-system">
           <span className="fl-g-hdr" />
-          <span className="fl-g-sys" />
         </div>
       )
     case 'process':
@@ -62,7 +62,11 @@ function SymbolGlyph({ k }) {
     case 'inform':
       return <PersonIcon />
     case 'decision':
-      return <div className="fl-g fl-g-dec" />
+      return (
+        <svg width="46" height="30" viewBox="0 0 46 30">
+          <polygon points="23,1 45,15 23,29 1,15" fill="#eef1f4" stroke="#8a929c" strokeWidth="1" />
+        </svg>
+      )
     case 'offpage':
       return <div className="fl-g fl-g-offpage" />
     case 'onpage':
@@ -120,8 +124,17 @@ function StepNode({ n, interactive, dragging, onPointerDown, onRename }) {
   if (n.type === 'decision') {
     return (
       <div className={cls('fl-decision')} {...common}>
-        <div className="fl-decision-inner" />
-        <div className="fl-decision-text">{n.activity}</div>
+        <svg className="fl-dec-svg" viewBox={`0 0 ${n.w} ${n.h}`} width={n.w} height={n.h} preserveAspectRatio="none">
+          <polygon
+            points={`${n.w / 2},1 ${n.w - 1},${n.h / 2} ${n.w / 2},${n.h - 1} 1,${n.h / 2}`}
+            fill="#eef1f4"
+            stroke="#8a929c"
+            strokeWidth="1"
+          />
+        </svg>
+        <div className="fl-decision-text">
+          <span>{n.activity}</span>
+        </div>
       </div>
     )
   }
@@ -142,8 +155,9 @@ function StepNode({ n, interactive, dragging, onPointerDown, onRename }) {
   }
   // process / system / subprocess: 3-cell header + activity body
   const rc = RASCI_COLOR[(n.rasci || '').replace('/', '').charAt(0)] || null
+  const variant = n.type === 'subprocess' ? ' fl-box-sub' : n.type === 'system' ? ' fl-box-system' : ''
   return (
-    <div className={cls('fl-box' + (n.type === 'subprocess' ? ' fl-box-sub' : ''))} {...common}>
+    <div className={cls('fl-box' + variant)} {...common}>
       <div className="fl-box-head">
         <span className="fl-box-no">{n.no}</span>
         <span className="fl-box-rasci" style={rc ? { background: rc.bg, color: rc.fg } : undefined}>
@@ -151,7 +165,6 @@ function StepNode({ n, interactive, dragging, onPointerDown, onRename }) {
         </span>
         <span className="fl-box-ref">{n.ref}</span>
       </div>
-      {n.type === 'system' ? <div className="fl-box-sysbar" /> : null}
       <div className="fl-box-body">{n.activity}</div>
     </div>
   )
@@ -311,9 +324,9 @@ export default function FlowChart({ flow, template, onExportName, notify, intera
                 const live = drag && (e.from === drag.id || e.to === drag.id)
                 return (
                   <g key={e.id} opacity={live ? 0.25 : 1}>
-                    <path d={pointsToPath(e.points)} fill="none" stroke="#333" strokeWidth="1.4" markerEnd="url(#fl-arrow)" />
+                    <path d={roundedPath(e.points, 8)} fill="none" stroke="#333" strokeWidth="1.4" markerEnd="url(#fl-arrow)" />
                     {e.label ? (
-                      <text className="fl-edge-label" x={e.labelAt[0] + 5} y={e.labelAt[1] - 5}>
+                      <text className="fl-edge-label" x={e.labelAt.x + 5} y={e.labelAt.y - 4}>
                         {e.label}
                       </text>
                     ) : null}

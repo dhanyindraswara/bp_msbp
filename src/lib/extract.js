@@ -100,7 +100,9 @@ export async function extractFromPdf(file, model) {
         ],
       },
     ],
-    plugins: [{ id: 'file-parser', pdf: { engine: 'native' } }],
+    // 'pdf-text' = OpenRouter extracts the PDF text first, then sends it as text
+    // to the model — free and works with any model (no native file support needed).
+    plugins: [{ id: 'file-parser', pdf: { engine: 'pdf-text' } }],
     temperature: 0.1,
   })
   let parsed

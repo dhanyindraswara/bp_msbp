@@ -47,11 +47,19 @@ export async function orChat(body) {
     let msg = ''
     try {
       const j = await resp.json()
-      msg = (j.error && (j.error.message || j.error.code)) || JSON.stringify(j.error || j)
+      const er = j.error || j
+      const meta = er.metadata || {}
+      msg = er.message || String(er.code || '')
+      // Surface the upstream provider's real reason when present.
+      const extra = meta.raw || meta.provider_name || (Array.isArray(meta.reasons) ? meta.reasons.join(', ') : '')
+      if (extra) {
+        const ex = typeof extra === 'string' ? extra : JSON.stringify(extra)
+        if (!msg.includes(ex)) msg += ' — ' + ex
+      }
     } catch (e) {
       msg = await resp.text().catch(() => '')
     }
-    throw new Error('OpenRouter ' + resp.status + ': ' + String(msg).slice(0, 400))
+    throw new Error('OpenRouter ' + resp.status + ': ' + String(msg).slice(0, 500))
   }
   const data = await resp.json()
   const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content

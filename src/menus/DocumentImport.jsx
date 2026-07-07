@@ -166,7 +166,7 @@ export default function DocumentImport({ notify, goRepository }) {
             <div className="imp-drop-title">
               {keyed ? 'Klik untuk pilih PDF, atau drag & drop ke sini' : 'Isi OpenRouter API key dulu di atas'}
             </div>
-            <div className="imp-drop-sub">Maks ±7MB per file · hasil scan juga bisa · PDF asli ikut tersimpan sebagai lampiran</div>
+            <div className="imp-drop-sub">Maks ±7MB · PDF digital (ada teksnya) paling akurat · PDF asli ikut tersimpan sebagai lampiran</div>
             <input
               ref={inputRef}
               type="file"

@@ -9,25 +9,28 @@ import { orChat, hasApiKey } from './openrouter.js'
 export const aiEnabled = true
 export { hasApiKey, getApiKey, setApiKey } from './openrouter.js'
 
-// ── model catalogues (edit freely) — IDs are OpenRouter slugs ──
-// Chat models for Ask AI. ":free" = no-cost tier, handy when a quota runs out.
+// ── fallback model list (dipakai kalau fetch katalog OpenRouter gagal) ──
+// IDs = slug OpenRouter. Gemini di atas biar sama seperti setup Google AI dulu.
+// Catatan: model `:free` di OpenRouter itu shared-pool & sering kena rate limit
+// ("Provider returned error"/429). Yang paling stabil = `google/gemini-2.5-flash`
+// (berbayar, murah) ATAU pasang Google API key sendiri di OpenRouter (BYOK) supaya
+// pakai kuota Google gratis kamu.
 export const AI_MODELS = [
+  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash — free' },
+  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash — stabil (sama kayak dulu, berbayar)' },
+  { id: 'google/gemini-flash-1.5', label: 'Gemini 1.5 Flash — murah' },
   { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek V3 — free' },
   { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B — free' },
-  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash — free' },
-  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 (reasoning) — free' },
   { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini — murah' },
-  { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet — bagus' },
 ]
 export const DEFAULT_MODEL = AI_MODELS[0].id
 
-// Extract models for Document Import — must accept file/PDF input. Gemini free
-// handles scans (native vision) and costs nothing.
+// Baca PDF pakai engine 'pdf-text' (teks diekstrak server-side) → model apa pun bisa.
 export const EXTRACT_MODELS = [
-  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash — free (scan OK)' },
+  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash — free' },
+  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash — stabil (berbayar)' },
   { id: 'google/gemini-flash-1.5', label: 'Gemini 1.5 Flash — murah' },
-  { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini' },
-  { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
+  { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek V3 — free' },
 ]
 export const DEFAULT_EXTRACT_MODEL = EXTRACT_MODELS[0].id
 

@@ -2,10 +2,11 @@
 // processes (OpenRouter, called client-side with the user's own API key). It also
 // reads the reference documents added in the AI Knowledge Base.
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { askAI, AI_MODELS, getModel, setModel } from '../lib/ai.js'
+import { askAI, getModel, setModel } from '../lib/ai.js'
 import { hasApiKey } from '../lib/openrouter.js'
 import { activeKnowledgeCount } from '../lib/knowledge.js'
 import ApiKeyField from '../components/ApiKeyField.jsx'
+import ModelPicker from '../components/ModelPicker.jsx'
 
 const SUGGESTIONS = [
   'Flow untuk request security information technology dimana dan gimana?',
@@ -59,16 +60,7 @@ export default function AskAI({ rev }) {
             {kbCount ? ` Memakai ${kbCount} referensi dari Knowledge Base.` : ''}
           </p>
         </div>
-        <label className="ai-model" title="Pilih model AI (ganti kalau limit habis)">
-          <span className="ai-model-lb">Model</span>
-          <select value={model} onChange={(e) => changeModel(e.target.value)}>
-            {AI_MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ModelPicker kind="chat" value={model} onChange={changeModel} />
       </div>
 
       <ApiKeyField onChange={() => setKeyed(hasApiKey())} />

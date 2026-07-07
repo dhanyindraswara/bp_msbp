@@ -59,3 +59,62 @@ export async function orChat(body) {
   if (Array.isArray(content)) return content.map((c) => (c && c.text) || '').join('')
   return ''
 }
+
+// ── model catalogue (fetched live from OpenRouter) ──
+const MODELS_CACHE_KEY = 'stones-or-models'
+let _modelsMem = null
+
+function normModel(m) {
+  return {
+    id: m.id,
+    name: m.name || m.id,
+    pricing: m.pricing || {},
+    context_length: m.context_length || (m.top_provider && m.top_provider.context_length) || 0,
+    input_modalities: (m.architecture && m.architecture.input_modalities) || [],
+  }
+}
+
+// Fetch the full model list from OpenRouter (public endpoint). Cached in memory
+// and localStorage; falls back to the cached copy if the network call fails.
+export async function fetchModels() {
+  if (_modelsMem) return _modelsMem
+  try {
+    const key = getApiKey()
+    const headers = { 'Content-Type': 'application/json' }
+    if (key) headers.Authorization = 'Bearer ' + key
+    const resp = await fetch('https://openrouter.ai/api/v1/models', { headers })
+    if (!resp.ok) throw new Error('HTTP ' + resp.status)
+    const data = await resp.json()
+    const list = (data.data || []).map(normModel).filter((m) => m.id)
+    if (!list.length) throw new Error('empty')
+    _modelsMem = list
+    try {
+      localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify(list))
+    } catch (e) {
+      /* ignore */
+    }
+    return list
+  } catch (e) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(MODELS_CACHE_KEY) || '[]')
+      if (Array.isArray(cached) && cached.length) {
+        _modelsMem = cached
+        return cached
+      }
+    } catch (e2) {
+      /* ignore */
+    }
+    throw new Error('Gagal memuat daftar model dari OpenRouter: ' + (e && e.message ? e.message : e))
+  }
+}
+
+const zero = (v) => v == null || v === '0' || Number(v) === 0
+export function isFreeModel(m) {
+  const p = m.pricing || {}
+  return zero(p.prompt) && zero(p.completion)
+}
+// Models that can read an uploaded PDF/image (needed for Document Import).
+export function supportsFiles(m) {
+  const mods = m.input_modalities || []
+  return mods.includes('image') || mods.includes('file')
+}

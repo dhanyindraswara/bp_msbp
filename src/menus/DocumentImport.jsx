@@ -3,12 +3,13 @@
 // original, then save it into the repository. The AI drafts, a human approves.
 import { useState, useRef, useEffect } from 'react'
 import { extractFromPdf } from '../lib/extract.js'
-import { EXTRACT_MODELS, getExtractModel, setExtractModel } from '../lib/ai.js'
+import { getExtractModel, setExtractModel } from '../lib/ai.js'
 import { hasApiKey } from '../lib/openrouter.js'
 import { createDoc, blankProject } from '../lib/store.js'
 import { uploadFile, filesEnabled } from '../lib/files.js'
 import { sopToSipoc, sopToPpi } from '../lib/sopMap.js'
 import ApiKeyField from '../components/ApiKeyField.jsx'
+import ModelPicker from '../components/ModelPicker.jsx'
 
 const TYPES = ['SOP', 'BP', 'POLICY', 'OTHER']
 
@@ -134,14 +135,7 @@ export default function DocumentImport({ notify, goRepository }) {
             <h1>Document Import</h1>
             <p>Upload PDF (SOP, BP, policy) — AI mengekstrak isinya jadi data terstruktur, kamu review sebelum disimpan.</p>
           </div>
-          <label className="ai-model" title="Model AI untuk baca PDF (ganti kalau limit habis)">
-            <span className="ai-model-lb">Model</span>
-            <select value={model} onChange={(e) => changeModel(e.target.value)}>
-              {EXTRACT_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-          </label>
+          <ModelPicker kind="extract" value={model} onChange={changeModel} />
         </div>
 
         <ApiKeyField onChange={() => setKeyed(hasApiKey())} />

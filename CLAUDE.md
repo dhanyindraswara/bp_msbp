@@ -62,9 +62,11 @@ comments. Deep-link share via `?doc=BP-xxxx`.
   pakai key sendiri. `src/lib/openrouter.js` = key mgmt + `orChat()` (fetch ke
   `openrouter.ai/api/v1/chat/completions`, OpenAI-compatible, header HTTP-Referer + X-Title).
   Komponen `src/components/ApiKeyField.jsx` (field password + tombol Simpan/Ganti).
-- **Pemilih model di layar** (persist di localStorage): Ask AI (`src/lib/ai.js` `AI_MODELS`) &
-  Document Import (`EXTRACT_MODELS`, model vision buat baca PDF). Default = model `:free`. Ganti
-  model dari dropdown kanan-atas kalau limit habis.
+- **Pemilih model di layar** (`src/components/ModelPicker.jsx`): **fetch daftar model LIVE** dari
+  `openrouter.ai/api/v1/models` (`openrouter.fetchModels`, cache localStorage), ada search +
+  toggle **"Gratis saja"** (`isFreeModel`), extract difilter ke model vision (`supportsFiles`).
+  Pilihan persist di localStorage (`getModel`/`getExtractModel`, terima id apa pun). `AI_MODELS`/
+  `EXTRACT_MODELS` di `ai.js` cuma fallback kalau fetch gagal. Default = model `:free`.
 - **Ask AI** (`ai.js`): `askAI(question, model)` → `orChat` dengan SYSTEM_PROMPT "senior
   business-process analyst" (`temperature 0.4`) + `buildContext()` (semua BP + REFERENCE dari
   knowledge base). `cleanText()` strip markdown biar bubble plain text.

@@ -59,9 +59,12 @@ export const setExtractModel = (m) => write(EXTRACT_MODEL_KEY, m)
 
 const SYSTEM_PROMPT = [
   'You are a senior business-process analyst and consultant inside STONES, a business-process management app.',
-  "You are given the company's documented business processes below as context: BP documents, each with SIPOC rows",
-  '(Supplier, Input, Process, Output, Customer), process flows, and PPI (process performance indicators). You may also',
-  'be given REFERENCE DOCUMENTS (an uploaded knowledge base) — treat those as authoritative source material.',
+  "You are given EVERY document stored in this app below as context. It starts with a repository inventory (id, name,",
+  'type, status, version) followed by full details of each document. Documents come in several types: BP (SIPOC rows —',
+  'Supplier, Input, Process, Output, Customer — plus flows and PPI), imported SOPs (step-by-step procedures with PIC and',
+  'RASCI), and Flow Process swimlane flowcharts (steps across responsible-party lanes). You may also be given REFERENCE',
+  'DOCUMENTS (an uploaded knowledge base) — treat those as authoritative source material. Use whichever documents are',
+  'relevant, and answer questions about any of them (including "what documents exist" / "list the SOPs" type questions).',
   'Your job is to help the user UNDERSTAND, ANALYZE, and IMPROVE these processes. Depending on the question you can:',
   '(1) Answer factual/lookup questions — where a flow lives, who the actors are, describe it as supplier -> process -> output -> customer, naming the BP (id + name).',
   '(2) Analyze processes — identify bottlenecks, redundant or missing steps, unclear ownership/handoffs, gaps in the SIPOC, and weak or missing PPIs.',
@@ -91,10 +94,35 @@ function cleanText(text) {
 // documents (docType KNOWLEDGE) are handled separately below.
 export function buildContext() {
   const docs = listDocs().filter((d) => d.docType !== 'KNOWLEDGE')
+
+  // A directory of every document in the app, so the model knows the full set.
+  const typeName = (d) => (d.docType === 'FLOW' ? 'Flow Process' : d.docType === 'SOP' ? 'SOP' : d.docType || 'BP')
+  const inventory = docs.length
+    ? docs.map((d) => `- [${d.id}] ${d.name} — type: ${typeName(d)}, status: ${d.status}, v${d.version}`).join('\n')
+    : '(none)'
+
   const blocks = docs.map((d) => {
     const p = d.project || {}
-    const lines = [`### ${d.name} [${d.id}] — status: ${d.status}, v${d.version}`]
-    if (p.header?.processOwner) lines.push('Process owner: ' + p.header.processOwner)
+    const t = p.template || {}
+    const lines = [`### ${d.name} [${d.id}] — type: ${typeName(d)}, status: ${d.status}, v${d.version}`]
+
+    // Document header / title block.
+    const meta = []
+    if (t.title) meta.push('Title: ' + t.title)
+    if (t.level) meta.push('Level: ' + t.level)
+    if (t.bpNo) meta.push('Doc No: ' + t.bpNo)
+    if (t.effectiveDate) meta.push('Effective: ' + t.effectiveDate)
+    if (t.revision) meta.push('Rev: ' + t.revision)
+    if (p.header?.processOwner) meta.push('Owner: ' + p.header.processOwner)
+    if (meta.length) lines.push(meta.join(' | '))
+    const appr = [
+      t.preparedBy && 'Prepared by: ' + t.preparedBy,
+      t.reviewedBy && 'Reviewed by: ' + t.reviewedBy,
+      t.approvedBy && 'Approved by: ' + t.approvedBy,
+    ].filter(Boolean)
+    if (appr.length) lines.push(appr.join(' | '))
+
+    // SIPOC + PPI (Document Development).
     const procs = [...new Set((p.sipoc || []).map((r) => (r.process || '').trim()).filter(Boolean))]
     if (procs.length) lines.push('Processes: ' + procs.join('; '))
     ;(p.sipoc || []).forEach((r) => {
@@ -107,10 +135,10 @@ export function buildContext() {
     ;(p.ppi || []).forEach((r) => {
       if ((r.indicator || '').trim()) lines.push(`PPI (${r.process || '—'}): ${r.indicator}`)
     })
+
+    // Imported SOP payload (Document Import).
     if (d.sop) {
       const s = d.sop
-      lines.push(`Document type: ${s.type || 'SOP'}${s.docNo ? ' — ' + s.docNo : ''}${s.revision ? ' rev ' + s.revision : ''}`)
-      if (s.owner) lines.push('Owner: ' + s.owner)
       if (s.purpose) lines.push('Purpose: ' + s.purpose)
       if (s.scope) lines.push('Scope: ' + s.scope)
       if ((s.actors || []).length) lines.push('Actors: ' + s.actors.join('; '))
@@ -122,11 +150,41 @@ export function buildContext() {
       })
       ;(s.ppi || []).forEach((x) => lines.push('PPI/SLA: ' + x))
     }
+
+    // Flow Process payload (Auto Flow Process swimlane flowchart).
+    if (d.flow) {
+      const f = d.flow
+      if (f.section) lines.push('Flow section: ' + f.section)
+      const lanes = (f.lanes || []).map((x) => (x || '').trim()).filter(Boolean)
+      if (lanes.length) lines.push('Swimlanes (responsible parties): ' + lanes.join(' | '))
+      ;(f.steps || []).forEach((st) => {
+        const seg = []
+        if (st.no) seg.push('#' + st.no)
+        if (st.lane) seg.push('[' + st.lane + ']')
+        if (st.type && st.type !== 'process') seg.push('(' + st.type + ')')
+        if (st.activity) seg.push(st.activity)
+        if (st.rasci) seg.push('RASCI:' + st.rasci)
+        if (st.ref) seg.push('ref:' + st.ref)
+        if ((st.next || '').trim()) seg.push('next→ ' + st.next)
+        if (seg.length) lines.push('Flow step ' + seg.join(' '))
+      })
+    }
+
+    // Discussion (comments) attached to the document.
+    const cmts = (d.comments || []).filter((c) => (c.body || '').trim()).slice(0, 5)
+    cmts.forEach((c) => lines.push(`Comment (${c.author || '-'}): ${c.body}`))
+
     return lines.join('\n')
   })
+
   let text = blocks.join('\n\n')
-  if (text.length > 52000) text = text.slice(0, 52000) + '\n...(truncated)'
-  const bp = text || '(no documents yet)'
+  if (text.length > 60000) text = text.slice(0, 60000) + '\n...(truncated)'
+  const bp =
+    'DOCUMENTS IN THIS APP (repository inventory):\n' +
+    inventory +
+    '\n\n--- FULL DOCUMENT DETAILS ---\n' +
+    (text || '(no documents yet)')
+
   const kb = buildKnowledgeContext()
   return kb ? bp + '\n\n=== REFERENCE DOCUMENTS (uploaded knowledge base) ===\n' + kb : bp
 }

@@ -75,6 +75,12 @@ export default function ModelPicker({ kind = 'chat', value, onChange, providerId
           </div>
           {err ? <div className="mp-note mp-err">{err} (pakai daftar cadangan)</div> : null}
           <div className="mp-list">
+            {q.trim() && !models.some((m) => m.id === q.trim()) ? (
+              <button className="mp-item mp-item-custom" onClick={() => { onChange(q.trim()); setOpen(false) }}>
+                <span className="mp-item-name">Pakai model id: “{q.trim()}”</span>
+                <span className="mp-tag">manual</span>
+              </button>
+            ) : null}
             {list.map((m) => (
               <button key={m.id} className={'mp-item' + (m.id === value ? ' on' : '')} onClick={() => { onChange(m.id); setOpen(false) }}>
                 <span className="mp-item-name">{m.name}</span>

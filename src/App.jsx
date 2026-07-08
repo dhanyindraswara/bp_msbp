@@ -12,6 +12,9 @@ import AskAI from './menus/AskAI.jsx'
 import DocumentImport from './menus/DocumentImport.jsx'
 import AutoFlow from './menus/AutoFlow.jsx'
 import KnowledgeBase from './menus/KnowledgeBase.jsx'
+import TaxonomyBuilder from './menus/TaxonomyBuilder.jsx'
+import HighLevelProcess from './menus/HighLevelProcess.jsx'
+import TaxonomyDescription from './menus/TaxonomyDescription.jsx'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
@@ -76,6 +79,14 @@ const NAV = [
     group: 'Flow Process',
     items: [{ id: 'flow', label: 'Auto Flow Process', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9' }],
   },
+  {
+    group: 'Taxonomy',
+    items: [
+      { id: 'taxonomy', label: 'Business Process Taxonomy', d: 'M12 3v4M6 21v-6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6M4 21h4M16 21h4M10 3h4v4h-4z' },
+      { id: 'hlp', label: 'High Level Process', d: 'M3 5h18M3 12h18M3 19h18M7 3v18' },
+      { id: 'taxdesc', label: 'Taxonomy Description', d: 'M4 5h16v14H4zM4 9h16M9 9v10M4 13h5M4 16h5' },
+    ],
+  },
   { id: 'request', label: 'Document Action Request', d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
   { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
   { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
@@ -91,6 +102,9 @@ export default function App() {
   const [authErr, setAuthErr] = useState('')
   const [openId, setOpenIdState] = useState(null)
   const [flowOpenId, setFlowOpenId] = useState(null)
+  const [taxOpenId, setTaxOpenId] = useState(null)
+  const [hlpOpenId, setHlpOpenId] = useState(null)
+  const [descOpenId, setDescOpenId] = useState(null)
   const [toast, setToast] = useState('')
   const tt = useRef(null)
   const bootedRef = useRef(false)
@@ -166,9 +180,25 @@ export default function App() {
   // Open a document. FLOW-type documents open in Auto Flow Process; everything
   // else opens the SIPOC studio in Document Development.
   const openDoc = useCallback((id) => {
-    if (getDoc(id)?.docType === 'FLOW') {
+    const dt = getDoc(id)?.docType
+    if (dt === 'FLOW') {
       setFlowOpenId(id)
       setMenu('flow')
+      return
+    }
+    if (dt === 'TAXONOMY') {
+      setTaxOpenId(id)
+      setMenu('taxonomy')
+      return
+    }
+    if (dt === 'HLP') {
+      setHlpOpenId(id)
+      setMenu('hlp')
+      return
+    }
+    if (dt === 'TAXDESC') {
+      setDescOpenId(id)
+      setMenu('taxdesc')
       return
     }
     storeSetOpenId(id)
@@ -259,6 +289,9 @@ export default function App() {
         )}
         {menu === 'import' && <DocumentImport notify={notify} goRepository={() => setMenu('repository')} />}
         {menu === 'flow' && <AutoFlow openId={flowOpenId} setOpenId={setFlowOpenId} notify={notify} />}
+        {menu === 'taxonomy' && <TaxonomyBuilder openId={taxOpenId} setOpenId={setTaxOpenId} notify={notify} />}
+        {menu === 'hlp' && <HighLevelProcess openId={hlpOpenId} setOpenId={setHlpOpenId} notify={notify} />}
+        {menu === 'taxdesc' && <TaxonomyDescription openId={descOpenId} setOpenId={setDescOpenId} notify={notify} />}
         {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} rev={rev} />}
         {menu === 'search' && <GlobalSearch openDoc={openDoc} rev={rev} />}
         {menu === 'ai' && <AskAI rev={rev} />}

@@ -18,7 +18,8 @@ dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio". Owner: dhanyindraswara.
 
 ## Menu (STONES shell — src/App.jsx, `NAV` array; nav dikelompokkan)
 Grup sidebar: **Dashboard** (atas, standalone) · grup **Business Process** (Document
-Development, Document Import) · grup **Flow Process** (Auto Flow Process) · lalu standalone
+Development, Document Import) · grup **Flow Process** (Auto Flow Process) · grup **Taxonomy**
+(Business Process Taxonomy, High Level Process, Taxonomy Description) · lalu standalone
 (Document Action Request, Repository, Global Search, Ask AI, AI Knowledge Base).
 1. **Document Action Request** (`request`) — daftar/permintaan + add new BP.
 2. **Document Development** (`develop`) — studio utama: SIPOC editor → auto business-process
@@ -38,6 +39,27 @@ Development, Document Import) · grup **Flow Process** (Auto Flow Process) · la
   `docType: 'FLOW'` (payload `flow`), `project`-nya tetap `blankProject()` valid. `openDoc` di
   App merutekan doc FLOW ke menu ini. Kotak bisa di-drag (`step.pos`) & double-click rename;
   kepala dokumen bisa di-hide via toggle.
+
+## Taxonomy suite (`taxonomy` / `hlp` / `taxdesc`) — 3 menu generator diagram
+Semua reuse pola FLOW: form kiri + live preview kanan, autosave debounce, "Load sample" /
+"baru" / "Simpan ke Repository", export PNG (html-to-image). Disimpan sebagai doc dengan
+`docType` khusus + payload sendiri, `project`-nya tetap `blankProject()` valid. `openDoc` di
+App merutekan tiap docType ke menunya (state `taxOpenId`/`hlpOpenId`/`descOpenId`). Muncul di
+Repository (chip tipe), tak difilter keluar.
+- **Business Process Taxonomy** (`taxonomy`): `src/menus/TaxonomyBuilder.jsx` +
+  `src/components/TaxonomyChart.jsx` + `src/lib/taxonomy.js`. Diagram hierarki L0→L3: rail label
+  level (L0..L3) + 2 band membentang (L0 core process, L1 grup) + grid kolom (tiap kolom = 1
+  kotak kategori L2 + tumpukan L3). Tiap kotak punya `code`/`name`/`hi` (highlight outline biru).
+  `docType:'TAXONOMY'`, payload `taxonomy`.
+- **High Level Process** (`hlp`): `src/menus/HighLevelProcess.jsx` +
+  `src/components/HlpChart.jsx` + `src/lib/hlp.js`. Value chain perusahaan: stack band
+  (Management/Core/Enabler), tiap band tray abu-abu berisi kotak proses (badge bulat kode + nama
+  italic), highlight biru. Title + subtitle + footnote/legend. `docType:'HLP'`, payload `hlp`.
+- **Taxonomy Description** (`taxdesc`): `src/menus/TaxonomyDescription.jsx` +
+  `src/components/TaxDescTable.jsx` + `src/lib/taxdesc.js`. Tabel deskripsi proses: header biru
+  nomor proses (kolom), baris atribut tetap (`TAXDESC_ROWS`: name, description, KPI, responsible,
+  accountable). KPI/responsible/accountable multi-baris → bullet list. `docType:'TAXDESC'`,
+  payload `taxdesc`.
 
 ## AI Knowledge Base (`knowledge`) — source of knowledge buat Ask AI
 - `src/menus/KnowledgeBase.jsx` + `src/lib/knowledge.js`. Upload PDF (reuse fungsi `extractDoc`

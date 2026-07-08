@@ -616,3 +616,74 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 
 /* routed process-map edge label (flow number) */
 .rf-elabel { position: absolute; pointer-events: none; background: rgba(255,255,255,.92); border-radius: 3px; padding: 1px 5px; font-size: 11px; font-weight: 700; color: #1f2937; line-height: 1.3; white-space: nowrap; }
+
+/* ============================================================
+   Taxonomy suite — shared form + three diagram renderers
+   (Business Process Taxonomy · High Level Process · Description)
+   ============================================================ */
+
+/* --- shared form bits (column cards + inline box editors) --- */
+.tx-colcard { border: 1px solid #e2e6ec; border-radius: 10px; padding: 10px 11px 12px; margin-bottom: 12px; background: #fbfcfe; }
+.tx-colcard-hd { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); margin-bottom: 8px; }
+.tx-l2edit, .tx-l3edit { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.tx-l3dot { color: #b6bdc7; font-size: 12px; width: 10px; flex: none; }
+.tx-inp { flex: 1; min-width: 0; border: 1px solid #d4d9e0; border-radius: 6px; padding: 6px 8px; font-size: 12.5px; font-family: inherit; background: #fff; color: var(--text); }
+.tx-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.tx-inp-code { flex: 0 0 88px; font-weight: 650; }
+.tx-hicheck { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; color: #7b8794; flex: none; white-space: nowrap; }
+.tx-addl3 { margin-top: 2px; }
+.fl-hint { font-size: 11.5px; color: #7b8794; margin: -4px 0 10px; line-height: 1.5; }
+.hlp-bandname { font-weight: 700 !important; }
+
+.td-editgrid { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+.td-editgrid .imp-field span { font-size: 11px; }
+.td-editgrid .imp-field input, .td-editgrid .imp-field textarea { border: 1px solid #d4d9e0; border-radius: 6px; padding: 7px 9px; font-size: 12.5px; font-family: inherit; background: #fff; color: var(--text); width: 100%; box-sizing: border-box; resize: vertical; }
+.td-editgrid .imp-field input:focus, .td-editgrid .imp-field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.td-editwide { grid-column: 1 / -1; }
+
+/* ============ 1) Business Process Taxonomy diagram ============ */
+.tx-doc { background: #fff; margin: 16px; padding: 22px 26px 28px; border: 1px solid #cfd6de; box-shadow: 0 2px 10px rgba(0,0,0,.06); width: max-content; min-width: calc(100% - 32px); }
+.tx-title { font-size: 22px; font-weight: 800; color: #12365f; margin-bottom: 18px; letter-spacing: -.01em; }
+.tx-line { display: flex; align-items: stretch; gap: 8px; margin-bottom: 8px; }
+.tx-line-l3 { align-items: flex-start; }
+.tx-rail { flex: 0 0 46px; background: #0d2f5e; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; border-radius: 3px; }
+.tx-rail-tall { align-self: stretch; }
+.tx-band { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 800; border-radius: 3px; padding: 12px 16px; min-height: 40px; }
+.tx-l0 { background: #0d2f5e; color: #fff; font-size: 15px; letter-spacing: .01em; }
+.tx-l1 { background: #cfe0f4; color: #17466f; border: 1px solid #a9c7e6; font-size: 15px; }
+.tx-cols { flex: 1; display: grid; gap: 14px; align-items: start; }
+.tx-box { border-radius: 3px; padding: 12px 12px; text-align: center; }
+.tx-l2 { background: #d3ecfb; border: 1px solid #a7d3ee; color: #14507e; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.tx-l3col { display: flex; flex-direction: column; gap: 8px; }
+.tx-l3 { background: #f0f1f3; border: 1px solid #d9dde3; color: #2b3946; }
+.tx-hi { border: 2px solid #3f86d6; }
+.tx-code { font-weight: 800; font-size: 13px; line-height: 1.25; }
+.tx-name { font-weight: 700; font-size: 12.5px; line-height: 1.3; }
+
+/* ============ 2) High Level Process map ============ */
+.hlp-doc { background: #fff; margin: 16px; padding: 24px 28px 26px; border: 1px solid #cfd6de; box-shadow: 0 2px 10px rgba(0,0,0,.06); width: max-content; min-width: calc(100% - 32px); max-width: 1180px; }
+.hlp-title { font-size: 24px; font-weight: 800; color: #14181d; letter-spacing: -.01em; }
+.hlp-sub { font-size: 15px; font-weight: 700; color: #2a2f36; margin: 2px 0 20px; }
+.hlp-band { margin-bottom: 18px; }
+.hlp-band-hd { background: #0d2f5e; color: #fff; font-weight: 800; font-style: italic; font-size: 14.5px; text-align: center; padding: 8px 12px; border-radius: 4px; letter-spacing: .01em; }
+.hlp-tray { background: #dfe1e4; border-radius: 8px; padding: 16px 16px 6px; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.hlp-tray-empty { color: #8a94a0; padding: 8px; font-size: 12px; }
+.hlp-box { position: relative; flex: 1 1 220px; max-width: 300px; min-width: 200px; background: #d4d6da; border: 1px solid #c2c5ca; border-radius: 8px; padding: 16px 14px 16px 20px; margin-bottom: 10px; display: flex; align-items: center; }
+.hlp-hi { background: #cfe0f4; border-color: #7ba7d4; }
+.hlp-badge { position: absolute; top: -11px; left: -8px; width: 30px; height: 30px; border-radius: 50%; background: #0d2f5e; color: #fff; font-weight: 800; font-size: 11.5px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.28); }
+.hlp-box-name { font-style: italic; font-weight: 650; font-size: 13.5px; color: #1c2127; line-height: 1.3; }
+.hlp-foot { font-size: 11.5px; color: #4b5560; margin-top: 6px; }
+
+/* ============ 3) Taxonomy Description table ============ */
+.td-doc { background: #fff; margin: 16px; padding: 22px 26px 28px; border: 1px solid #cfd6de; box-shadow: 0 2px 10px rgba(0,0,0,.06); width: max-content; min-width: calc(100% - 32px); }
+.td-title { font-size: 22px; font-weight: 800; color: #12365f; }
+.td-sub { font-size: 13px; font-weight: 700; color: #3f86d6; margin: 2px 0 18px; }
+.td-table { border-collapse: collapse; }
+.td-table th, .td-table td { border: 1px solid #cdd3da; vertical-align: top; text-align: left; padding: 10px 12px; font-size: 12.5px; line-height: 1.4; }
+.td-head th { background: #3f7bbf; color: #fff; font-weight: 800; font-size: 13px; text-align: left; }
+.td-rowlabel { background: #eceef1; font-weight: 800; color: #2b3946; width: 190px; }
+.td-head .td-rowlabel { background: #3f7bbf; color: #fff; }
+.td-namecell { color: #14507e; font-weight: 800; font-size: 13px; }
+.td-bullets { margin: 0; padding-left: 16px; }
+.td-bullets li { margin-bottom: 4px; }
+.td-empty { color: #b6bdc7; }

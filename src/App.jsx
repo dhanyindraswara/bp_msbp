@@ -12,6 +12,7 @@ import AskAI from './menus/AskAI.jsx'
 import DocumentImport from './menus/DocumentImport.jsx'
 import AutoFlow from './menus/AutoFlow.jsx'
 import KnowledgeBase from './menus/KnowledgeBase.jsx'
+import BpArchitecture from './menus/BpArchitecture.jsx'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
@@ -68,6 +69,7 @@ const NAV = [
   {
     group: 'Business Process',
     items: [
+      { id: 'architecture', label: 'BP Architecture', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8' },
       { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
       { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
     ],
@@ -248,6 +250,7 @@ export default function App() {
       </aside>
 
       <main className="stones-main">
+        {menu === 'architecture' && <BpArchitecture notify={notify} rev={rev} />}
         {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} rev={rev} />}
         {menu === 'develop' && (
           <DocumentDevelopment

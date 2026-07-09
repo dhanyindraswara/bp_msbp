@@ -174,6 +174,25 @@ Ketiganya disimpan seragam sebagai `{ type, refId, label }`.
 - **Selaras `project.sipoc` app sekarang** → perubahan kode minimal; tinggal tambah
   `risks`, `kpis`, dan bungkus supplier/customer jadi objek `{type,refId,label}`.
 
+## 4b. Implementasi di app (sudah dibangun)
+
+Menu baru **BP Architecture** (`src/menus/BpArchitecture.jsx` + `src/lib/bpTree.js`)
+mewujudkan model ini di web:
+
+- **Penyimpanan:** tiap node = 1 dokumen di collection `bp_documents` yang sudah ada,
+  dengan `docType: 'BPNODE'` + payload `node:{ entity, parent, level, code, title,
+  sortOrder, sipoc[], risks[], kpis[] }`. Sama persis pola KNOWLEDGE/SOP/FLOW → **tanpa
+  collection baru, tanpa security-rule baru, tanpa deploy function**. Node difilter keluar
+  dari Repository/Dashboard/Global Search/Ask AI.
+- **UI:** dua panel — navigator pohon (kiri, badge L0–L3, tombol `+` untuk tambah anak,
+  chip "n SIPOC" di daun) + editor node (kanan). Node LVL 3 memunculkan editor SIPOC
+  (baris supplier→input→process→output→customer), Risk, dan Performance Indicator.
+- **Supplier/Customer** memakai kontrol polimorfik `{type, refId, label}`: tipe **Proses**
+  → dropdown node lain; **Organisasi** → label teks (di-wire ke `org_units` nanti);
+  **Bebas** → free text.
+- Ada tombol **"Buat struktur contoh (ITM)"** untuk seed pohon Marine & Logistic dari
+  `DATABASE_DESIGN_IDEA.xlsx` saat masih kosong.
+
 ## 5. Kalau nanti butuh lebih
 - **Pindah RISK/KPI jadi register lintas-BP** (dashboard risiko se-perusahaan) → angkat
   `risks`/`kpis` jadi collection sendiri dengan `bpNodeId` (persis tabel 2.4/2.5).

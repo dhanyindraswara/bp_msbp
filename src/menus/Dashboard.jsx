@@ -3,7 +3,7 @@
 import { listDocs } from '../lib/store.js'
 
 export default function Dashboard({ goRepository }) {
-  const docs = listDocs().filter((d) => d.docType !== 'KNOWLEDGE')
+  const docs = listDocs().filter((d) => d.docType !== 'KNOWLEDGE' && d.docType !== 'BPNODE')
   const total = docs.length
   const versions = new Set(docs.map((d) => d.version)).size
   const latest = docs[0]

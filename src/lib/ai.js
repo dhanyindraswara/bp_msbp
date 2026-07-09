@@ -63,7 +63,7 @@ function cleanText(text) {
 // Summarize every document into text the model can reason over. Reference
 // documents (docType KNOWLEDGE) are handled separately below.
 export function buildContext() {
-  const docs = listDocs().filter((d) => d.docType !== 'KNOWLEDGE')
+  const docs = listDocs().filter((d) => d.docType !== 'KNOWLEDGE' && d.docType !== 'BPNODE')
 
   // A directory of every document in the app, so the model knows the full set.
   const typeName = (d) => (d.docType === 'FLOW' ? 'Flow Process' : d.docType === 'SOP' ? 'SOP' : d.docType || 'BP')

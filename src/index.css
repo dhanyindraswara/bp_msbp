@@ -690,6 +690,50 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .bpa-mini:disabled { opacity: .35; cursor: not-allowed; }
 .bpa-mini-danger:hover { background: #fbe9eb; border-color: #e6bcc1; color: #c0505a; }
 
+/* entity tabs */
+.bpa-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.bpa-tab { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); font-weight: 650; font-size: 12.5px; cursor: pointer; box-shadow: var(--shadow-xs); }
+.bpa-tab:hover { background: var(--surface-2); }
+.bpa-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 1px 2px rgba(47,111,176,.35); }
+.bpa-tab-hold { font-size: 9px; font-weight: 800; background: #d98324; color: #fff; border-radius: 4px; padding: 0 4px; line-height: 14px; }
+.bpa-tab.active .bpa-tab-hold { background: rgba(255,255,255,.3); }
+
+/* add-entity form */
+.bpa-addent { padding: 14px 16px; margin-bottom: 14px; }
+.bpa-addent-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.bpa-addent-row .imp-field { min-width: 130px; }
+.bpa-addent-actions { display: flex; gap: 6px; margin-left: auto; }
+.bpa-hold-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 650; color: var(--text-2); cursor: pointer; padding-bottom: 8px; white-space: nowrap; }
+.bpa-hold-check input { width: 15px; height: 15px; accent-color: var(--accent); }
+
+/* holding badge in tree + entity chip in editor */
+.bpa-hold { flex: none; font-size: 9px; font-weight: 800; color: #fff; background: #d98324; border-radius: 5px; padding: 1px 5px; }
+.bpa-ent-chip { flex: none; font-family: 'Inter', ui-monospace, monospace; font-size: 11px; font-weight: 800; color: #2b5c8a; background: var(--accent-tint); border: 1px solid var(--accent-tint-2); border-radius: 6px; padding: 2px 7px; }
+
+/* LVL0 badge shows entity code — allow it to size to text */
+.bpa-lv-0 { background: #2f6fb0; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* code + suggest */
+.bpa-code-wrap { display: flex; gap: 6px; align-items: stretch; }
+.bpa-code-wrap input { flex: 1; min-width: 0; }
+.bpa-suggest { flex: none; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-2); border-radius: var(--radius-sm); padding: 0 9px; font-size: 11px; font-weight: 650; cursor: pointer; }
+.bpa-suggest:hover { background: var(--accent-tint); border-color: var(--accent-tint-2); color: var(--accent); }
+.bpa-meta-cat { grid-template-columns: 130px 1fr 150px; }
+
+/* PROCESS party: dropdown + jump button */
+.bpa-party-proc { display: flex; gap: 4px; align-items: center; }
+.bpa-party-proc .bpa-party-val { flex: 1; min-width: 0; }
+.bpa-jump { flex: none; width: 28px; border: 1px solid var(--border-strong); background: var(--surface-2); border-radius: 6px; color: var(--accent); font-weight: 700; cursor: pointer; }
+.bpa-jump:hover { background: var(--accent-tint); border-color: var(--accent-tint-2); }
+
+/* inbound connections */
+.bpa-inbound { display: flex; flex-direction: column; gap: 6px; }
+.bpa-inlink { display: flex; align-items: center; gap: 8px; text-align: left; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 12.5px; color: var(--text); cursor: pointer; }
+.bpa-inlink:hover { border-color: var(--accent-tint-2); background: var(--accent-tint); }
+.bpa-inrole { flex: none; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 6px; }
+.bpa-inrole-supplier { background: #e6f2ea; color: #2f7a52; }
+.bpa-inrole-customer { background: #fdeede; color: #b9741e; }
+
 /* risk / KPI lists */
 .bpa-list { display: flex; flex-direction: column; gap: 8px; }
 .bpa-list-row { display: flex; gap: 8px; align-items: center; }

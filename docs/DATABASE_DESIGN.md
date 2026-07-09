@@ -190,8 +190,22 @@ mewujudkan model ini di web:
 - **Supplier/Customer** memakai kontrol polimorfik `{type, refId, label}`: tipe **Proses**
   → dropdown node lain; **Organisasi** → label teks (di-wire ke `org_units` nanti);
   **Bebas** → free text.
-- Ada tombol **"Buat struktur contoh (ITM)"** untuk seed pohon Marine & Logistic dari
-  `DATABASE_DESIGN_IDEA.xlsx` saat masih kosong.
+- Ada tombol **"Buat struktur contoh"** untuk seed pohon (ITM holding + TCM) saat masih kosong.
+
+### Multi-entity (LVL 0 = perusahaan)
+
+- **LVL 0 = satu entity/korporasi** (ITM, TCM, BEK, IMM, …). Field `entity` + `code` di
+  node LVL 0 = kode perusahaan; ada flag `isHolding` untuk menandai holding (ITM). Node LVL 0
+  bisa ditambah lewat tombol **"+ Entity"**.
+- **Anak-anaknya mewarisi `entity`** dari root LVL 0-nya (`entityCodeOf` menelusuri parent
+  chain). Editor menampilkan chip entity, dan ada **tab filter per-entity** di atas pohon.
+- **Numbering** ngikut skema ITM & bisa di-edit: LVL 1 pakai huruf kategori
+  (Core→`C.1`, Enabler→`E.1`, Management→`M.1`; field `category`), LVL 2 `C1.1`, LVL 3
+  `C.1.1.1`. Tombol **"saran"** mengisi kode berikutnya otomatis (`suggestChildCode`).
+- **Koneksi antar-proses:** Supplier/Customer tipe `PROCESS` bisa menunjuk node mana pun
+  **lintas entity** (opsi dropdown diprefix kode entity), ada tombol lompat ↗ ke node
+  tujuan, dan tiap node punya bagian **"Dipakai oleh"** (inbound links via `inboundRefs`)
+  yang meng-klik-kan balik ke proses yang mereferensikannya.
 
 ## 5. Kalau nanti butuh lebih
 - **Pindah RISK/KPI jadi register lintas-BP** (dashboard risiko se-perusahaan) → angkat

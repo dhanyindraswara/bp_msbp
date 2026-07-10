@@ -280,7 +280,7 @@ export default function App() {
       </aside>
 
       <main className="stones-main">
-        {menu === 'architecture' && <BpArchitecture notify={notify} rev={rev} />}
+        {menu === 'architecture' && <BpArchitecture notify={notify} rev={rev} openDoc={openDoc} />}
         {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} rev={rev} />}
         {menu === 'develop' && (
           <DocumentDevelopment

@@ -21,6 +21,8 @@ import {
   processOptions,
   suggestChildCode,
   inboundRefs,
+  linkableDocs,
+  resolveDocs,
   createNode,
   createEntity,
   saveNode,
@@ -131,7 +133,7 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId }) {
   )
 }
 
-export default function BpArchitecture({ notify, rev }) {
+export default function BpArchitecture({ notify, rev, openDoc }) {
   const docs = useMemo(() => listNodeDocs(), [rev])
   const byId = useMemo(() => {
     const m = {}
@@ -247,6 +249,7 @@ export default function BpArchitecture({ notify, rev }) {
   }
   const setRisks = (rows) => patch({ risks: rows })
   const setKpis = (rows) => patch({ kpis: rows })
+  const setDocs = (ids) => patch({ docs: ids })
 
   // suggested code for the current (non-entity) node
   const applySuggestedCode = () => {
@@ -487,6 +490,9 @@ export default function BpArchitecture({ notify, rev }) {
                       </>
                     )}
 
+                    {/* linked repository documents — the connective tissue */}
+                    {draft.level >= 1 ? renderDocs() : null}
+
                     {/* inbound connections — where this node is used as supplier/customer */}
                     {draft.level >= 2 && inbound.length ? (
                       <div className="bpa-sec">
@@ -595,6 +601,60 @@ export default function BpArchitecture({ notify, rev }) {
                   placeholder={placeholder}
                 />
                 <button className="bpa-mini bpa-mini-danger" title="Hapus" onClick={() => setter((items || []).filter((x) => x.id !== r.id))}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function renderDocs() {
+    const linked = resolveDocs(draft.docs)
+    const linkedIds = new Set(draft.docs || [])
+    const available = linkableDocs().filter((d) => !linkedIds.has(d.id))
+    return (
+      <div className="bpa-sec">
+        <div className="bpa-sec-hd">
+          <span>Dokumen terkait</span>
+          <select
+            className="bpa-doc-add"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) setDocs([...(draft.docs || []), e.target.value])
+            }}
+          >
+            <option value="">+ Tautkan dokumen…</option>
+            {available.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.id} · {d.name} ({d.docType})
+              </option>
+            ))}
+          </select>
+        </div>
+        {linked.length === 0 ? (
+          <div className="bpa-empty-row">Belum ada dokumen BP/SOP/Flow yang ditautkan ke proses ini.</div>
+        ) : (
+          <div className="bpa-doclist">
+            {linked.map((d) => (
+              <div key={d.id} className={'bpa-docchip' + (d.exists ? '' : ' bpa-docchip-gone')}>
+                <span className="bpa-doc-type">{d.docType}</span>
+                <button
+                  className="bpa-doc-name"
+                  title={d.exists ? 'Buka dokumen' : 'Dokumen sudah dihapus'}
+                  disabled={!d.exists || !openDoc}
+                  onClick={() => d.exists && openDoc && openDoc(d.id)}
+                >
+                  {d.name}
+                  {d.exists ? ' ↗' : ' (dihapus)'}
+                </button>
+                <button
+                  className="bpa-mini bpa-mini-danger"
+                  title="Lepas tautan"
+                  onClick={() => setDocs((draft.docs || []).filter((x) => x !== d.id))}
+                >
                   ✕
                 </button>
               </div>

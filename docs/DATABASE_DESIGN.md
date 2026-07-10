@@ -206,6 +206,11 @@ mewujudkan model ini di web:
   **lintas entity** (opsi dropdown diprefix kode entity), ada tombol lompat ↗ ke node
   tujuan, dan tiap node punya bagian **"Dipakai oleh"** (inbound links via `inboundRefs`)
   yang meng-klik-kan balik ke proses yang mereferensikannya.
+- **Tautan ke dokumen (connective tissue):** tiap node proses (LVL 1–3) punya field
+  `docs: []` — daftar id dokumen BP/SOP/Flow dari collection `bp_documents`. Section
+  **"Dokumen terkait"** (`linkableDocs`/`resolveDocs`) buat nautkan dokumen yang ada;
+  chip-nya bisa di-klik buat langsung buka dokumennya di Document Development (via `openDoc`).
+  Jadi arsitektur proses nyambungin hierarki ↔ SIPOC ↔ dokumen nyata.
 
 ## 5. Kalau nanti butuh lebih
 - **Pindah RISK/KPI jadi register lintas-BP** (dashboard risiko se-perusahaan) → angkat

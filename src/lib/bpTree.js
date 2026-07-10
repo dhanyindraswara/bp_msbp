@@ -62,6 +62,7 @@ export function blankNode(level, parent) {
     sipoc: [],
     risks: [],
     kpis: [],
+    docs: [], // linked repository document ids (BP / SOP / FLOW) — the connective tissue
   }
 }
 
@@ -88,8 +89,25 @@ const normNode = (n) => ({
   sipoc: [],
   risks: [],
   kpis: [],
+  docs: [],
   ...(n || {}),
 })
+
+// Documents that can be linked to a process node: real BP/SOP/FLOW documents,
+// excluding structural/meta docs (nodes, knowledge, taxonomy renderers).
+const NON_LINKABLE = ['BPNODE', 'KNOWLEDGE', 'TAXONOMY', 'HLP', 'TAXDESC']
+export function linkableDocs() {
+  return listDocs()
+    .filter((d) => !NON_LINKABLE.includes(d.docType))
+    .map((d) => ({ id: d.id, name: d.name || d.id, docType: d.docType || 'BP' }))
+}
+// Resolve stored doc ids to displayable entries (flags ones that were deleted).
+export function resolveDocs(ids) {
+  return (ids || []).map((id) => {
+    const d = getDoc(id)
+    return { id, name: d?.name || id, docType: d?.docType || 'BP', exists: !!d }
+  })
+}
 
 // ---- reads ----
 // All node docs (each is a store doc `{ id, node, name, ... }`).

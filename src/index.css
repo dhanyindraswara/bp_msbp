@@ -1395,3 +1395,12 @@ table.stones-table tbody tr td { transition: background .12s; }
   .stones-page, .ai-page, .fl-page, .itm-wrap, .imp-review, .bpa-branch, .toast, .top-new-menu { animation: none !important; }
   .bpa-caret { transition: none; }
 }
+
+/* ---- "Auto-generate from architecture" bar (diagram menus) ---- */
+.gen-bar { display: flex; align-items: center; gap: 9px; background: linear-gradient(120deg, #eaf7fd, #eef0fb); border: 1px solid #cdे0f5; border: 1px solid #cde0f5; border-radius: 11px; padding: 9px 12px; margin: 4px 0 16px; }
+.gen-lb { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #3b3a7a; flex: none; }
+.gen-lb svg { width: 14px; height: 14px; color: #0084c6; }
+.gen-bar select { flex: 1; min-width: 0; border: 1px solid var(--border-strong); border-radius: 8px; padding: 7px 9px; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); background: #fff; cursor: pointer; }
+.gen-bar select:focus { outline: none; border-color: var(--accent); }
+.bpa-view { color: #3b3a7a; border-color: #cdd5f0; background: #f4f5fd; }
+.bpa-view:hover { background: #e9ebfa; border-color: #b9c3ec; }

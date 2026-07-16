@@ -5,6 +5,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { blankTaxdesc, sampleTaxdesc, normTaxdesc, taxdescProc, TAXDESC_ROWS } from '../lib/taxdesc.js'
 import { blankProject } from '../lib/sample.js'
+import { taxdescSourceOptions, genTaxdescFromNode } from '../lib/genFromTree.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import TaxDescTable from '../components/TaxDescTable.jsx'
 
@@ -15,7 +16,7 @@ const Field = ({ label, value, onChange, placeholder }) => (
   </label>
 )
 
-export default function TaxonomyDescription({ openId, setOpenId, notify }) {
+export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom, onGenHandled }) {
   const [td, setTd] = useState(() => (openId ? normTaxdesc(getDoc(openId)?.taxdesc) : blankTaxdesc()))
   const [savedId, setSavedId] = useState(openId || '')
 
@@ -43,6 +44,24 @@ export default function TaxonomyDescription({ openId, setOpenId, notify }) {
   }, [td, savedId])
 
   const tdDocs = useMemo(() => listDocs().filter((d) => d.docType === 'TAXDESC'), [savedId, td])
+
+  // "Select a parent process → auto" — columns from its children, KPIs prefilled.
+  const genOpts = useMemo(() => taxdescSourceOptions(), [])
+  const [genSrc, setGenSrc] = useState('')
+  const doGen = (id) => {
+    const g = genTaxdescFromNode(id)
+    if (!g) return
+    setTd(g)
+    setSavedId('')
+    setOpenId && setOpenId(null)
+    notify && notify('Description table generated from the Process Explorer')
+  }
+  useEffect(() => {
+    if (!genFrom) return
+    doGen(genFrom.id)
+    onGenHandled && onGenHandled()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [genFrom && genFrom.n])
 
   const set = (patch) => setTd((p) => ({ ...p, ...patch }))
   const setProc = (pi, patch) => setTd((p) => ({ ...p, processes: p.processes.map((x, i) => (i === pi ? { ...x, ...patch } : x)) }))
@@ -88,6 +107,21 @@ export default function TaxonomyDescription({ openId, setOpenId, notify }) {
 
       <div className="fl-split">
         <div className="fl-form">
+          {genOpts.length ? (
+            <div className="gen-bar">
+              <span className="gen-lb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+                Auto-generate
+              </span>
+              <select value={genSrc} onChange={(e) => setGenSrc(e.target.value)}>
+                <option value="">Select a parent process (LVL 1–2)…</option>
+                {genOpts.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+              <button className="btn btn-sm btn-primary" disabled={!genSrc} onClick={() => doGen(genSrc)}>Generate</button>
+            </div>
+          ) : null}
           <div className="imp-sec">Title</div>
           <div className="imp-grid">
             <Field label="Title" value={td.title} onChange={(v) => set({ title: v })} placeholder="Taxonomy Description" />

@@ -158,7 +158,7 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId, openMap
   )
 }
 
-export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, onFocusHandled }) {
+export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, onFocusHandled, openDiagram }) {
   const docs = useMemo(() => listNodeDocs(), [rev])
   const byId = useMemo(() => {
     const m = {}
@@ -478,6 +478,21 @@ export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, 
                       {dirty ? <span className="bpa-dirty-tag">unsaved</span> : null}
                     </div>
                     <div className="bpa-ed-hd-actions">
+                      {openDiagram && draft.level === 0 ? (
+                        <button className="btn btn-sm bpa-view" title="Draw this entity as a High Level Business Process diagram" onClick={() => openDiagram('hlp', selectedId)}>
+                          ⤴ View as HLP diagram
+                        </button>
+                      ) : null}
+                      {openDiagram && draft.level === 1 ? (
+                        <button className="btn btn-sm bpa-view" title="Draw this group as an L0→L3 taxonomy diagram" onClick={() => openDiagram('taxonomy', selectedId)}>
+                          ⤴ View as Taxonomy
+                        </button>
+                      ) : null}
+                      {openDiagram && (draft.level === 1 || draft.level === 2) && docs.some((x) => (x.node?.parent || null) === selectedId) ? (
+                        <button className="btn btn-sm bpa-view" title="Generate the description table of this process's children" onClick={() => openDiagram('taxdesc', selectedId)}>
+                          ⤴ Description table
+                        </button>
+                      ) : null}
                       <button className="btn btn-sm btn-danger" onClick={removeNode}>
                         Delete
                       </button>

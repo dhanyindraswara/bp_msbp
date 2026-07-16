@@ -86,6 +86,7 @@ export default function App() {
   // Enterprise context: which entity (LVL 0 company) the user is working in.
   const [entity, setEntity] = useState(() => localStorage.getItem('stones-entity') || '')
   const [focusNodeId, setFocusNodeId] = useState(null) // process node to focus in the Explorer
+  const [genReq, setGenReq] = useState(null) // {kind:'hlp'|'taxonomy'|'taxdesc', id, n} — auto-generate request
   const setEntityCtx = (code) => {
     setEntity(code)
     try { localStorage.setItem('stones-entity', code || '') } catch (e) { /* ignore */ }
@@ -212,6 +213,13 @@ export default function App() {
   const openProcess = useCallback((nodeId) => {
     setFocusNodeId(nodeId)
     setMenu('architecture')
+  }, [])
+  // "View as diagram" from the Explorer: open a diagram menu pre-generated
+  // from that node/entity (HLP for LVL 0, Taxonomy for LVL 1, description
+  // table for LVL 1–2).
+  const openDiagram = useCallback((kind, nodeId) => {
+    setGenReq({ kind, id: nodeId, n: Date.now() })
+    setMenu(kind)
   }, [])
 
   // Top-bar context: entities for the switcher + breadcrumb of the active menu.
@@ -375,6 +383,7 @@ export default function App() {
               entity={entity}
               focusId={focusNodeId}
               onFocusHandled={() => setFocusNodeId(null)}
+              openDiagram={openDiagram}
             />
           )}
           {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} rev={rev} />}
@@ -388,9 +397,15 @@ export default function App() {
           )}
           {menu === 'import' && <DocumentImport notify={notify} goRepository={() => setMenu('repository')} />}
           {menu === 'flow' && <AutoFlow openId={flowOpenId} setOpenId={setFlowOpenId} notify={notify} />}
-          {menu === 'taxonomy' && <TaxonomyBuilder openId={taxOpenId} setOpenId={setTaxOpenId} notify={notify} />}
-          {menu === 'hlp' && <HighLevelProcess openId={hlpOpenId} setOpenId={setHlpOpenId} notify={notify} />}
-          {menu === 'taxdesc' && <TaxonomyDescription openId={descOpenId} setOpenId={setDescOpenId} notify={notify} />}
+          {menu === 'taxonomy' && (
+            <TaxonomyBuilder openId={taxOpenId} setOpenId={setTaxOpenId} notify={notify} genFrom={genReq?.kind === 'taxonomy' ? genReq : null} onGenHandled={() => setGenReq(null)} />
+          )}
+          {menu === 'hlp' && (
+            <HighLevelProcess openId={hlpOpenId} setOpenId={setHlpOpenId} notify={notify} genFrom={genReq?.kind === 'hlp' ? genReq : null} onGenHandled={() => setGenReq(null)} />
+          )}
+          {menu === 'taxdesc' && (
+            <TaxonomyDescription openId={descOpenId} setOpenId={setDescOpenId} notify={notify} genFrom={genReq?.kind === 'taxdesc' ? genReq : null} onGenHandled={() => setGenReq(null)} />
+          )}
           {menu === 'repository' && <Repository openDoc={openDoc} openProcess={openProcess} notify={notify} rev={rev} />}
           {menu === 'search' && (
             <GlobalSearch key={'gs-' + searchQ} openDoc={openDoc} openProcess={openProcess} rev={rev} initialQuery={searchQ} />

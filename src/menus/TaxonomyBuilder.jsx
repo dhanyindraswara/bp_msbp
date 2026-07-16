@@ -4,6 +4,7 @@
 // repository as TAXONOMY-type documents and reopenable here for editing.
 import { useState, useEffect, useMemo } from 'react'
 import { blankTaxonomy, sampleTaxonomy, normTaxonomy, taxBox } from '../lib/taxonomy.js'
+import { taxonomySourceOptions, genTaxonomyFromNode } from '../lib/genFromTree.js'
 import { blankProject } from '../lib/sample.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import { uid } from '../lib/constants.js'
@@ -16,7 +17,7 @@ const Field = ({ label, value, onChange, placeholder }) => (
   </label>
 )
 
-export default function TaxonomyBuilder({ openId, setOpenId, notify }) {
+export default function TaxonomyBuilder({ openId, setOpenId, notify, genFrom, onGenHandled }) {
   const [tax, setTax] = useState(() => (openId ? normTaxonomy(getDoc(openId)?.taxonomy) : blankTaxonomy()))
   const [savedId, setSavedId] = useState(openId || '')
 
@@ -45,6 +46,24 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify }) {
   }, [tax, savedId])
 
   const taxDocs = useMemo(() => listDocs().filter((d) => d.docType === 'TAXONOMY'), [savedId, tax])
+
+  // "Select a process → auto" — generate the diagram from the Explorer tree.
+  const genOpts = useMemo(() => taxonomySourceOptions(), [])
+  const [genSrc, setGenSrc] = useState('')
+  const doGen = (id) => {
+    const g = genTaxonomyFromNode(id)
+    if (!g) return
+    setTax(g)
+    setSavedId('')
+    setOpenId && setOpenId(null)
+    notify && notify('Taxonomy generated from the Process Explorer')
+  }
+  useEffect(() => {
+    if (!genFrom) return
+    doGen(genFrom.id)
+    onGenHandled && onGenHandled()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [genFrom && genFrom.n])
 
   const set = (patch) => setTax((p) => ({ ...p, ...patch }))
   const setCol = (ci, patch) => setTax((p) => ({ ...p, columns: p.columns.map((c, i) => (i === ci ? { ...c, ...patch } : c)) }))
@@ -95,11 +114,26 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify }) {
 
       <div className="fl-split">
         <div className="fl-form">
+          {genOpts.length ? (
+            <div className="gen-bar">
+              <span className="gen-lb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+                Auto-generate
+              </span>
+              <select value={genSrc} onChange={(e) => setGenSrc(e.target.value)}>
+                <option value="">Select a process group (LVL 1)…</option>
+                {genOpts.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+              <button className="btn btn-sm btn-primary" disabled={!genSrc} onClick={() => doGen(genSrc)}>Generate</button>
+            </div>
+          ) : null}
           <div className="imp-sec">Title &amp; bands</div>
           <div className="imp-grid">
             <Field label="Diagram title" value={tax.title} onChange={(v) => set({ title: v })} placeholder="E4. Shipment Coordination (Taxonomy)" />
-            <Field label="L0 — label proses inti" value={tax.l0} onChange={(v) => set({ l0: v })} placeholder="Core Process" />
-            <Field label="L1 — grup proses" value={tax.l1} onChange={(v) => set({ l1: v })} placeholder="C4. Marine & Logistic" />
+            <Field label="L0 — core process label" value={tax.l0} onChange={(v) => set({ l0: v })} placeholder="Core Process" />
+            <Field label="L1 — process group" value={tax.l1} onChange={(v) => set({ l1: v })} placeholder="C4. Marine & Logistic" />
           </div>
 
           <div className="imp-sec">
@@ -113,7 +147,7 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify }) {
           {tax.columns.map((c, ci) => (
             <div key={c.id} className="tx-colcard">
               <div className="tx-colcard-hd">
-                <span>Kolom {ci + 1}</span>
+                <span>Column {ci + 1}</span>
                 {tax.columns.length > 1 ? (
                   <button className="imp-x" title="Delete column" onClick={() => delCol(ci)}>✕ column</button>
                 ) : null}

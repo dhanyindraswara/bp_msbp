@@ -2,6 +2,7 @@
 // actors, flows, PPI, template header, and comments. Results open the document.
 import { useState, useMemo } from 'react'
 import { listDocs, STATUS } from '../lib/store.js'
+import { listNodeDocs, entityCodeOf } from '../lib/bpTree.js'
 
 const StatusBadge = ({ status }) => <span className={'stbadge stbadge-' + status}>{STATUS[status] || 'Draft'}</span>
 
@@ -62,10 +63,42 @@ function Snippet({ text, q }) {
   return <>{parts}</>
 }
 
-export default function GlobalSearch({ openDoc, rev, initialQuery }) {
+export default function GlobalSearch({ openDoc, openProcess, rev, initialQuery }) {
   const [q, setQ] = useState(initialQuery || '')
   const docs = useMemo(() => listDocs().filter((d) => d.docType !== 'KNOWLEDGE' && d.docType !== 'BPNODE'), [rev])
+  const nodeDocs = useMemo(() => listNodeDocs(), [rev])
+  const nodeById = useMemo(() => {
+    const m = {}
+    nodeDocs.forEach((d) => (m[d.id] = d))
+    return m
+  }, [nodeDocs])
   const query = q.trim()
+
+  // Business-process (architecture) matches: code, title, SIPOC parties/activities,
+  // risks, KPIs — each hit tagged so the user sees WHY it matched.
+  const procResults = useMemo(() => {
+    if (query.length < 2) return []
+    const ql = query.toLowerCase()
+    const has = (t) => (t || '').toLowerCase().includes(ql)
+    return nodeDocs
+      .map((d) => {
+        const n = d.node || {}
+        const hits = []
+        if (has(n.code) || has(n.title)) hits.push({ cat: 'Process', text: [n.code, n.title].filter(Boolean).join(' ') })
+        ;(n.sipoc || []).forEach((r) => {
+          if (has(r.supplier?.label)) hits.push({ cat: 'Supplier', text: r.supplier.label })
+          if (has(r.input)) hits.push({ cat: 'Input', text: r.input })
+          if (has(r.process)) hits.push({ cat: 'Activity', text: r.process })
+          if (has(r.output)) hits.push({ cat: 'Output', text: r.output })
+          if (has(r.customer?.label)) hits.push({ cat: 'Customer', text: r.customer.label })
+        })
+        ;(n.risks || []).forEach((r) => has(r.description) && hits.push({ cat: 'Risk', text: r.description }))
+        ;(n.kpis || []).forEach((k) => has(k.indicator) && hits.push({ cat: 'KPI', text: k.indicator }))
+        return { d, n, hits }
+      })
+      .filter((r) => r.hits.length)
+      .slice(0, 8)
+  }, [nodeDocs, query])
 
   const results = useMemo(() => {
     if (query.length < 2) return []
@@ -109,8 +142,35 @@ export default function GlobalSearch({ openDoc, rev, initialQuery }) {
         ) : null}
       </div>
 
+      {query.length >= 2 && procResults.length ? (
+        <>
+          <div className="search-count">{procResults.length} business process{procResults.length === 1 ? '' : 'es'} match “{query}”</div>
+          <div className="search-list" style={{ marginBottom: 18 }}>
+            {procResults.map(({ d, n, hits }) => (
+              <button key={d.id} className="search-result" onClick={() => openProcess && openProcess(d.id)}>
+                <div className="sr-top">
+                  <span className={'bpa-lv bpa-lv-' + (n.level ?? 0)}>{(n.level ?? 0) === 0 ? n.entity || n.code : 'L' + n.level}</span>
+                  <span className="sr-name"><Snippet text={[n.code, n.title].filter(Boolean).join(' ') || 'Process'} q={query} /></span>
+                  <span className="sr-ver">{entityCodeOf(d, nodeById) || ''}</span>
+                  <span className="chip">Process</span>
+                </div>
+                <div className="sr-snips">
+                  {hits.slice(0, 3).map((m, i) => (
+                    <div key={i} className="sr-snip">
+                      <span className="sr-cat">{m.cat}</span>
+                      <span><Snippet text={m.text} q={query} /></span>
+                    </div>
+                  ))}
+                  {hits.length > 3 ? <div className="sr-more">+{hits.length - 3} more match{hits.length - 3 === 1 ? '' : 'es'}</div> : null}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
       {query.length < 2 ? (
-        <div className="drawer-empty" style={{ padding: '18px 2px' }}>Type at least 2 characters to search {docs.length} document{docs.length === 1 ? '' : 's'}.</div>
+        <div className="drawer-empty" style={{ padding: '18px 2px' }}>Type at least 2 characters to search {docs.length} document{docs.length === 1 ? '' : 's'} and {nodeDocs.length} process node{nodeDocs.length === 1 ? '' : 's'}.</div>
       ) : results.length ? (
         <>
           <div className="search-count">{results.length} document{results.length === 1 ? '' : 's'} match “{query}”</div>
@@ -136,12 +196,12 @@ export default function GlobalSearch({ openDoc, rev, initialQuery }) {
             ))}
           </div>
         </>
-      ) : (
+      ) : procResults.length === 0 ? (
         <div className="empty-hero">
           <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a43', marginBottom: 4 }}>No matches</div>
           <div style={{ color: '#8a94a0' }}>Nothing found for “{query}”. Try a different keyword.</div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

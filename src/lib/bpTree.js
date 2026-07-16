@@ -17,22 +17,40 @@
 // the link for traceability.
 import { createDoc, saveDoc, getDoc, listDocs, deleteDoc, getOpenId, setOpenId } from './store.js'
 
-export const MAX_LEVEL = 3
-export const LEVEL_NAMES = ['Entity (LVL 0)', 'BP LVL 1', 'BP LVL 2', 'BP LVL 3']
+// ITM BP hierarchy (Management System Governance Guideline ITM-GD-GRC-2023-001):
+// LVL 0 business activities (value chain) per entity → LVL 1 process group →
+// LVL 2 process chain → LVL 3 process activity → LVL 4 process flow (deliverable:
+// SOP) → LVL 5 process task (deliverable: Work Instruction).
+export const MAX_LEVEL = 5
+export const LEVEL_NAMES = [
+  'Entity (LVL 0)',
+  'LVL 1 · Process Group',
+  'LVL 2 · Process Chain',
+  'LVL 3 · Process Activity',
+  'LVL 4 · Process Flow',
+  'LVL 5 · Process Task',
+]
+// Deliverable expected at each level, per the governance guideline.
+export const LEVEL_DELIVERABLES = ['BP Lv.0 document', 'BP Lv.1 document + flows', 'BP Lv.2 document + flows', 'BP Lv.3 document + SOP mapping + PPI', 'SOP document (incl. PPI)', 'Work Instruction']
+// SIPOC / risks / KPIs live on LVL 3 and deeper (process activity → flow → task).
+export const SIPOC_LEVEL = 3
 export const PARTY_TYPES = [
-  { id: 'PROCESS', label: 'Proses' },
-  { id: 'ORG', label: 'Organisasi' },
-  { id: 'FREE', label: 'Bebas' },
+  { id: 'PROCESS', label: 'Process' },
+  { id: 'ORG', label: 'Organization' },
+  { id: 'FREE', label: 'Free text' },
 ]
 
-// LVL 1 categories in the ITM taxonomy. The letter seeds the numbering
-// (Core → C.1, Enabler → E.1, Management → M.1).
+// LVL 1 categories in the ITM taxonomy (guideline: Enterprise / Core / Support).
+// The letter seeds the numbering (Enterprise → E.1, Core → C.1, Support → S.1).
 export const CATEGORIES = [
+  { id: 'ENTERPRISE', label: 'Enterprise', letter: 'E' },
   { id: 'CORE', label: 'Core', letter: 'C' },
-  { id: 'ENABLER', label: 'Enabler', letter: 'E' },
-  { id: 'MANAGEMENT', label: 'Management', letter: 'M' },
+  { id: 'SUPPORT', label: 'Support', letter: 'S' },
 ]
-export const categoryLetter = (id) => (CATEGORIES.find((c) => c.id === id) || {}).letter || 'C'
+// Legacy ids from before the guideline alignment keep their old letters.
+const LEGACY_LETTERS = { ENABLER: 'E', MANAGEMENT: 'M' }
+export const categoryLetter = (id) =>
+  (CATEGORIES.find((c) => c.id === id) || {}).letter || LEGACY_LETTERS[id] || 'C'
 
 const nid = (p) => (p || 'r') + Math.random().toString(36).slice(2, 9)
 
@@ -280,8 +298,8 @@ export function seedSampleTree() {
   const itm = mk(0, null, 'ITM', 'Indo Tambangraya Megah', 'ITM', { isHolding: true })
   // LVL1 categories (Core / Enabler / Management)
   const c4 = mk(1, itm, 'C.4', 'Marine & Logistic', 'ITM', { category: 'CORE' })
-  mk(1, itm, 'E.1', 'Human Capital', 'ITM', { category: 'ENABLER' })
-  mk(1, itm, 'M.1', 'Strategic Planning', 'ITM', { category: 'MANAGEMENT' })
+  mk(1, itm, 'S.1', 'Human Capital Management', 'ITM', { category: 'SUPPORT' })
+  mk(1, itm, 'E.1', 'Corporate Strategic & Performance Management', 'ITM', { category: 'ENTERPRISE' })
   // LVL2 under Marine & Logistic
   const c41 = mk(2, c4, 'C4.1', 'Marine & Logistics Planning', 'ITM')
   const c42 = mk(2, c4, 'C4.2', 'Marine & Logistic Operation', 'ITM')

@@ -8,9 +8,10 @@ import Landing from './Landing.jsx'
 import Login from './Login.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import BrandMark from './components/BrandMark.jsx'
+import { listEntities } from './lib/bpTree.js'
 import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
-import Dashboard from './menus/Dashboard.jsx'
+import Home from './menus/Home.jsx'
 import DocumentActionRequest from './menus/DocumentActionRequest.jsx'
 import GlobalSearch from './menus/GlobalSearch.jsx'
 import AskAI from './menus/AskAI.jsx'
@@ -33,11 +34,11 @@ const Icon = ({ d }) => (
 // (menemukan & meminta), Intelligence (bertanya & memberi konteks AI).
 // Global Search punya rumah baru: command palette (Ctrl/⌘+K) + pill di sidebar.
 const NAV = [
-  { id: 'dashboard', label: 'Dashboard', d: 'M4 13h6V4H4v9zm10 7h6V10h-6v10zM4 20h6v-4H4v4zM14 4v3h6V4h-6z' },
+  { id: 'home', label: 'Home', d: 'M3 10.5L12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5' },
   {
     group: 'Processes',
     items: [
-      { id: 'architecture', label: 'Process Architecture', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8' },
+      { id: 'architecture', label: 'Process Explorer', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8' },
       { id: 'taxonomy', label: 'Process Taxonomy', d: 'M12 3v4M6 21v-6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6M4 21h4M16 21h4M10 3h4v4h-4z' },
       { id: 'hlp', label: 'High Level Process', d: 'M3 5h18M3 12h18M3 19h18M7 3v18' },
       { id: 'taxdesc', label: 'Taxonomy Description', d: 'M4 5h16v14H4zM4 9h16M9 9v10M4 13h5M4 16h5' },
@@ -72,7 +73,7 @@ const NAV = [
 const NAV_FLAT = NAV.flatMap((e) => (e.group ? e.items.map((m) => ({ ...m, group: e.group })) : [{ ...e, group: '' }]))
 
 export default function App() {
-  const [menu, setMenu] = useState('develop')
+  const [menu, setMenu] = useState('home')
   const [ready, setReady] = useState(false)
   const [rev, setRev] = useState(0)
   const [user, setUser] = useState(undefined) // undefined = checking, null = signed out, object = signed in
@@ -80,6 +81,13 @@ export default function App() {
   const [gate, setGate] = useState('landing') // signed-out flow: landing → login
   const [palette, setPalette] = useState(false)
   const [searchQ, setSearchQ] = useState('') // seed query handed to Global Search
+  // Enterprise context: which entity (LVL 0 company) the user is working in.
+  const [entity, setEntity] = useState(() => localStorage.getItem('stones-entity') || '')
+  const [focusNodeId, setFocusNodeId] = useState(null) // process node to focus in the Explorer
+  const setEntityCtx = (code) => {
+    setEntity(code)
+    try { localStorage.setItem('stones-entity', code || '') } catch (e) { /* ignore */ }
+  }
   const [openId, setOpenIdState] = useState(null)
   const [flowOpenId, setFlowOpenId] = useState(null)
   const [taxOpenId, setTaxOpenId] = useState(null)
@@ -198,6 +206,17 @@ export default function App() {
     setMenu('develop')
     syncUrl(id)
   }, [])
+  // Jump to a process node inside the Process Explorer (from search, Home, Repository).
+  const openProcess = useCallback((nodeId) => {
+    setFocusNodeId(nodeId)
+    setMenu('architecture')
+  }, [])
+
+  // Top-bar context: entities for the switcher + breadcrumb of the active menu.
+  const entities = ready ? listEntities() : []
+  const navCurrent = NAV_FLAT.find((m) => m.id === menu)
+  const crumbGroup = navCurrent?.group || ''
+  const crumbLabel = navCurrent?.label || 'Home'
 
   // Firebase configured but still checking sign-in state.
   if (firebaseEnabled && user === undefined) {
@@ -233,13 +252,6 @@ export default function App() {
             <div className="stones-tag">Business Process Suite</div>
           </div>
         </div>
-        <button className="side-search" onClick={() => setPalette(true)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" />
-          </svg>
-          <span>Search…</span>
-          <kbd>Ctrl K</kbd>
-        </button>
         <nav className="stones-nav">
           <div className="stones-navlabel">Workspace</div>
           {NAV.map((entry, i) => {
@@ -278,26 +290,74 @@ export default function App() {
       </aside>
 
       <main className="stones-main">
-        {menu === 'architecture' && <BpArchitecture notify={notify} rev={rev} openDoc={openDoc} />}
-        {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} rev={rev} />}
-        {menu === 'develop' && (
-          <DocumentDevelopment
-            openId={openId}
-            setOpenId={setOpenId}
-            notify={notify}
-            goRepository={() => setMenu('repository')}
-          />
-        )}
-        {menu === 'import' && <DocumentImport notify={notify} goRepository={() => setMenu('repository')} />}
-        {menu === 'flow' && <AutoFlow openId={flowOpenId} setOpenId={setFlowOpenId} notify={notify} />}
-        {menu === 'taxonomy' && <TaxonomyBuilder openId={taxOpenId} setOpenId={setTaxOpenId} notify={notify} />}
-        {menu === 'hlp' && <HighLevelProcess openId={hlpOpenId} setOpenId={setHlpOpenId} notify={notify} />}
-        {menu === 'taxdesc' && <TaxonomyDescription openId={descOpenId} setOpenId={setDescOpenId} notify={notify} />}
-        {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} rev={rev} />}
-        {menu === 'search' && <GlobalSearch key={'gs-' + searchQ} openDoc={openDoc} rev={rev} initialQuery={searchQ} />}
-        {menu === 'ai' && <AskAI rev={rev} />}
-        {menu === 'knowledge' && <KnowledgeBase notify={notify} rev={rev} />}
-        {menu === 'dashboard' && <Dashboard goRepository={() => setMenu('repository')} rev={rev} />}
+        {/* ---- enterprise top bar: where am I + entity context + search + user ---- */}
+        <header className="stones-top">
+          <div className="top-crumb">
+            {crumbGroup ? <span className="top-crumb-group">{crumbGroup}</span> : null}
+            {crumbGroup ? <span className="top-crumb-sep">/</span> : null}
+            <span className="top-crumb-here">{crumbLabel}</span>
+          </div>
+          <div className="top-entity" title="Entity context — scopes Home and the Process Explorer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 21h18M5 21V7l7-4l7 4v14M9 9h.01M9 12h.01M9 15h.01M15 9h.01M15 12h.01M15 15h.01" />
+            </svg>
+            <select value={entity} onChange={(e) => setEntityCtx(e.target.value)}>
+              <option value="">All entities</option>
+              {entities.map((e) => {
+                const code = e.node?.entity || e.node?.code
+                return (
+                  <option key={e.id} value={code}>
+                    {code}{e.node?.isHolding ? ' · Holding' : ''}
+                  </option>
+                )
+              })}
+            </select>
+          </div>
+          <button className="top-search" onClick={() => setPalette(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" />
+            </svg>
+            <span>Search anything…</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+          <div className="top-user" title={firebaseEnabled ? user?.email || '' : 'Local mode'}>
+            {(firebaseEnabled ? user?.displayName || user?.email || 'U' : 'L').trim().charAt(0).toUpperCase()}
+          </div>
+        </header>
+
+        <div className="stones-content">
+          {menu === 'home' && <Home rev={rev} entity={entity} goTo={setMenu} openDoc={openDoc} openProcess={openProcess} />}
+          {menu === 'architecture' && (
+            <BpArchitecture
+              notify={notify}
+              rev={rev}
+              openDoc={openDoc}
+              entity={entity}
+              focusId={focusNodeId}
+              onFocusHandled={() => setFocusNodeId(null)}
+            />
+          )}
+          {menu === 'request' && <DocumentActionRequest openDoc={openDoc} notify={notify} rev={rev} />}
+          {menu === 'develop' && (
+            <DocumentDevelopment
+              openId={openId}
+              setOpenId={setOpenId}
+              notify={notify}
+              goRepository={() => setMenu('repository')}
+            />
+          )}
+          {menu === 'import' && <DocumentImport notify={notify} goRepository={() => setMenu('repository')} />}
+          {menu === 'flow' && <AutoFlow openId={flowOpenId} setOpenId={setFlowOpenId} notify={notify} />}
+          {menu === 'taxonomy' && <TaxonomyBuilder openId={taxOpenId} setOpenId={setTaxOpenId} notify={notify} />}
+          {menu === 'hlp' && <HighLevelProcess openId={hlpOpenId} setOpenId={setHlpOpenId} notify={notify} />}
+          {menu === 'taxdesc' && <TaxonomyDescription openId={descOpenId} setOpenId={setDescOpenId} notify={notify} />}
+          {menu === 'repository' && <Repository openDoc={openDoc} openProcess={openProcess} notify={notify} rev={rev} />}
+          {menu === 'search' && (
+            <GlobalSearch key={'gs-' + searchQ} openDoc={openDoc} openProcess={openProcess} rev={rev} initialQuery={searchQ} />
+          )}
+          {menu === 'ai' && <AskAI rev={rev} />}
+          {menu === 'knowledge' && <KnowledgeBase notify={notify} rev={rev} />}
+        </div>
       </main>
 
       <CommandPalette
@@ -309,6 +369,7 @@ export default function App() {
           setMenu(id)
         }}
         onOpenDoc={openDoc}
+        onOpenNode={openProcess}
         onDeepSearch={(q) => {
           setSearchQ(q)
           setMenu('search')

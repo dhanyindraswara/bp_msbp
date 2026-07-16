@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   MAX_LEVEL,
   LEVEL_NAMES,
+  LEVEL_DELIVERABLES,
+  SIPOC_LEVEL,
   PARTY_TYPES,
   CATEGORIES,
   blankSipocRow,
@@ -32,7 +34,7 @@ import {
 import { getDoc } from '../lib/store.js'
 
 const clone = (o) => JSON.parse(JSON.stringify(o))
-const nodeLabel = (n) => [n?.code, n?.title].filter(Boolean).join(' ').trim() || 'Proses tanpa nama'
+const nodeLabel = (n) => [n?.code, n?.title].filter(Boolean).join(' ').trim() || 'Untitled process'
 
 // ---- polymorphic Supplier/Customer field: { type, refId, label } ----
 function PartyField({ value, options, onChange, onNavigate }) {
@@ -60,7 +62,7 @@ function PartyField({ value, options, onChange, onNavigate }) {
               onChange({ type: 'PROCESS', refId: opt ? opt.id : null, label: opt ? opt.label : '' })
             }}
           >
-            <option value="">— pilih proses —</option>
+            <option value="">— select a process —</option>
             {options.map((o) => (
               <option key={o.id} value={o.id}>
                 {(o.entity ? o.entity + ' · ' : '') + o.label}
@@ -68,7 +70,7 @@ function PartyField({ value, options, onChange, onNavigate }) {
             ))}
           </select>
           {v.refId ? (
-            <button type="button" className="bpa-jump" title="Buka proses ini" onClick={() => onNavigate(v.refId)}>
+            <button type="button" className="bpa-jump" title="Open this process" onClick={() => onNavigate(v.refId)}>
               ↗
             </button>
           ) : null}
@@ -78,7 +80,7 @@ function PartyField({ value, options, onChange, onNavigate }) {
           className="bpa-party-val"
           value={v.label}
           onChange={(e) => onChange({ type: v.type, refId: null, label: e.target.value })}
-          placeholder={v.type === 'ORG' ? 'Nama unit organisasi…' : 'Ketik aktor / pihak…'}
+          placeholder={v.type === 'ORG' ? 'Organization unit name…' : 'Type an actor / party…'}
         />
       )}
     </div>
@@ -100,15 +102,15 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId }) {
         <span className={'bpa-lv bpa-lv-' + n.level}>{n.level === 0 ? n.entity || n.code || 'ENT' : 'L' + n.level}</span>
         <span className="bpa-node-main">
           <span className="bpa-node-code">{n.level === 0 ? n.title || n.entity : n.code || '—'}</span>
-          <span className="bpa-node-title">{n.level === 0 ? '' : n.title || 'Proses tanpa nama'}</span>
+          <span className="bpa-node-title">{n.level === 0 ? '' : n.title || 'Untitled process'}</span>
         </span>
         {n.level === 0 && n.isHolding ? <span className="bpa-hold">Holding</span> : null}
-        {dirtyId === node.id ? <span className="bpa-dirty" title="Belum disimpan">●</span> : null}
-        {isLeaf && sipocN ? <span className="bpa-node-chip">{sipocN} SIPOC</span> : null}
+        {dirtyId === node.id ? <span className="bpa-dirty" title="Unsaved changes">●</span> : null}
+        {sipocN ? <span className="bpa-node-chip">{sipocN} SIPOC</span> : null}
         {!isLeaf ? (
           <button
             className="bpa-node-add"
-            title={'Tambah anak (' + LEVEL_NAMES[n.level + 1] + ')'}
+            title={'Add child (' + LEVEL_NAMES[n.level + 1] + ')'}
             onClick={(e) => {
               e.stopPropagation()
               onAdd(n.level + 1, node.id)
@@ -133,7 +135,7 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId }) {
   )
 }
 
-export default function BpArchitecture({ notify, rev, openDoc }) {
+export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, onFocusHandled }) {
   const docs = useMemo(() => listNodeDocs(), [rev])
   const byId = useMemo(() => {
     const m = {}
@@ -142,7 +144,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
   }, [docs])
   const forest = useMemo(() => buildForest(docs), [docs])
   const entities = useMemo(() => listEntities(), [rev])
-  const [entityFilter, setEntityFilter] = useState(null) // null = all
+  const [entityFilter, setEntityFilter] = useState(entity || null) // null = all
   const [selectedId, setSelectedId] = useState(null)
   const [draft, setDraft] = useState(null) // working copy of the selected node's payload
   const [dirty, setDirty] = useState(false)
@@ -161,6 +163,25 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
     if (selectedId && docs.some((d) => d.id === selectedId)) return
     setSelectedId(docs[0]?.id || null)
   }, [docs, selectedId])
+
+  // Follow the workspace entity switcher (top bar).
+  useEffect(() => {
+    setEntityFilter(entity || null)
+  }, [entity])
+
+  // Focus request from search / Home / Repository: select that node and make
+  // sure it is visible (drop the entity filter if it would hide it).
+  useEffect(() => {
+    if (!focusId) return
+    if (docs.some((d) => d.id === focusId)) {
+      const target = byId[focusId]
+      const targetEntity = target ? entityCodeOf(target, byId) : null
+      setEntityFilter((f) => (f && targetEntity && f !== targetEntity ? null : f))
+      setSelectedId(focusId)
+    }
+    onFocusHandled && onFocusHandled()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, docs])
 
   // Load the selected node into an editable draft.
   useEffect(() => {
@@ -186,7 +207,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
     if (!selectedId || !draft) return
     saveNode(selectedId, draft)
     setDirty(false)
-    notify && notify('Node disimpan')
+    notify && notify('Node saved')
   }
   const reset = () => {
     const d = getDoc(selectedId)
@@ -195,7 +216,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
       setDirty(false)
     }
   }
-  const confirmLeave = () => !dirty || window.confirm('Perubahan belum disimpan akan hilang. Lanjut?')
+  const confirmLeave = () => !dirty || window.confirm('Unsaved changes will be lost. Continue?')
   const selectNode = (id) => {
     if (id === selectedId) return
     if (!confirmLeave()) return
@@ -205,7 +226,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
     if (!confirmLeave()) return
     const d = createNode(level, parent)
     setSelectedId(d.id)
-    notify && notify(LEVEL_NAMES[level] + ' ditambahkan')
+    notify && notify(LEVEL_NAMES[level] + ' added')
   }
   const submitEntity = () => {
     const code = entForm.code.trim()
@@ -215,7 +236,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
     setEntForm({ code: '', name: '', holding: false })
     setEntityFilter(code)
     setSelectedId(d.id)
-    notify && notify('Entity ' + code + ' dibuat')
+    notify && notify('Entity ' + code + ' created')
   }
   const removeNode = () => {
     if (!selectedId) return
@@ -223,20 +244,20 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
     const kids = docs.filter((x) => (x.node?.parent || null) === selectedId).length
     const what = draft.level === 0 ? `entity "${draft.code || draft.entity}"` : `"${label}"`
     const msg = kids
-      ? `Hapus ${what} beserta ${kids} turunan di bawahnya? Tindakan ini permanen.`
-      : `Hapus ${what}?`
+      ? `Delete ${what} and its ${kids} descendants? This cannot be undone.`
+      : `Delete ${what}?`
     if (!window.confirm(msg)) return
     deleteNodeCascade(selectedId)
     setSelectedId(null)
-    notify && notify('Node dihapus')
+    notify && notify('Node deleted')
   }
   const seed = () => {
     seedSampleTree()
-    notify && notify('Struktur contoh dibuat')
+    notify && notify('Sample structure created')
   }
 
   // ---- SIPOC / risk / KPI mutators on the draft ----
-  const isLeaf = draft && draft.level >= MAX_LEVEL
+  const isLeaf = draft && draft.level >= SIPOC_LEVEL
   const setSipoc = (rows) => patch({ sipoc: rows })
   const updateRow = (id, field, val) =>
     setSipoc((draft.sipoc || []).map((r) => (r.id === id ? { ...r, [field]: val } : r)))
@@ -259,19 +280,32 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
   }
 
   const totalNodes = docs.length
-  const leafCount = docs.filter((d) => (d.node?.level ?? 0) >= MAX_LEVEL).length
+  const leafCount = docs.filter((d) => (d.node?.level ?? 0) >= SIPOC_LEVEL).length
   const displayEntity = draft ? draft.entity || (byId[selectedId] ? entityCodeOf(byId[selectedId], byId) : '') : ''
   const inbound = useMemo(() => (selectedId ? inboundRefs(selectedId) : []), [selectedId, rev])
+
+  // Breadcrumb: parent chain of the selected node, root first.
+  const crumb = useMemo(() => {
+    const out = []
+    let cur = byId[selectedId]
+    let guard = 0
+    while (cur && guard++ < 12) {
+      out.unshift({ id: cur.id, label: cur.node?.level === 0 ? (cur.node.code || cur.node.entity) : (cur.node?.code || cur.node?.title || '—') })
+      cur = cur.node?.parent ? byId[cur.node.parent] : null
+    }
+    return out
+  }, [selectedId, byId])
 
   return (
     <div className="stones-page bpa-page">
       <div className="stones-page-hd stones-page-hd-row">
         <div>
-          <h1>BP Architecture</h1>
+          <h1>Process Explorer</h1>
           <p>
-            Kelola hierarki business process multi-entity (LVL 0 = perusahaan → LVL 1 kategori → LVL 2 → LVL 3) dan isi
-            SIPOC, risiko, serta indikator kinerja tiap proses LVL 3.
-            {totalNodes ? ` ${entities.length} entity · ${totalNodes} node · ${leafCount} proses LVL 3.` : ''}
+            Drill down through the group's business processes — LVL 0 entity → LVL 1 process group (Enterprise / Core /
+            Support) → LVL 2 chain → LVL 3 activity → LVL 4 flow (SOP) → LVL 5 task (WI). Each process carries its SIPOC,
+            risks, KPIs, linked documents and connections.
+            {totalNodes ? ` ${entities.length} entities · ${totalNodes} nodes · ${leafCount} LVL 3+ processes.` : ''}
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setAdding((a) => !a)}>
@@ -284,23 +318,23 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
         <div className="panel bpa-addent">
           <div className="bpa-addent-row">
             <label className="imp-field">
-              <span>Kode entity</span>
+              <span>Entity code</span>
               <input
                 autoFocus
                 value={entForm.code}
                 onChange={(e) => setEntForm({ ...entForm, code: e.target.value.toUpperCase() })}
-                placeholder="mis. TCM"
+                placeholder="e.g. TCM"
               />
             </label>
             <label className="imp-field" style={{ flex: 1 }}>
-              <span>Nama perusahaan</span>
+              <span>Company name</span>
               <input
                 value={entForm.name}
                 onChange={(e) => setEntForm({ ...entForm, name: e.target.value })}
-                placeholder="mis. Trubaindo Coal Mining"
+                placeholder="e.g. Trubaindo Coal Mining"
               />
             </label>
-            <label className="bpa-hold-check" title="Tandai sebagai perusahaan holding">
+            <label className="bpa-hold-check" title="Mark as the holding company">
               <input
                 type="checkbox"
                 checked={entForm.holding}
@@ -310,10 +344,10 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
             </label>
             <div className="bpa-addent-actions">
               <button className="btn btn-sm" onClick={() => setAdding(false)}>
-                Batal
+                Cancel
               </button>
               <button className="btn btn-sm btn-primary" onClick={submitEntity} disabled={!entForm.code.trim()}>
-                Buat entity
+                Create entity
               </button>
             </div>
           </div>
@@ -322,16 +356,16 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
 
       {totalNodes === 0 ? (
         <div className="empty-hero">
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a43', marginBottom: 6 }}>Belum ada struktur</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a43', marginBottom: 6 }}>No architecture yet</div>
           <div style={{ color: '#8a94a0', marginBottom: 16 }}>
-            Tambah entity (perusahaan) sebagai LVL 0, atau buat contoh struktur ITM (holding) + TCM untuk gambaran.
+            Add an entity (company) as LVL 0, or create the sample ITM (holding) + TCM structure to see how it works.
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
             <button className="btn btn-primary" onClick={seed}>
-              Buat struktur contoh
+              Create sample structure
             </button>
             <button className="btn" onClick={() => setAdding(true)}>
-              + Tambah entity
+              + Add entity
             </button>
           </div>
         </div>
@@ -341,7 +375,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
           {entities.length ? (
             <div className="bpa-tabs">
               <button className={'bpa-tab' + (entityFilter === null ? ' active' : '')} onClick={() => setEntityFilter(null)}>
-                Semua
+                All
               </button>
               {entities.map((e) => {
                 const code = e.node.entity || e.node.code
@@ -363,7 +397,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
             {/* ---- tree navigator ---- */}
             <div className="panel bpa-tree">
               <div className="bpa-tree-hd">
-                <span>Hierarki</span>
+                <span>Hierarchy</span>
                 <button className="btn btn-sm" onClick={() => setAdding(true)}>
                   + Entity
                 </button>
@@ -386,7 +420,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
             {/* ---- node editor ---- */}
             <div className="panel bpa-editor">
               {!draft ? (
-                <div className="bpa-editor-empty">Pilih node di kiri untuk mengedit.</div>
+                <div className="bpa-editor-empty">Select a node on the left to edit.</div>
               ) : (
                 <>
                   <div className="bpa-ed-hd">
@@ -394,11 +428,16 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                       <span className={'bpa-lv bpa-lv-' + draft.level}>{LEVEL_NAMES[draft.level]}</span>
                       {draft.level > 0 && displayEntity ? <span className="bpa-ent-chip">{displayEntity}</span> : null}
                       <span className="bpa-ed-name">{draft.level === 0 ? draft.title || draft.code || draft.entity : nodeLabel(draft)}</span>
-                      {dirty ? <span className="bpa-dirty-tag">belum disimpan</span> : null}
+                      {draft.level >= 1 ? (
+                        <span className="bpa-deliv" title="Expected deliverable at this level (governance guideline)">
+                          {LEVEL_DELIVERABLES[draft.level]}
+                        </span>
+                      ) : null}
+                      {dirty ? <span className="bpa-dirty-tag">unsaved</span> : null}
                     </div>
                     <div className="bpa-ed-hd-actions">
                       <button className="btn btn-sm btn-danger" onClick={removeNode}>
-                        Hapus
+                        Delete
                       </button>
                       {dirty ? (
                         <button className="btn btn-sm" onClick={reset}>
@@ -406,29 +445,58 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                         </button>
                       ) : null}
                       <button className="btn btn-sm btn-primary" onClick={save} disabled={!dirty}>
-                        Simpan
+                        Save
                       </button>
                     </div>
                   </div>
+
+                  {crumb.length > 1 ? (
+                    <div className="bpa-crumb">
+                      {crumb.map((c, i) => (
+                        <span key={c.id} className="bpa-crumb-seg">
+                          {i > 0 ? <span className="bpa-crumb-sep">›</span> : null}
+                          {i < crumb.length - 1 ? (
+                            <button className="bpa-crumb-link" onClick={() => selectNode(c.id)}>{c.label}</button>
+                          ) : (
+                            <span className="bpa-crumb-here">{c.label}</span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {draft.level >= 1 ? (
+                    <div className="bpa-360">
+                      {draft.level >= SIPOC_LEVEL ? (
+                        <>
+                          <span className="bpa-360-chip"><b>{(draft.sipoc || []).length}</b> SIPOC rows</span>
+                          <span className="bpa-360-chip"><b>{(draft.risks || []).length}</b> risks</span>
+                          <span className="bpa-360-chip"><b>{(draft.kpis || []).length}</b> KPIs</span>
+                        </>
+                      ) : null}
+                      <span className="bpa-360-chip"><b>{(draft.docs || []).length}</b> linked documents</span>
+                      <span className="bpa-360-chip"><b>{inbound.length}</b> used by</span>
+                    </div>
+                  ) : null}
 
                   <div className="bpa-ed-body">
                     {/* metadata — entity (LVL0) vs process node */}
                     {draft.level === 0 ? (
                       <div className="bpa-meta">
                         <label className="imp-field">
-                          <span>Kode entity</span>
+                          <span>Entity code</span>
                           <input
                             value={draft.code}
                             onChange={(e) => patch({ code: e.target.value.toUpperCase(), entity: e.target.value.toUpperCase() })}
-                            placeholder="mis. ITM"
+                            placeholder="e.g. ITM"
                           />
                         </label>
                         <label className="imp-field bpa-meta-title">
-                          <span>Nama perusahaan</span>
+                          <span>Company name</span>
                           <input
                             value={draft.title}
                             onChange={(e) => patch({ title: e.target.value })}
-                            placeholder="mis. Indo Tambangraya Megah"
+                            placeholder="e.g. Indo Tambangraya Megah"
                           />
                         </label>
                         <label className="bpa-hold-check" style={{ alignSelf: 'end', paddingBottom: 8 }}>
@@ -439,25 +507,25 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                     ) : (
                       <div className={'bpa-meta' + (draft.level === 1 ? ' bpa-meta-cat' : '')}>
                         <label className="imp-field">
-                          <span>Kode</span>
+                          <span>Code</span>
                           <div className="bpa-code-wrap">
-                            <input value={draft.code} onChange={(e) => patch({ code: e.target.value })} placeholder="mis. C4.1.1" />
-                            <button type="button" className="bpa-suggest" title="Saran kode otomatis" onClick={applySuggestedCode}>
-                              saran
+                            <input value={draft.code} onChange={(e) => patch({ code: e.target.value })} placeholder="e.g. C4.1.1" />
+                            <button type="button" className="bpa-suggest" title="Suggest the next code" onClick={applySuggestedCode}>
+                              suggest
                             </button>
                           </div>
                         </label>
                         <label className="imp-field bpa-meta-title">
-                          <span>Nama proses</span>
+                          <span>Process name</span>
                           <input
                             value={draft.title}
                             onChange={(e) => patch({ title: e.target.value })}
-                            placeholder="mis. Barge & Shipment Planning"
+                            placeholder="e.g. Barge & Shipment Planning"
                           />
                         </label>
                         {draft.level === 1 ? (
                           <label className="imp-field">
-                            <span>Kategori</span>
+                            <span>Category</span>
                             <select value={draft.category || ''} onChange={(e) => patch({ category: e.target.value })}>
                               <option value="">—</option>
                               {CATEGORIES.map((c) => (
@@ -473,19 +541,20 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
 
                     {draft.level === 0 ? (
                       <div className="bpa-note">
-                        Ini <b>entity (perusahaan)</b> — LVL 0. Tambah kategori proses (Core / Enabler / Management) sebagai
-                        LVL 1 lewat tombol <b>+</b> pada entity ini di panel kiri. Semua turunannya otomatis mewarisi entity{' '}
-                        <b>{draft.code || draft.entity || '—'}</b>.
+                        This is an <b>entity (company)</b> — LVL 0. Add process categories (Core / Enabler / Management) as
+                        LVL 1 via the <b>+</b> button on this entity in the left panel. Every descendant automatically inherits
+                        entity <b>{draft.code || draft.entity || '—'}</b>.
                       </div>
                     ) : !isLeaf ? (
                       <div className="bpa-note">
-                        SIPOC, risiko, dan indikator kinerja diisi di level proses paling bawah (LVL 3). Tambah sub-proses
-                        lewat tombol <b>+</b> pada node ini di panel kiri.
+                        SIPOC, risks and performance indicators start at LVL 3 (Process Activity) and continue down to LVL 4
+                        (Process Flow → SOP) and LVL 5 (Process Task → Work Instruction). Add sub-processes via the <b>+</b>
+                        button on this node in the left panel.
                       </div>
                     ) : (
                       <>
                         {renderSipoc()}
-                        {renderList('Risk', draft.risks, blankRisk, setRisks, 'description', 'Deskripsi risiko…')}
+                        {renderList('Risk', draft.risks, blankRisk, setRisks, 'description', 'Risk description…')}
                         {renderKpis()}
                       </>
                     )}
@@ -497,12 +566,12 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                     {draft.level >= 2 && inbound.length ? (
                       <div className="bpa-sec">
                         <div className="bpa-sec-hd">
-                          <span>Dipakai oleh (koneksi masuk)</span>
+                          <span>Used by (inbound connections)</span>
                         </div>
                         <div className="bpa-inbound">
                           {inbound.map((r, i) => (
                             <button key={i} className="bpa-inlink" onClick={() => selectNode(r.nodeId)}>
-                              <span className={'bpa-inrole bpa-inrole-' + r.role}>{r.role === 'supplier' ? 'sbg supplier' : 'sbg customer'}</span>
+                              <span className={'bpa-inrole bpa-inrole-' + r.role}>{r.role === 'supplier' ? 'as supplier' : 'as customer'}</span>
                               {r.label} ↗
                             </button>
                           ))}
@@ -526,11 +595,11 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
         <div className="bpa-sec-hd">
           <span>SIPOC</span>
           <button className="btn btn-sm" onClick={() => setSipoc([...(draft.sipoc || []), blankSipocRow()])}>
-            + Baris
+            + Row
           </button>
         </div>
         {(draft.sipoc || []).length === 0 ? (
-          <div className="bpa-empty-row">Belum ada baris. Tambah baris supplier → input → proses → output → customer.</div>
+          <div className="bpa-empty-row">No rows yet. Add a supplier → input → process → output → customer row.</div>
         ) : (
           <div className="bpa-rows">
             {(draft.sipoc || []).map((r, idx) => (
@@ -542,15 +611,15 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                   </div>
                   <div className="bpa-cell">
                     <label>Input</label>
-                    <input value={r.input} onChange={(e) => updateRow(r.id, 'input', e.target.value)} placeholder="mis. Rencana muat" />
+                    <input value={r.input} onChange={(e) => updateRow(r.id, 'input', e.target.value)} placeholder="e.g. Loading plan" />
                   </div>
                   <div className="bpa-cell">
                     <label>Process</label>
-                    <input value={r.process} onChange={(e) => updateRow(r.id, 'process', e.target.value)} placeholder="Aktivitas" />
+                    <input value={r.process} onChange={(e) => updateRow(r.id, 'process', e.target.value)} placeholder="Activity" />
                   </div>
                   <div className="bpa-cell">
                     <label>Output</label>
-                    <input value={r.output} onChange={(e) => updateRow(r.id, 'output', e.target.value)} placeholder="mis. Draft schedule" />
+                    <input value={r.output} onChange={(e) => updateRow(r.id, 'output', e.target.value)} placeholder="e.g. Draft schedule" />
                   </div>
                   <div className="bpa-cell">
                     <label>Customer</label>
@@ -558,15 +627,15 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                   </div>
                 </div>
                 <div className="bpa-row-actions">
-                  <button className="bpa-mini" title="Naik" onClick={() => moveRow(idx, -1)} disabled={idx === 0}>
+                  <button className="bpa-mini" title="Move up" onClick={() => moveRow(idx, -1)} disabled={idx === 0}>
                     ↑
                   </button>
-                  <button className="bpa-mini" title="Turun" onClick={() => moveRow(idx, 1)} disabled={idx === (draft.sipoc || []).length - 1}>
+                  <button className="bpa-mini" title="Move down" onClick={() => moveRow(idx, 1)} disabled={idx === (draft.sipoc || []).length - 1}>
                     ↓
                   </button>
                   <button
                     className="bpa-mini bpa-mini-danger"
-                    title="Hapus baris"
+                    title="Delete row"
                     onClick={() => setSipoc((draft.sipoc || []).filter((x) => x.id !== r.id))}
                   >
                     ✕
@@ -586,11 +655,11 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
         <div className="bpa-sec-hd">
           <span>{title}</span>
           <button className="btn btn-sm" onClick={() => setter([...(items || []), factory()])}>
-            + {title === 'Risk' ? 'Risiko' : 'Item'}
+            + {title === 'Risk' ? 'Risk' : 'Item'}
           </button>
         </div>
         {(items || []).length === 0 ? (
-          <div className="bpa-empty-row">Belum ada {title === 'Risk' ? 'risiko' : 'item'}.</div>
+          <div className="bpa-empty-row">No {title === 'Risk' ? 'risks' : 'items'} yet.</div>
         ) : (
           <div className="bpa-list">
             {(items || []).map((r) => (
@@ -600,7 +669,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                   onChange={(e) => setter((items || []).map((x) => (x.id === r.id ? { ...x, [field]: e.target.value } : x)))}
                   placeholder={placeholder}
                 />
-                <button className="bpa-mini bpa-mini-danger" title="Hapus" onClick={() => setter((items || []).filter((x) => x.id !== r.id))}>
+                <button className="bpa-mini bpa-mini-danger" title="Delete" onClick={() => setter((items || []).filter((x) => x.id !== r.id))}>
                   ✕
                 </button>
               </div>
@@ -618,7 +687,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
     return (
       <div className="bpa-sec">
         <div className="bpa-sec-hd">
-          <span>Dokumen terkait</span>
+          <span>Related documents</span>
           <select
             className="bpa-doc-add"
             value=""
@@ -626,7 +695,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
               if (e.target.value) setDocs([...(draft.docs || []), e.target.value])
             }}
           >
-            <option value="">+ Tautkan dokumen…</option>
+            <option value="">+ Link a document…</option>
             {available.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.id} · {d.name} ({d.docType})
@@ -635,7 +704,7 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
           </select>
         </div>
         {linked.length === 0 ? (
-          <div className="bpa-empty-row">Belum ada dokumen BP/SOP/Flow yang ditautkan ke proses ini.</div>
+          <div className="bpa-empty-row">No BP/SOP/Flow documents linked to this process yet.</div>
         ) : (
           <div className="bpa-doclist">
             {linked.map((d) => (
@@ -643,16 +712,16 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                 <span className="bpa-doc-type">{d.docType}</span>
                 <button
                   className="bpa-doc-name"
-                  title={d.exists ? 'Buka dokumen' : 'Dokumen sudah dihapus'}
+                  title={d.exists ? 'Open document' : 'Document was deleted'}
                   disabled={!d.exists || !openDoc}
                   onClick={() => d.exists && openDoc && openDoc(d.id)}
                 >
                   {d.name}
-                  {d.exists ? ' ↗' : ' (dihapus)'}
+                  {d.exists ? ' ↗' : ' (deleted)'}
                 </button>
                 <button
                   className="bpa-mini bpa-mini-danger"
-                  title="Lepas tautan"
+                  title="Unlink"
                   onClick={() => setDocs((draft.docs || []).filter((x) => x !== d.id))}
                 >
                   ✕
@@ -672,11 +741,11 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
         <div className="bpa-sec-hd">
           <span>Performance Indicator</span>
           <button className="btn btn-sm" onClick={() => setKpis([...items, blankKpi()])}>
-            + Indikator
+            + Indicator
           </button>
         </div>
         {items.length === 0 ? (
-          <div className="bpa-empty-row">Belum ada indikator kinerja.</div>
+          <div className="bpa-empty-row">No performance indicators yet.</div>
         ) : (
           <div className="bpa-list">
             {items.map((k) => (
@@ -684,15 +753,15 @@ export default function BpArchitecture({ notify, rev, openDoc }) {
                 <input
                   value={k.indicator}
                   onChange={(e) => setKpis(items.map((x) => (x.id === k.id ? { ...x, indicator: e.target.value } : x)))}
-                  placeholder="Indikator, mis. % on-time"
+                  placeholder="Indicator, e.g. % on-time"
                 />
                 <input
                   className="bpa-kpi-target"
                   value={k.target}
                   onChange={(e) => setKpis(items.map((x) => (x.id === k.id ? { ...x, target: e.target.value } : x)))}
-                  placeholder="Target, mis. ≥ 95%"
+                  placeholder="Target, e.g. ≥ 95%"
                 />
-                <button className="bpa-mini bpa-mini-danger" title="Hapus" onClick={() => setKpis(items.filter((x) => x.id !== k.id))}>
+                <button className="bpa-mini bpa-mini-danger" title="Delete" onClick={() => setKpis(items.filter((x) => x.id !== k.id))}>
                   ✕
                 </button>
               </div>

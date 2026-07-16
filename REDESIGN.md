@@ -96,3 +96,60 @@ sejarah modul:
   atas backdrop leaf-swoosh gradien translusen. Kesan: mining company yang sedang
   bertransformasi digital, bukan industrial berat.
 - **Bahasa**: seluruh copy UI kini bahasa Inggris.
+
+
+## Update 3 — Enterprise workspace (ITM Group) + governance alignment
+
+Sumber bisnis: **ITM-GD-GRC-2023-001 Management System Governance Guideline**
+(QMS document hierarchy, BP hierarchy Lv 0–5, development steps, approval matrix).
+
+### Shell v2 — satu workspace terhubung
+- **Top bar** baru di semua layar: breadcrumb grup/menu ("Where am I"), **entity
+  switcher** (ITM holding + subsidiaries, persist di localStorage, men-scope Home &
+  Process Explorer), tombol search global (Ctrl/⌘+K), avatar user.
+- **Home hub** (default, menggantikan Dashboard): sapaan + konteks, quick actions
+  (New BP / Import / Explore / Ask AI), "Needs attention" (antrean review), dokumen
+  terbaru, "Architecture at a glance" per entity (jumlah proses, LVL 3+, linked docs)
+  yang meng-klik langsung ke Explorer, + counter portfolio.
+
+### Process Explorer = jantung produk
+- Rename BP Architecture → **Process Explorer**; hierarki diselaraskan ke guideline:
+  **LVL 0–5** (0 entity/value chain, 1 process group E/C/S, 2 chain, 3 activity,
+  4 flow → SOP, 5 task → WI). `MAX_LEVEL=5`, SIPOC/risk/KPI mulai LVL 3 (`SIPOC_LEVEL`).
+- Kategori LVL 1 kini **Enterprise / Core / Support** (huruf E/C/S untuk numbering;
+  id lama Enabler/Management tetap dikenali).
+- Editor node: **breadcrumb path** klik-able (ITM › C.4 › C4.1 › C4.1.1), strip
+  **Process 360** (n SIPOC · n risks · n KPIs · n linked docs · n used-by), chip
+  **deliverable per level** dari guideline (mis. LVL 4 → "SOP document (incl. PPI)").
+- Prop `entity` (ikut switcher top bar) + `focusId` (lompatan dari search/Home/Repo).
+
+### Search yang paham relasi
+- Command palette & Global Search kini juga menemukan **business process**: match di
+  code, title, SIPOC (supplier/input/activity/output/customer), risk, KPI — hasilnya
+  diberi konteks entity + level, klik → langsung fokus di Process Explorer.
+
+### Repository → document hub QMS
+- Filter: teks, **chip tipe dokumen QMS** (BP, SOP, WI, Policy, Manual, MS, GD, SP,
+  Form, Charter, CoC + tipe diagram), dropdown status.
+- Kolom **Processes**: reverse-index tautan `node.docs` — tiap dokumen menampilkan
+  proses yang memakainya, klik → Explorer. Dokumen ⇄ proses jadi dua arah.
+- Document Import: pilihan tipe diperluas ke seluruh tipe QMS guideline.
+
+### Pemetaan guideline → produk (ringkas)
+| Guideline | LEAP-STONES |
+|---|---|
+| BP Lv 0–3 documents | Process Explorer nodes + SIPOC/risk/PPI |
+| BP Lv 4 Process Flow → SOP | Auto Flow Process + Document Import (SOP) |
+| BP Lv 5 Task → WI | docType WI (import/manual) |
+| 5 development steps | Explorer → AutoFlow → Development → Approval workflow → Repository |
+| QMS doc pyramid Lv I–IV | docType: P/C/COC/M · BP/MS · SOP · WI/SP/GD/F |
+| Register on DMS platform | Repository (controlled documents + status + versi) |
+
+### Roadmap berikutnya (dari brief enterprise)
+1. Org structure & people: `org_units` + ownership per node (Process Owner / Group
+   Owner / Value Chain Owner sesuai guideline) → RASCI evaluation.
+2. Risk & KPI register lintas-BP (angkat dari embed ke register per entity).
+3. Improvement requests & audit findings menempel ke node proses.
+4. Document numbering otomatis `(Entity)-(Type)-(BPCode)-(Year)-(xxx)` + approval
+  matrix per tipe dokumen (Prepared/Checked/Reviewed/Approved).
+5. RBAC (viewer/contributor/approver/admin) di atas Google auth.

@@ -3,6 +3,7 @@
 // deep full-text pass. Keyboard-first: ↑↓ to move, Enter to go, Esc to close.
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { listDocs, STATUS } from '../lib/store.js'
+import { listNodeDocs, entityCodeOf } from '../lib/bpTree.js'
 
 const TYPE_LABEL = { FLOW: 'Flow', TAXONOMY: 'Taxonomy', HLP: 'HLP', TAXDESC: 'Tax Desc', SOP: 'SOP', KNOWLEDGE: 'Knowledge' }
 
@@ -12,7 +13,7 @@ const Ico = ({ d }) => (
   </svg>
 )
 
-export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc, onDeepSearch }) {
+export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc, onOpenNode, onDeepSearch }) {
   const [q, setQ] = useState('')
   const [sel, setSel] = useState(0)
   const inputRef = useRef(null)
@@ -36,8 +37,28 @@ export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc,
       .slice(0, ql ? 6 : 12)
       .forEach((m) => out.push({ kind: 'menu', id: m.id, label: m.label, sub: m.group || 'Menu', d: m.d }))
     if (ql) {
+      // Business processes (architecture nodes) — searched by code + title.
+      const nodeDocs = listNodeDocs()
+      const byId = {}
+      nodeDocs.forEach((d) => (byId[d.id] = d))
+      nodeDocs
+        .filter((d) => {
+          const n = d.node || {}
+          return ((n.code || '') + ' ' + (n.title || '')).toLowerCase().includes(ql)
+        })
+        .slice(0, 6)
+        .forEach((d) => {
+          const n = d.node || {}
+          out.push({
+            kind: 'node',
+            id: d.id,
+            label: [n.code, n.title].filter(Boolean).join(' ') || 'Process',
+            sub: 'Process · ' + (entityCodeOf(d, byId) || '—') + ' · LVL ' + (n.level ?? 0),
+            d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z',
+          })
+        })
       listDocs()
-        .filter((doc) => doc.docType !== 'KNOWLEDGE')
+        .filter((doc) => doc.docType !== 'KNOWLEDGE' && doc.docType !== 'BPNODE')
         .filter((doc) => (doc.name || '').toLowerCase().includes(ql) || (doc.id || '').toLowerCase().includes(ql))
         .slice(0, 8)
         .forEach((doc) =>
@@ -66,6 +87,7 @@ export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc,
     if (!row) return
     if (row.kind === 'menu') onNav(row.id)
     else if (row.kind === 'doc') onOpenDoc(row.id)
+    else if (row.kind === 'node') onOpenNode && onOpenNode(row.id)
     else onDeepSearch(q.trim())
     onClose()
   }

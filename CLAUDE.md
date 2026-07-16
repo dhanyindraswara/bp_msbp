@@ -35,14 +35,31 @@ dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio" → "STONES" → **LEAP-
 - CTA/"Sign in" → **Login** (`src/Login.jsx`, dark glass card purple-blue + orb cyan/green).
 - Animasi CSS + IntersectionObserver, hormat `prefers-reduced-motion`.
 
-## Menu (shell — src/App.jsx, `NAV` array; nav dikelompokkan per job-to-be-done)
-Grup sidebar: **Dashboard** (atas) · **Proses** (Process Architecture, Process Taxonomy,
-High Level Process, Taxonomy Description) · **Studio** (Document Development, Document
-Import, Auto Flow Process) · **Library** (Repository, Global Search, Action Request) ·
+## Shell enterprise (src/App.jsx) — workspace ITM Group
+- **Top bar**: breadcrumb grup/menu, **entity switcher** (LVL0 BPNODE; state `entity`,
+  localStorage `stones-entity`, men-scope Home + Process Explorer), tombol search
+  (Ctrl/⌘+K), avatar user. Routes dibungkus `.stones-content`.
+- **Home** (`src/menus/Home.jsx`, default; Dashboard lama dihapus/merged): quick actions,
+  needs-attention (in_review), recent docs, architecture-at-a-glance per entity, counters.
+- `openProcess(nodeId)` → fokus node di Process Explorer (state `focusNodeId`).
+Grup sidebar: **Home** · **Processes** (Process Explorer, Process Taxonomy, High Level
+Process, Taxonomy Description) · **Studio** (Document Development, Document Import,
+Auto Flow Process) · **Library** (Repository, Global Search, Action Request) ·
 **Intelligence** (Ask AI, AI Knowledge Base).
-- **Command palette Ctrl/⌘+K** (`src/components/CommandPalette.jsx`) + pill "Cari…" di
-  sidebar: lompat menu, buka dokumen by nama/ID, atau lempar query ke Global Search
-  (`initialQuery` prop, remount via `key`).
+- **Command palette Ctrl/⌘+K** (`src/components/CommandPalette.jsx`): lompat menu, buka
+  dokumen by nama/ID, **cari proses BPNODE** (code/title → openProcess), atau lempar query
+  ke Global Search (`initialQuery` prop, remount via `key`). Global Search juga menampilkan
+  hasil proses (match SIPOC/risk/KPI) → openProcess.
+
+## Governance alignment (ITM-GD-GRC-2023-001, lihat REDESIGN.md Update 3)
+- **BP hierarchy LVL 0–5** (`src/lib/bpTree.js`): MAX_LEVEL=5, SIPOC_LEVEL=3 (SIPOC/risk/KPI
+  di LVL≥3), LEVEL_DELIVERABLES per level (LVL4→SOP, LVL5→WI). Kategori LVL1 =
+  **Enterprise/Core/Support** (E/C/S; id lama Enabler/Management masih dikenali).
+- **Process Explorer** (`src/menus/BpArchitecture.jsx`, label menu "Process Explorer"):
+  breadcrumb path, strip Process-360, chip deliverable, props `entity`/`focusId`/`onFocusHandled`.
+- **Repository**: filter tipe QMS (BP/SOP/WI/Policy/Manual/MS/GD/SP/Form/Charter/CoC + diagram),
+  status, teks; kolom "Processes" = reverse-index `node.docs` → openProcess.
+- Document Import TYPES diperluas ke tipe QMS lengkap.
 1. **Document Action Request** (`request`) — daftar/permintaan + add new BP.
 2. **Document Development** (`develop`) — studio utama: SIPOC editor → auto business-process
    map (ProcessMap.jsx) + RASCI, ITM title block (logo, Prepared/Reviewed/Approved, BP No,

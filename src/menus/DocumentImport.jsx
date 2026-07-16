@@ -10,7 +10,8 @@ import { sopToSipoc, sopToPpi } from '../lib/sopMap.js'
 import ApiKeyField from '../components/ApiKeyField.jsx'
 import ModelPicker from '../components/ModelPicker.jsx'
 
-const TYPES = ['SOP', 'BP', 'POLICY', 'OTHER']
+// QMS document types per ITM governance guideline (Lv I–IV of the pyramid).
+const TYPES = ['SOP', 'BP', 'WI', 'POLICY', 'MANUAL', 'MS', 'GD', 'SP', 'FORM', 'CHARTER', 'COC', 'OTHER']
 
 const Field = ({ label, value, onChange, placeholder, wide }) => (
   <label className={'imp-field' + (wide ? ' imp-field-wide' : '')}>

@@ -32,6 +32,7 @@ import {
   seedSampleTree,
 } from '../lib/bpTree.js'
 import { getDoc } from '../lib/store.js'
+import SearchSelect from '../components/SearchSelect.jsx'
 
 const clone = (o) => JSON.parse(JSON.stringify(o))
 const nodeLabel = (n) => [n?.code, n?.title].filter(Boolean).join(' ').trim() || 'Untitled process'
@@ -54,21 +55,15 @@ function PartyField({ value, options, onChange, onNavigate }) {
       </select>
       {v.type === 'PROCESS' ? (
         <div className="bpa-party-proc">
-          <select
-            className="bpa-party-val"
+          <SearchSelect
             value={v.refId || ''}
-            onChange={(e) => {
-              const opt = options.find((o) => o.id === e.target.value)
+            placeholder="Select a process…"
+            options={options.map((o) => ({ value: o.id, label: o.label, sub: (o.entity || '') + ' · LVL ' + o.level }))}
+            onChange={(val) => {
+              const opt = options.find((o) => o.id === val)
               onChange({ type: 'PROCESS', refId: opt ? opt.id : null, label: opt ? opt.label : '' })
             }}
-          >
-            <option value="">— select a process —</option>
-            {options.map((o) => (
-              <option key={o.id} value={o.id}>
-                {(o.entity ? o.entity + ' · ' : '') + o.label}
-              </option>
-            ))}
-          </select>
+          />
           {v.refId ? (
             <button type="button" className="bpa-jump" title="Open this process" onClick={() => onNavigate(v.refId)}>
               ↗
@@ -745,20 +740,14 @@ export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, 
       <div className="bpa-sec">
         <div className="bpa-sec-hd">
           <span>Related documents</span>
-          <select
-            className="bpa-doc-add"
-            value=""
-            onChange={(e) => {
-              if (e.target.value) setDocs([...(draft.docs || []), e.target.value])
-            }}
-          >
-            <option value="">+ Link a document…</option>
-            {available.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.id} · {d.name} ({d.docType})
-              </option>
-            ))}
-          </select>
+          <div className="bpa-doc-add">
+            <SearchSelect
+              value=""
+              placeholder="+ Link a document…"
+              options={available.map((d) => ({ value: d.id, label: d.name, sub: d.id + ' · ' + d.docType }))}
+              onChange={(val) => val && setDocs([...(draft.docs || []), val])}
+            />
+          </div>
         </div>
         {linked.length === 0 ? (
           <div className="bpa-empty-row">No BP/SOP/Flow documents linked to this process yet.</div>

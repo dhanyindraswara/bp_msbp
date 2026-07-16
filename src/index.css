@@ -398,7 +398,7 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .map-view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .map-toolbar { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid #e6eaee; background: #fff; flex: none; }
 .map-hint { font-size: 11.5px; color: #9aa4ae; }
-.doc-scroll { flex: 1; overflow: auto; background: #e9edf1; padding: 20px; min-height: 0; }
+.doc-scroll { flex: 1; overflow: auto; background: #eef2f6; padding: 26px; min-height: 0; }
 .itm-doc { background: #fff; border: 1px solid #9aa4ae; padding: 8px; margin: 0 auto; width: 100%; max-width: 1440px; box-shadow: 0 2px 12px rgba(15,42,67,.08); }
 
 .tb { border: 1px solid #3a3f45; display: flex; flex-direction: column; }
@@ -1436,3 +1436,61 @@ table.stones-table tbody tr td { transition: background .12s; }
 .td-editgrid .imp-field input:hover, .td-editgrid .imp-field textarea:hover { border-color: var(--border-strong); }
 .td-editgrid .imp-field input:focus, .td-editgrid .imp-field textarea:focus { background: #fff; }
 @media (prefers-reduced-motion: reduce) { .fs-body { animation: none; } .fs-caret { transition: none; } }
+
+/* ============================================================
+   SEARCH SELECT (.ss), STEP CARDS (.stp), PREVIEW ZOOM (.zc)
+   ============================================================ */
+.ss { position: relative; min-width: 0; flex: 1; }
+.ss-btn { display: flex; align-items: center; gap: 7px; width: 100%; border: 1px solid var(--border-strong); background: var(--surface); border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; transition: border-color .12s, background .12s; }
+.ss-btn:hover { border-color: var(--accent); }
+.ss-btn.ss-empty { color: var(--muted); font-weight: 500; }
+.ss-val { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-caret { flex: none; font-size: 9px; color: var(--muted); }
+.ss-off .ss-btn { opacity: .55; cursor: not-allowed; }
+.ss-pop { position: absolute; top: calc(100% + 6px); left: 0; z-index: 80; min-width: min(300px, 84vw); max-width: 340px; width: max-content; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); padding: 6px; animation: cpPop .14s ease; }
+.ss-searchrow { display: flex; align-items: center; gap: 8px; padding: 6px 8px 8px; border-bottom: 1px solid var(--border); margin-bottom: 5px; }
+.ss-searchrow svg { width: 13px; height: 13px; color: var(--muted); flex: none; }
+.ss-searchrow input { flex: 1; min-width: 0; border: none; outline: none; font-family: inherit; font-size: 13px; color: var(--text); background: transparent; }
+.ss-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.ss-item { display: flex; align-items: center; gap: 8px; text-align: left; border: none; background: transparent; border-radius: 7px; padding: 7px 9px; cursor: pointer; font-family: inherit; width: 100%; }
+.ss-item.on { background: var(--accent-tint); }
+.ss-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+.ss-item-label { font-size: 12.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-item.picked .ss-item-label { color: var(--accent); font-weight: 750; }
+.ss-item-sub { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+.ss-check { flex: none; color: var(--accent); font-weight: 800; font-size: 12px; }
+.ss-none { padding: 12px; text-align: center; color: var(--muted); font-size: 12px; }
+.ss-compact .ss-btn { padding: 6px 8px; font-size: 12px; border-radius: 7px; border-color: transparent; background: var(--surface-2); }
+.ss-compact .ss-btn:hover { border-color: var(--border-strong); }
+.gen-bar .ss { flex: 1; }
+.gen-bar .ss-btn { border-color: var(--border-strong); }
+.bpa-doc-add { min-width: 220px; }
+.bpa-party-proc { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.bpa-party-proc .ss { flex: 1; }
+
+/* step cards (Auto Flow) */
+.stp { border: 1px solid var(--border); border-radius: 11px; padding: 9px 11px; margin-bottom: 9px; background: var(--surface); transition: border-color .13s, box-shadow .13s; }
+.stp:hover { border-color: var(--accent-tint-2); box-shadow: var(--shadow-xs); }
+.stp:focus-within { border-color: var(--accent-tint-2); }
+.stp-row1 { display: flex; align-items: center; gap: 8px; }
+.stp-no { flex: none; width: 36px; text-align: center; font-weight: 750; }
+.stp-activity { flex: 1; min-width: 0; font-weight: 600; }
+.stp input, .stp select { border: 1px solid transparent; background: var(--surface-2); border-radius: 7px; padding: 7px 8px; font-family: inherit; font-size: 12.5px; color: var(--text); transition: border-color .12s, background .12s; }
+.stp input:hover, .stp select:hover { border-color: var(--border-strong); }
+.stp input:focus, .stp select:focus { outline: none; border-color: var(--accent); background: #fff; }
+.stp-actions { flex: none; display: flex; gap: 1px; opacity: 0; transition: opacity .12s; }
+.stp:hover .stp-actions, .stp:focus-within .stp-actions { opacity: 1; }
+.stp-row2 { display: flex; align-items: center; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+.stp-row2 .ss { flex: 1 1 130px; max-width: 210px; }
+.stp-rasci { flex: none; width: 56px; cursor: pointer; }
+.stp-ref { flex: none; width: 72px; }
+.stp-next { flex: none; width: 92px; }
+
+/* preview zoom control (chart toolbars) */
+.zc { display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.zc button { border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text-2); width: 26px; height: 26px; cursor: pointer; display: grid; place-items: center; }
+.zc button:hover:not(:disabled) { background: var(--surface-2); color: var(--accent); }
+.zc button:disabled { opacity: .35; cursor: default; }
+.zc .zc-val { width: auto; padding: 0 7px; font-size: 11px; font-weight: 750; color: var(--text-2); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+.zoom-stage { transform-origin: top left; width: max-content; min-width: 100%; transition: transform .15s ease; }
+@media (prefers-reduced-motion: reduce) { .zoom-stage { transition: none; } .ss-pop { animation: none; } }

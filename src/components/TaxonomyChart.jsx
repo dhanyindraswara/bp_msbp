@@ -3,11 +3,13 @@
 // + L1 process-group label) and a column grid: one L2 category box per column
 // with its stack of L3 boxes below. Exports the diagram to PNG (html-to-image).
 import { useRef } from 'react'
+import { useZoom, ZoomCtl } from './ZoomCtl.jsx'
 import * as htmlToImage from 'html-to-image'
 import { download } from '../lib/generate.js'
 import { normTaxonomy } from '../lib/taxonomy.js'
 
 export default function TaxonomyChart({ taxonomy, onExportName, notify }) {
+  const zoom = useZoom()
   const t = normTaxonomy(taxonomy)
   const captureRef = useRef(null)
   const cols = t.columns.length || 1
@@ -30,11 +32,13 @@ export default function TaxonomyChart({ taxonomy, onExportName, notify }) {
       <div className="fl-toolbar fl-noexport">
         <span style={{ fontWeight: 800, color: '#0f2a43', fontSize: 13.5 }}>{t.title || 'Business Process Taxonomy'}</span>
         <div style={{ marginLeft: 'auto' }}>
+          <ZoomCtl zoom={zoom} />
           <button className="btn btn-sm btn-primary" onClick={exportPng}>Export PNG</button>
         </div>
       </div>
 
       <div className="doc-scroll">
+        <div className="zoom-stage" style={{ transform: `scale(${zoom.z})` }}>
         <div ref={captureRef} className="tx-doc">
           <div className="tx-title">{t.title || 'Business Process Taxonomy'}</div>
 
@@ -80,6 +84,7 @@ export default function TaxonomyChart({ taxonomy, onExportName, notify }) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

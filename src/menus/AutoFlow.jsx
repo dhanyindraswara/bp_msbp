@@ -8,6 +8,8 @@ import { blankProject } from '../lib/sample.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import { uid } from '../lib/constants.js'
 import FlowChart from '../components/FlowChart.jsx'
+import FormSection from '../components/FormSection.jsx'
+import SearchSelect from '../components/SearchSelect.jsx'
 
 const DEFAULT_TPL = {
   logo: '',
@@ -28,24 +30,10 @@ const Field = ({ label, value, onChange, placeholder, wide }) => (
   </label>
 )
 
-// A collapsible form section: click the header to hide / show its body.
-const Section = ({ title, open, onToggle, right, children }) => (
-  <>
-    <div className="imp-sec fl-sec" onClick={onToggle}>
-      <span className="fl-sec-caret">{open ? '▾' : '▸'}</span>
-      {title}
-      {right ? <span className="fl-sec-right" onClick={(e) => e.stopPropagation()}>{right}</span> : null}
-    </div>
-    {open ? children : null}
-  </>
-)
-
 export default function AutoFlow({ openId, setOpenId, notify }) {
   const [flow, setFlow] = useState(() => (openId ? getDoc(openId)?.flow || blankFlow() : blankFlow()))
   const [tpl, setTpl] = useState(() => ({ ...DEFAULT_TPL, ...(openId ? getDoc(openId)?.project?.template : null) }))
   const [savedId, setSavedId] = useState(openId || '')
-  const [secOpen, setSecOpen] = useState({ header: false, section: true }) // Kepala dokumen collapsed by default
-  const toggleSec = (k) => setSecOpen((s) => ({ ...s, [k]: !s[k] }))
   const logoRef = useRef(null)
 
   // Reload when the caller opens a different flow document.
@@ -158,7 +146,7 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
       <div className="fl-split">
         {/* ---- input form ---- */}
         <div className="fl-form">
-          <Section title="Document header" open={secOpen.header} onToggle={() => toggleSec('header')}>
+          <FormSection title="Document header" defaultOpen={false}>
             <div className="imp-grid">
               <Field label="Flow title" value={tpl.title} onChange={(v) => setT('title', v)} placeholder="C3.2 Fuel Supply" wide />
               <Field label="Level" value={tpl.level} onChange={(v) => setT('level', v)} />
@@ -171,91 +159,73 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
               <label className="imp-field">
                 <span>Logo</span>
                 <button className="btn btn-sm" onClick={() => logoRef.current && logoRef.current.click()}>
-                  {tpl.logo ? 'Ganti logo' : 'Upload logo'}
+                  {tpl.logo ? 'Change logo' : 'Upload logo'}
                 </button>
                 <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { onLogoFile(e.target.files[0]); e.target.value = '' }} />
               </label>
             </div>
-          </Section>
+          </FormSection>
 
-          <Section title="Section title (band)" open={secOpen.section} onToggle={() => toggleSec('section')}>
+          <FormSection title="Lanes" count={lanesArr.length} hint={<>Responsible parties, one per line, ordered left → right. The section name becomes the band above the lanes.</>}>
             <div className="imp-grid">
               <Field label="Process / section name" value={flow.section} onChange={(v) => setFlow((f) => ({ ...f, section: v }))} placeholder="C3.2 Fuel Supply" wide />
+              <label className="imp-field imp-field-wide">
+                <span>Lanes (one per line)</span>
+                <textarea
+                  rows={Math.min(8, Math.max(3, (flow.lanes || []).length))}
+                  value={(flow.lanes || []).join('\n')}
+                  onChange={(e) => setLanes(e.target.value)}
+                  placeholder={'Fuel Supply/Cargo Handling\nAgency\nFuel Supplier\nHarbor Master'}
+                />
+              </label>
             </div>
-          </Section>
+          </FormSection>
 
-          <div className="imp-sec">Lanes / columns (one per line)</div>
-          <div className="imp-grid">
-            <label className="imp-field imp-field-wide">
-              <span>Responsible parties, ordered left → right</span>
-              <textarea
-                rows={Math.min(8, Math.max(3, (flow.lanes || []).length))}
-                value={(flow.lanes || []).join('\n')}
-                onChange={(e) => setLanes(e.target.value)}
-                placeholder={'Fuel Supply/Cargo Handling\nAgency\nFuel Supplier\nHarbor Master'}
-              />
-            </label>
-          </div>
-
-          <div className="imp-sec">
-            Steps ({flow.steps.length})
-            <button className="btn btn-sm" onClick={addStep}>+ Step</button>
-          </div>
-          <div className="fl-hint">
-            <b>Next</b>: target step numbers, comma separated. For decision branches use <code>6:Yes, 3:No</code>. Leave empty to continue to the next step.
-          </div>
-          <table className="fl-steps">
-            <colgroup>
-              <col style={{ width: 38 }} />
-              <col style={{ width: 96 }} />
-              <col style={{ width: '26%' }} />
-              <col style={{ width: 52 }} />
-              <col style={{ width: 58 }} />
-              <col />
-              <col style={{ width: 66 }} />
-              <col style={{ width: 60 }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>No</th><th>Type</th><th>Lane</th><th>RASCI</th><th>Ref</th><th>Activity</th><th>Next</th><th />
-              </tr>
-            </thead>
-            <tbody>
-              {flow.steps.map((s, i) => (
-                <tr key={s.id}>
-                  <td><input value={s.no} onChange={(e) => setStep(i, 'no', e.target.value)} /></td>
-                  <td>
-                    <select value={s.type} onChange={(e) => setStep(i, 'type', e.target.value)}>
-                      {FLOW_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    <select value={s.lane} onChange={(e) => setStep(i, 'lane', e.target.value)}>
-                      <option value="">—</option>
-                      {lanesArr.map((ln) => <option key={ln} value={ln}>{ln}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    <select value={s.rasci} onChange={(e) => setStep(i, 'rasci', e.target.value)}>
-                      {FLOW_RASCI.map((r) => <option key={r} value={r}>{r || '—'}</option>)}
-                    </select>
-                  </td>
-                  <td><input value={s.ref} onChange={(e) => setStep(i, 'ref', e.target.value)} placeholder="7.1.1" /></td>
-                  <td><input value={s.activity} onChange={(e) => setStep(i, 'activity', e.target.value)} /></td>
-                  <td><input value={s.next} onChange={(e) => setStep(i, 'next', e.target.value)} placeholder="auto" /></td>
-                  <td className="fl-steps-act">
+          <FormSection
+            title="Steps"
+            count={flow.steps.length}
+            right={<button className="btn btn-sm" onClick={addStep}>+ Step</button>}
+            hint={<><b>Next</b>: target step numbers, comma separated — <code>6:Yes, 3:No</code> for decision branches; empty continues to the next step.</>}
+          >
+            {flow.steps.map((s, i) => (
+              <div key={s.id} className="stp">
+                <div className="stp-row1">
+                  <input className="stp-no" value={s.no} title="Step number" onChange={(e) => setStep(i, 'no', e.target.value)} />
+                  <input className="stp-activity" value={s.activity} placeholder="Activity — what happens in this step" onChange={(e) => setStep(i, 'activity', e.target.value)} />
+                  <span className="stp-actions">
                     <button className="imp-x" title="Move up" onClick={() => moveStep(i, -1)}>↑</button>
                     <button className="imp-x" title="Move down" onClick={() => moveStep(i, 1)}>↓</button>
-                    <button className="imp-x" title="Delete" onClick={() => delStep(i)}>✕</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <button className="imp-x" title="Delete step" onClick={() => delStep(i)}>✕</button>
+                  </span>
+                </div>
+                <div className="stp-row2">
+                  <SearchSelect
+                    compact
+                    value={s.type}
+                    options={FLOW_TYPES.map((t) => ({ value: t.id, label: t.label }))}
+                    onChange={(v) => setStep(i, 'type', v)}
+                    placeholder="Type"
+                  />
+                  <SearchSelect
+                    compact
+                    value={s.lane}
+                    options={lanesArr.map((ln) => ({ value: ln, label: ln }))}
+                    onChange={(v) => setStep(i, 'lane', v)}
+                    placeholder="Lane…"
+                    emptyLabel="— no lane —"
+                  />
+                  <select className="stp-rasci" title="RASCI" value={s.rasci} onChange={(e) => setStep(i, 'rasci', e.target.value)}>
+                    {FLOW_RASCI.map((r) => <option key={r} value={r}>{r || '—'}</option>)}
+                  </select>
+                  <input className="stp-ref" value={s.ref} placeholder="Ref" title="PDC reference, e.g. 7.1.1" onChange={(e) => setStep(i, 'ref', e.target.value)} />
+                  <input className="stp-next" value={s.next} placeholder="Next: auto" title="Next step number(s)" onChange={(e) => setStep(i, 'next', e.target.value)} />
+                </div>
+              </div>
+            ))}
+          </FormSection>
 
           {flowDocs.length ? (
-            <>
-              <div className="imp-sec">Saved flows</div>
+            <FormSection title="Saved flows" count={flowDocs.length} defaultOpen={false}>
               <div className="fl-saved">
                 {flowDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>
@@ -263,7 +233,7 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
                   </button>
                 ))}
               </div>
-            </>
+            </FormSection>
           ) : null}
           <div style={{ height: 28 }} />
         </div>

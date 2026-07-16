@@ -3,11 +3,13 @@
 // header and a light tray of coded boxes (badge + name). Highlighted boxes get
 // a blue outline. Exports to PNG (html-to-image).
 import { useRef } from 'react'
+import { useZoom, ZoomCtl } from './ZoomCtl.jsx'
 import * as htmlToImage from 'html-to-image'
 import { download } from '../lib/generate.js'
 import { normHlp } from '../lib/hlp.js'
 
 export default function HlpChart({ hlp, onExportName, notify }) {
+  const zoom = useZoom()
   const h = normHlp(hlp)
   const captureRef = useRef(null)
 
@@ -28,11 +30,13 @@ export default function HlpChart({ hlp, onExportName, notify }) {
       <div className="fl-toolbar fl-noexport">
         <span style={{ fontWeight: 800, color: '#0f2a43', fontSize: 13.5 }}>{h.title || 'High Level Business Process'}</span>
         <div style={{ marginLeft: 'auto' }}>
+          <ZoomCtl zoom={zoom} />
           <button className="btn btn-sm btn-primary" onClick={exportPng}>Export PNG</button>
         </div>
       </div>
 
       <div className="doc-scroll">
+        <div className="zoom-stage" style={{ transform: `scale(${zoom.z})` }}>
         <div ref={captureRef} className="hlp-doc">
           <div className="hlp-title">{h.title || 'High Level Business Process'}</div>
           {h.subtitle ? <div className="hlp-sub">{h.subtitle}</div> : null}
@@ -57,6 +61,7 @@ export default function HlpChart({ hlp, onExportName, notify }) {
 
           {h.footnote ? <div className="hlp-foot">{h.footnote}</div> : null}
         </div>
+      </div>
       </div>
     </div>
   )

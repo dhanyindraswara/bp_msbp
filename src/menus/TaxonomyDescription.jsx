@@ -9,6 +9,7 @@ import { taxdescSourceOptions, genTaxdescFromNode } from '../lib/genFromTree.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import TaxDescTable from '../components/TaxDescTable.jsx'
 import FormSection from '../components/FormSection.jsx'
+import SearchSelect from '../components/SearchSelect.jsx'
 
 const Field = ({ label, value, onChange, placeholder }) => (
   <label className="imp-field imp-field-wide">
@@ -114,12 +115,12 @@ export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
                 Auto-generate
               </span>
-              <select value={genSrc} onChange={(e) => setGenSrc(e.target.value)}>
-                <option value="">Select a parent process (LVL 1–2)…</option>
-                {genOpts.map((o) => (
-                  <option key={o.id} value={o.id}>{o.label}</option>
-                ))}
-              </select>
+              <SearchSelect
+                value={genSrc}
+                onChange={setGenSrc}
+                placeholder="Select a parent process (LVL 1–2)…"
+                options={genOpts.map((o) => ({ value: o.id, label: o.label }))}
+              />
               <button className="btn btn-sm btn-primary" disabled={!genSrc} onClick={() => doGen(genSrc)}>Generate</button>
             </div>
           ) : null}

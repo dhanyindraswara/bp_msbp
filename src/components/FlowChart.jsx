@@ -3,6 +3,7 @@
 // reference SOP flow. When `interactive`, boxes can be dragged to reposition and
 // double-clicked to rename. Exports the whole document to PNG (html-to-image).
 import { useMemo, useRef, useState } from 'react'
+import { useZoom, ZoomCtl } from './ZoomCtl.jsx'
 import * as htmlToImage from 'html-to-image'
 import { layoutFlow, LANE_W } from '../lib/flow.js'
 import { roundedPath } from '../lib/router.js'
@@ -171,6 +172,7 @@ function StepNode({ n, interactive, dragging, onPointerDown, onRename }) {
 }
 
 export default function FlowChart({ flow, template, onExportName, notify, interactive, onUpdateStep, onResetLayout }) {
+  const zoom = useZoom()
   const layout = useMemo(() => layoutFlow(flow), [flow])
   const captureRef = useRef(null)
   const canvasRef = useRef(null)
@@ -239,17 +241,18 @@ export default function FlowChart({ flow, template, onExportName, notify, intera
     <div className="fl-wrap">
       <div className="fl-toolbar fl-noexport">
         <span style={{ fontWeight: 800, color: '#0f2a43', fontSize: 13.5 }}>{titleText || 'Flow process'}</span>
-        {interactive ? <span className="map-hint">Geser kotak untuk atur posisi · klik dua kali untuk ganti nama</span> : null}
+        {interactive ? <span className="map-hint">Drag boxes to reposition · double-click to rename</span> : null}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center' }}>
           <label className="fl-toggle" title="Show / hide the document header">
             <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} />
-            Kepala dokumen
+            Header
           </label>
           {interactive && onResetLayout ? (
-            <button className="btn btn-sm" onClick={onResetLayout} title="Kembalikan posisi otomatis">
-              Rapikan ulang
+            <button className="btn btn-sm" onClick={onResetLayout} title="Restore automatic layout">
+              Auto-arrange
             </button>
           ) : null}
+          <ZoomCtl zoom={zoom} />
           <button className="btn btn-sm btn-primary" onClick={exportPng}>
             Export PNG
           </button>
@@ -257,6 +260,7 @@ export default function FlowChart({ flow, template, onExportName, notify, intera
       </div>
 
       <div className="doc-scroll">
+        <div className="zoom-stage" style={{ transform: `scale(${zoom.z})` }}>
         <div ref={captureRef} className="fl-doc">
           {/* title block (toggleable) */}
           {showHeader ? (
@@ -351,6 +355,7 @@ export default function FlowChart({ flow, template, onExportName, notify, intera
             })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

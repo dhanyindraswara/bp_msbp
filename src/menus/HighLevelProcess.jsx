@@ -9,6 +9,7 @@ import { hlpSourceOptions, genHlpFromEntity } from '../lib/genFromTree.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import { uid } from '../lib/constants.js'
 import HlpChart from '../components/HlpChart.jsx'
+import FormSection from '../components/FormSection.jsx'
 
 const Field = ({ label, value, onChange, placeholder }) => (
   <label className="imp-field imp-field-wide">
@@ -127,21 +128,20 @@ export default function HighLevelProcess({ openId, setOpenId, notify, genFrom, o
               <button className="btn btn-sm btn-primary" disabled={!genSrc} onClick={() => doGen(genSrc)}>Generate</button>
             </div>
           ) : null}
-          <div className="imp-sec">Title</div>
-          <div className="imp-grid">
-            <Field label="Title" value={hlp.title} onChange={(v) => set({ title: v })} placeholder="ITM High Level Business Process" />
-            <Field label="Subtitle" value={hlp.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Capturing General Core Value Chain" />
-            <Field label="Footnote / legend" value={hlp.footnote} onChange={(v) => set({ footnote: v })} placeholder="*New business to be launched" />
-          </div>
+          <FormSection title="Title & footnote" defaultOpen={false}>
+            <div className="imp-grid">
+              <Field label="Title" value={hlp.title} onChange={(v) => set({ title: v })} placeholder="ITM High Level Business Process" />
+              <Field label="Subtitle" value={hlp.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Capturing General Core Value Chain" />
+              <Field label="Footnote / legend" value={hlp.footnote} onChange={(v) => set({ footnote: v })} placeholder="*New business to be launched" />
+            </div>
+          </FormSection>
 
-          <div className="imp-sec">
-            Band ({hlp.bands.length})
-            <button className="btn btn-sm" onClick={addBand}>+ Band</button>
-          </div>
-          <div className="fl-hint">
-            Each band is one process layer (Management / Core / Enabler). Fill in the code (badge) &amp; name of each box. Tick <b>HL</b> to highlight.
-          </div>
-
+          <FormSection
+            title="Bands"
+            count={hlp.bands.length}
+            right={<button className="btn btn-sm" onClick={addBand}>+ Band</button>}
+            hint={<>One process layer per band (Enterprise / Core / Support). Code becomes the badge. Tick <b>HL</b> to highlight.</>}
+          >
           {hlp.bands.map((band, bi) => (
             <div key={band.id} className="tx-colcard">
               <div className="tx-colcard-hd">
@@ -152,9 +152,9 @@ export default function HighLevelProcess({ openId, setOpenId, notify, genFrom, o
               </div>
               {band.items.map((it, ii) => (
                 <div key={it.id} className="tx-l3edit">
-                  <input className="tx-inp tx-inp-code" value={it.code} placeholder="Kode" onChange={(e) => setItem(bi, ii, { code: e.target.value })} />
+                  <input className="tx-inp tx-inp-code" value={it.code} placeholder="Code" onChange={(e) => setItem(bi, ii, { code: e.target.value })} />
                   <input className="tx-inp" value={it.name} placeholder="Process name" onChange={(e) => setItem(bi, ii, { name: e.target.value })} />
-                  <label className="tx-hicheck" title="Highlight kotak">
+                  <label className="tx-hicheck" title="Highlight this box">
                     <input type="checkbox" checked={!!it.hi} onChange={(e) => setItem(bi, ii, { hi: e.target.checked })} /> HL
                   </label>
                   <button className="imp-x" title="Delete" onClick={() => delItem(bi, ii)}>✕</button>
@@ -163,10 +163,10 @@ export default function HighLevelProcess({ openId, setOpenId, notify, genFrom, o
               <button className="btn btn-sm tx-addl3" onClick={() => addItem(bi)}>+ Process</button>
             </div>
           ))}
+          </FormSection>
 
           {hlpDocs.length ? (
-            <>
-              <div className="imp-sec">Saved maps</div>
+            <FormSection title="Saved maps" count={hlpDocs.length} defaultOpen={false}>
               <div className="fl-saved">
                 {hlpDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>
@@ -174,7 +174,7 @@ export default function HighLevelProcess({ openId, setOpenId, notify, genFrom, o
                   </button>
                 ))}
               </div>
-            </>
+            </FormSection>
           ) : null}
           <div style={{ height: 28 }} />
         </div>

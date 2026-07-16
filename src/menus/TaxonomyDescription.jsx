@@ -8,6 +8,7 @@ import { blankProject } from '../lib/sample.js'
 import { taxdescSourceOptions, genTaxdescFromNode } from '../lib/genFromTree.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import TaxDescTable from '../components/TaxDescTable.jsx'
+import FormSection from '../components/FormSection.jsx'
 
 const Field = ({ label, value, onChange, placeholder }) => (
   <label className="imp-field imp-field-wide">
@@ -122,24 +123,23 @@ export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom
               <button className="btn btn-sm btn-primary" disabled={!genSrc} onClick={() => doGen(genSrc)}>Generate</button>
             </div>
           ) : null}
-          <div className="imp-sec">Title</div>
-          <div className="imp-grid">
-            <Field label="Title" value={td.title} onChange={(v) => set({ title: v })} placeholder="Taxonomy Description" />
-            <Field label="Subtitle" value={td.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Subtitle: the level" />
-          </div>
+          <FormSection title="Title" defaultOpen={false}>
+            <div className="imp-grid">
+              <Field label="Title" value={td.title} onChange={(v) => set({ title: v })} placeholder="Taxonomy Description" />
+              <Field label="Subtitle" value={td.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Subtitle: the level" />
+            </div>
+          </FormSection>
 
-          <div className="imp-sec">
-            Processes ({td.processes.length})
-            <button className="btn btn-sm" onClick={addProc}>+ Process</button>
-          </div>
-          <div className="fl-hint">
-            For <b>Performance Indicator</b>, <b>Responsible</b>, and <b>Accountable</b>: one point per line (Enter) — they become bullet lists in the table.
-          </div>
-
+          <FormSection
+            title="Processes"
+            count={td.processes.length}
+            right={<button className="btn btn-sm" onClick={addProc}>+ Process</button>}
+            hint={<>For <b>Performance Indicator</b>, <b>Responsible</b>, and <b>Accountable</b>: one point per line — they render as bullet lists.</>}
+          >
           {td.processes.map((p, pi) => (
             <div key={p.id} className="tx-colcard">
               <div className="tx-colcard-hd">
-                <span>Proses {pi + 1}</span>
+                <span>Process {pi + 1}</span>
                 {td.processes.length > 1 ? (
                   <button className="imp-x" title="Delete process" onClick={() => delProc(pi)}>✕ process</button>
                 ) : null}
@@ -158,7 +158,7 @@ export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom
                   <textarea rows={3} value={p.description} onChange={(e) => setProc(pi, { description: e.target.value })} />
                 </label>
                 <label className="imp-field td-editwide">
-                  <span>{TAXDESC_ROWS[2].label} (1 baris / poin)</span>
+                  <span>{TAXDESC_ROWS[2].label} — one per line</span>
                   <textarea rows={3} value={p.kpi} onChange={(e) => setProc(pi, { kpi: e.target.value })} />
                 </label>
                 <label className="imp-field">
@@ -172,10 +172,10 @@ export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom
               </div>
             </div>
           ))}
+          </FormSection>
 
           {tdDocs.length ? (
-            <>
-              <div className="imp-sec">Saved descriptions</div>
+            <FormSection title="Saved descriptions" count={tdDocs.length} defaultOpen={false}>
               <div className="fl-saved">
                 {tdDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>
@@ -183,7 +183,7 @@ export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom
                   </button>
                 ))}
               </div>
-            </>
+            </FormSection>
           ) : null}
           <div style={{ height: 28 }} />
         </div>

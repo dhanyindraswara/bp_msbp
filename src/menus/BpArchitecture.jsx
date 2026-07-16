@@ -100,7 +100,7 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId, openMap
     <div className="bpa-branch">
       <div
         className={'bpa-node' + (selectedId === node.id ? ' active' : '')}
-        style={{ paddingLeft: 6 + depth * 14 }}
+        style={{ paddingLeft: 8 }}
         onClick={() => onSelect(node.id)}
       >
         {hasKids ? (

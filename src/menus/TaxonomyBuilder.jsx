@@ -9,6 +9,7 @@ import { blankProject } from '../lib/sample.js'
 import { createDoc, saveDoc, getDoc, listDocs } from '../lib/store.js'
 import { uid } from '../lib/constants.js'
 import TaxonomyChart from '../components/TaxonomyChart.jsx'
+import FormSection from '../components/FormSection.jsx'
 
 const Field = ({ label, value, onChange, placeholder }) => (
   <label className="imp-field imp-field-wide">
@@ -129,21 +130,20 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify, genFrom, on
               <button className="btn btn-sm btn-primary" disabled={!genSrc} onClick={() => doGen(genSrc)}>Generate</button>
             </div>
           ) : null}
-          <div className="imp-sec">Title &amp; bands</div>
-          <div className="imp-grid">
-            <Field label="Diagram title" value={tax.title} onChange={(v) => set({ title: v })} placeholder="E4. Shipment Coordination (Taxonomy)" />
-            <Field label="L0 — core process label" value={tax.l0} onChange={(v) => set({ l0: v })} placeholder="Core Process" />
-            <Field label="L1 — process group" value={tax.l1} onChange={(v) => set({ l1: v })} placeholder="C4. Marine & Logistic" />
-          </div>
+          <FormSection title="Title & labels" defaultOpen={false}>
+            <div className="imp-grid">
+              <Field label="Diagram title" value={tax.title} onChange={(v) => set({ title: v })} placeholder="E4. Shipment Coordination (Taxonomy)" />
+              <Field label="L0 — core process label" value={tax.l0} onChange={(v) => set({ l0: v })} placeholder="Core Process" />
+              <Field label="L1 — process group" value={tax.l1} onChange={(v) => set({ l1: v })} placeholder="C4. Marine & Logistic" />
+            </div>
+          </FormSection>
 
-          <div className="imp-sec">
-            L2 &amp; L3 columns ({tax.columns.length})
-            <button className="btn btn-sm" onClick={addCol}>+ Column</button>
-          </div>
-          <div className="fl-hint">
-            Each column is one <b>L2</b> category with its stack of <b>L3</b> sub-processes below. Tick <b>Highlight</b> to outline a box for emphasis.
-          </div>
-
+          <FormSection
+            title="Columns"
+            count={tax.columns.length}
+            right={<button className="btn btn-sm" onClick={addCol}>+ Column</button>}
+            hint={<>One <b>L2</b> category per column, its <b>L3</b> sub-processes stacked below. Tick <b>HL</b> to highlight a box.</>}
+          >
           {tax.columns.map((c, ci) => (
             <div key={c.id} className="tx-colcard">
               <div className="tx-colcard-hd">
@@ -153,18 +153,18 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify, genFrom, on
                 ) : null}
               </div>
               <div className="tx-l2edit">
-                <input className="tx-inp tx-inp-code" value={c.l2.code} placeholder="Kode L2" onChange={(e) => setL2(ci, { code: e.target.value })} />
+                <input className="tx-inp tx-inp-code" value={c.l2.code} placeholder="L2 code" onChange={(e) => setL2(ci, { code: e.target.value })} />
                 <input className="tx-inp" value={c.l2.name} placeholder="L2 category name" onChange={(e) => setL2(ci, { name: e.target.value })} />
-                <label className="tx-hicheck" title="Highlight kotak">
+                <label className="tx-hicheck" title="Highlight this box">
                   <input type="checkbox" checked={!!c.l2.hi} onChange={(e) => setL2(ci, { hi: e.target.checked })} /> HL
                 </label>
               </div>
               {c.l3.map((b, li) => (
                 <div key={b.id} className="tx-l3edit">
                   <span className="tx-l3dot">└</span>
-                  <input className="tx-inp tx-inp-code" value={b.code} placeholder="Kode" onChange={(e) => setL3(ci, li, { code: e.target.value })} />
+                  <input className="tx-inp tx-inp-code" value={b.code} placeholder="Code" onChange={(e) => setL3(ci, li, { code: e.target.value })} />
                   <input className="tx-inp" value={b.name} placeholder="L3 sub-process name" onChange={(e) => setL3(ci, li, { name: e.target.value })} />
-                  <label className="tx-hicheck" title="Highlight kotak">
+                  <label className="tx-hicheck" title="Highlight this box">
                     <input type="checkbox" checked={!!b.hi} onChange={(e) => setL3(ci, li, { hi: e.target.checked })} /> HL
                   </label>
                   <button className="imp-x" title="Delete" onClick={() => delL3(ci, li)}>✕</button>
@@ -173,10 +173,10 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify, genFrom, on
               <button className="btn btn-sm tx-addl3" onClick={() => addL3(ci)}>+ L3</button>
             </div>
           ))}
+          </FormSection>
 
           {taxDocs.length ? (
-            <>
-              <div className="imp-sec">Saved taxonomies</div>
+            <FormSection title="Saved taxonomies" count={taxDocs.length} defaultOpen={false}>
               <div className="fl-saved">
                 {taxDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>
@@ -184,7 +184,7 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify, genFrom, on
                   </button>
                 ))}
               </div>
-            </>
+            </FormSection>
           ) : null}
           <div style={{ height: 28 }} />
         </div>

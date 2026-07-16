@@ -1,8 +1,12 @@
-// STONES — Business Process suite shell. Left-hand menu switches between the
-// four modules; Document Development hosts the SIPOC → map + RASCI studio.
+// STONES — Business Process suite shell. Signed out: landing page → login.
+// Signed in: grouped sidebar + command palette (Ctrl/⌘+K) switch between the
+// modules; Document Development hosts the SIPOC → map + RASCI studio.
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { ensureSeed, getOpenId, getDoc, setOpenId as storeSetOpenId, initStore, subscribe, setCurrentUser } from './lib/store.js'
 import { watchAuth, signInGoogle, signOutUser, firebaseEnabled } from './lib/auth.js'
+import Landing from './Landing.jsx'
+import Login from './Login.jsx'
+import CommandPalette from './components/CommandPalette.jsx'
 import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
 import Dashboard from './menus/Dashboard.jsx'
@@ -17,84 +21,54 @@ import TaxonomyBuilder from './menus/TaxonomyBuilder.jsx'
 import HighLevelProcess from './menus/HighLevelProcess.jsx'
 import TaxonomyDescription from './menus/TaxonomyDescription.jsx'
 
-const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18">
-    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
-    <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z" />
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
-  </svg>
-)
-
-function LoginScreen({ onSignIn, err }) {
-  return (
-    <div className="login">
-      <div className="login-hero">
-        <div className="login-hero-inner">
-          <div className="login-mark">S</div>
-          <div className="login-brand">STONES</div>
-          <div className="login-brand-sub">Business Process Suite</div>
-          <p className="login-tag">Kembangkan, kelola, dan simpan Business Process, SOP, dan dokumen perusahaan — dalam satu platform.</p>
-          <ul className="login-feats">
-            <li>Business process map &amp; RASCI otomatis dari SIPOC</li>
-            <li>Approval workflow, versi &amp; audit trail</li>
-            <li>Realtime &amp; tersimpan aman di cloud</li>
-          </ul>
-        </div>
-      </div>
-      <div className="login-panel">
-        <div className="login-card">
-          <div className="login-card-title">Sign in</div>
-          <div className="login-card-sub">Masuk untuk melanjutkan ke STONES</div>
-          <button className="login-btn" onClick={onSignIn}>
-            <GoogleIcon />
-            Continue with Google
-          </button>
-          {err ? <div className="login-err">{err}</div> : null}
-          <div className="login-note">Akses dibatasi untuk akun yang diizinkan.</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 const Icon = ({ d }) => (
   <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
     <path d={d} />
   </svg>
 )
 
-// Sidebar navigation. Entries are either a standalone { id } item or a
-// { group, items } section with a heading. Dashboard sits on top; the two work
-// modules are grouped; the rest stand alone.
+// Sidebar navigation, grouped by what the user is doing rather than by module
+// history: Proses (memahami arsitektur), Studio (membuat & mengimpor), Library
+// (menemukan & meminta), Intelligence (bertanya & memberi konteks AI).
+// Global Search punya rumah baru: command palette (Ctrl/⌘+K) + pill di sidebar.
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', d: 'M4 13h6V4H4v9zm10 7h6V10h-6v10zM4 20h6v-4H4v4zM14 4v3h6V4h-6z' },
   {
-    group: 'Business Process',
+    group: 'Proses',
     items: [
-      { id: 'architecture', label: 'BP Architecture', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8' },
-      { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
-      { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
-    ],
-  },
-  {
-    group: 'Flow Process',
-    items: [{ id: 'flow', label: 'Auto Flow Process', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9' }],
-  },
-  {
-    group: 'Taxonomy',
-    items: [
-      { id: 'taxonomy', label: 'Business Process Taxonomy', d: 'M12 3v4M6 21v-6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6M4 21h4M16 21h4M10 3h4v4h-4z' },
+      { id: 'architecture', label: 'Process Architecture', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8' },
+      { id: 'taxonomy', label: 'Process Taxonomy', d: 'M12 3v4M6 21v-6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6M4 21h4M16 21h4M10 3h4v4h-4z' },
       { id: 'hlp', label: 'High Level Process', d: 'M3 5h18M3 12h18M3 19h18M7 3v18' },
       { id: 'taxdesc', label: 'Taxonomy Description', d: 'M4 5h16v14H4zM4 9h16M9 9v10M4 13h5M4 16h5' },
     ],
   },
-  { id: 'request', label: 'Document Action Request', d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
-  { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
-  { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
-  { id: 'ai', label: 'Ask AI', d: 'M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2zM9 10h.01M13 10h.01M17 10h.01' },
-  { id: 'knowledge', label: 'AI Knowledge Base', d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z' },
+  {
+    group: 'Studio',
+    items: [
+      { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
+      { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
+      { id: 'flow', label: 'Auto Flow Process', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9' },
+    ],
+  },
+  {
+    group: 'Library',
+    items: [
+      { id: 'repository', label: 'Repository', d: 'M4 7c0-1.1 3.6-2 8-2s8 .9 8 2s-3.6 2-8 2s-8-.9-8-2zM4 7v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2' },
+      { id: 'search', label: 'Global Search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' },
+      { id: 'request', label: 'Action Request', d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
+    ],
+  },
+  {
+    group: 'Intelligence',
+    items: [
+      { id: 'ai', label: 'Ask AI', d: 'M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2zM9 10h.01M13 10h.01M17 10h.01' },
+      { id: 'knowledge', label: 'AI Knowledge Base', d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z' },
+    ],
+  },
 ]
+
+// Flat list of every nav target — feeds the command palette.
+const NAV_FLAT = NAV.flatMap((e) => (e.group ? e.items.map((m) => ({ ...m, group: e.group })) : [{ ...e, group: '' }]))
 
 export default function App() {
   const [menu, setMenu] = useState('develop')
@@ -102,6 +76,9 @@ export default function App() {
   const [rev, setRev] = useState(0)
   const [user, setUser] = useState(undefined) // undefined = checking, null = signed out, object = signed in
   const [authErr, setAuthErr] = useState('')
+  const [gate, setGate] = useState('landing') // signed-out flow: landing → login
+  const [palette, setPalette] = useState(false)
+  const [searchQ, setSearchQ] = useState('') // seed query handed to Global Search
   const [openId, setOpenIdState] = useState(null)
   const [flowOpenId, setFlowOpenId] = useState(null)
   const [taxOpenId, setTaxOpenId] = useState(null)
@@ -155,6 +132,18 @@ export default function App() {
       unsubStore()
       unsubAuth()
     }
+  }, [])
+
+  // Ctrl/⌘+K opens the command palette anywhere in the app.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        setPalette((p) => !p)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   const doSignIn = () => {
@@ -217,9 +206,10 @@ export default function App() {
       </div>
     )
   }
-  // Signed out → login screen.
+  // Signed out → landing page, lalu login.
   if (firebaseEnabled && user === null) {
-    return <LoginScreen onSignIn={doSignIn} err={authErr} />
+    if (gate === 'login') return <Login onSignIn={doSignIn} onBack={() => setGate('landing')} err={authErr} />
+    return <Landing onEnter={() => setGate('login')} />
   }
   // Signed in (or local mode) but store not ready yet.
   if (!ready) {
@@ -242,6 +232,13 @@ export default function App() {
             <div className="stones-tag">Business Process Suite</div>
           </div>
         </div>
+        <button className="side-search" onClick={() => setPalette(true)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" />
+          </svg>
+          <span>Cari…</span>
+          <kbd>Ctrl K</kbd>
+        </button>
         <nav className="stones-nav">
           <div className="stones-navlabel">Workspace</div>
           {NAV.map((entry, i) => {
@@ -296,11 +293,26 @@ export default function App() {
         {menu === 'hlp' && <HighLevelProcess openId={hlpOpenId} setOpenId={setHlpOpenId} notify={notify} />}
         {menu === 'taxdesc' && <TaxonomyDescription openId={descOpenId} setOpenId={setDescOpenId} notify={notify} />}
         {menu === 'repository' && <Repository openDoc={openDoc} notify={notify} rev={rev} />}
-        {menu === 'search' && <GlobalSearch openDoc={openDoc} rev={rev} />}
+        {menu === 'search' && <GlobalSearch key={'gs-' + searchQ} openDoc={openDoc} rev={rev} initialQuery={searchQ} />}
         {menu === 'ai' && <AskAI rev={rev} />}
         {menu === 'knowledge' && <KnowledgeBase notify={notify} rev={rev} />}
         {menu === 'dashboard' && <Dashboard goRepository={() => setMenu('repository')} rev={rev} />}
       </main>
+
+      <CommandPalette
+        open={palette}
+        onClose={() => setPalette(false)}
+        menus={NAV_FLAT}
+        onNav={(id) => {
+          if (id === 'search') setSearchQ('')
+          setMenu(id)
+        }}
+        onOpenDoc={openDoc}
+        onDeepSearch={(q) => {
+          setSearchQ(q)
+          setMenu('search')
+        }}
+      />
 
       {toast ? <div className="toast">{toast}</div> : null}
     </div>

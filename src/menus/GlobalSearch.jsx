@@ -62,8 +62,8 @@ function Snippet({ text, q }) {
   return <>{parts}</>
 }
 
-export default function GlobalSearch({ openDoc, rev }) {
-  const [q, setQ] = useState('')
+export default function GlobalSearch({ openDoc, rev, initialQuery }) {
+  const [q, setQ] = useState(initialQuery || '')
   const docs = useMemo(() => listDocs().filter((d) => d.docType !== 'KNOWLEDGE' && d.docType !== 'BPNODE'), [rev])
   const query = q.trim()
 

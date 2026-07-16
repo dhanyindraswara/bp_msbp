@@ -16,11 +16,21 @@ dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio". Owner: dhanyindraswara.
 - **Deploy function:** dari terminal PC (`firebase deploy --only functions`). User pakai
   PowerShell — ingat: **nggak ada `&&`** (satu command per baris), jangan run dari `C:\WINDOWS\system32`.
 
-## Menu (STONES shell — src/App.jsx, `NAV` array; nav dikelompokkan)
-Grup sidebar: **Dashboard** (atas, standalone) · grup **Business Process** (Document
-Development, Document Import) · grup **Flow Process** (Auto Flow Process) · grup **Taxonomy**
-(Business Process Taxonomy, High Level Process, Taxonomy Description) · lalu standalone
-(Document Action Request, Repository, Global Search, Ask AI, AI Knowledge Base).
+## Landing + Login (pra-auth) — redesign 2026 (lihat REDESIGN.md)
+- Signed-out: **Landing page** (`src/Landing.jsx`) — hero animasi haul truck HD (SVG murni),
+  section benang-kusut (chaos → STONES → alur rapi), grid fitur, CTA. CTA/„Masuk" →
+  **Login** (`src/Login.jsx`, dark glass card + Google). Login split-hero lama dihapus.
+- Animasi CSS + IntersectionObserver, hormat `prefers-reduced-motion`. Palet landing:
+  gradien `#ff7a1a → #f0439c → #2f8bff` di atas warm paper `#fbfaf7`.
+
+## Menu (STONES shell — src/App.jsx, `NAV` array; nav dikelompokkan per job-to-be-done)
+Grup sidebar: **Dashboard** (atas) · **Proses** (Process Architecture, Process Taxonomy,
+High Level Process, Taxonomy Description) · **Studio** (Document Development, Document
+Import, Auto Flow Process) · **Library** (Repository, Global Search, Action Request) ·
+**Intelligence** (Ask AI, AI Knowledge Base).
+- **Command palette Ctrl/⌘+K** (`src/components/CommandPalette.jsx`) + pill "Cari…" di
+  sidebar: lompat menu, buka dokumen by nama/ID, atau lempar query ke Global Search
+  (`initialQuery` prop, remount via `key`).
 1. **Document Action Request** (`request`) — daftar/permintaan + add new BP.
 2. **Document Development** (`develop`) — studio utama: SIPOC editor → auto business-process
    map (ProcessMap.jsx) + RASCI, ITM title block (logo, Prepared/Reviewed/Approved, BP No,

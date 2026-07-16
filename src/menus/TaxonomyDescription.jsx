@@ -173,6 +173,7 @@ export default function TaxonomyDescription({ openId, setOpenId, notify, genFrom
               </div>
             </div>
           ))}
+            <button className="add-row" onClick={addProc}>+ Add process</button>
           </FormSection>
 
           {tdDocs.length ? (

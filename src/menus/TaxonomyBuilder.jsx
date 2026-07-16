@@ -174,6 +174,7 @@ export default function TaxonomyBuilder({ openId, setOpenId, notify, genFrom, on
               <button className="btn btn-sm tx-addl3" onClick={() => addL3(ci)}>+ L3</button>
             </div>
           ))}
+            <button className="add-row" onClick={addCol}>+ Add column</button>
           </FormSection>
 
           {taxDocs.length ? (

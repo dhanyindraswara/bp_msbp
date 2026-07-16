@@ -1494,3 +1494,41 @@ table.stones-table tbody tr td { transition: background .12s; }
 .zc .zc-val { width: auto; padding: 0 7px; font-size: 11px; font-weight: 750; color: var(--text-2); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
 .zoom-stage { transform-origin: top left; width: max-content; min-width: 100%; transition: transform .15s ease; }
 @media (prefers-reduced-motion: reduce) { .zoom-stage { transition: none; } .ss-pop { animation: none; } }
+
+/* decision step: explicit Yes/No branch pickers */
+.stp-branches { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 100%; margin-top: 2px; }
+.stp-branch { display: inline-flex; align-items: center; gap: 6px; }
+.stp-branch .ss { flex: none; width: 168px; }
+.stp-branch-tag { font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .03em; padding: 3px 9px; border-radius: 999px; }
+.stp-branch-yes { background: #e3f6ee; color: #1e7c50; }
+.stp-branch-no { background: #fdeaea; color: #b13a3a; }
+
+/* full-width "add" button at the end of builder lists */
+.add-row { display: block; width: 100%; border: 1.5px dashed var(--border-strong); background: transparent; border-radius: 11px; padding: 10px; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; transition: border-color .13s, color .13s, background .13s; margin-top: 2px; }
+.add-row:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-tint); }
+
+/* clearer field affordance in builder cards: visible fill + soft border
+   (was too faint — inputs disappeared into the card background) */
+.stp input, .stp select,
+.ss-compact .ss-btn,
+.tx-inp,
+.td-editgrid .imp-field input, .td-editgrid .imp-field textarea {
+  background: #edf2f7;
+  border: 1px solid #d7e0e9;
+  color: var(--text);
+}
+.stp input:hover, .stp select:hover,
+.ss-compact .ss-btn:hover,
+.tx-inp:hover,
+.td-editgrid .imp-field input:hover, .td-editgrid .imp-field textarea:hover {
+  border-color: #aebdcb;
+}
+.stp input:focus, .stp select:focus,
+.tx-inp:focus,
+.td-editgrid .imp-field input:focus, .td-editgrid .imp-field textarea:focus {
+  background: #fff;
+  border-color: var(--accent);
+}
+.stp input::placeholder, .tx-inp::placeholder, .td-editgrid .imp-field input::placeholder, .td-editgrid .imp-field textarea::placeholder { color: #8494a3; }
+.ss-compact .ss-btn.ss-empty { color: #74838f; }
+.ss-compact .ss-caret { color: #74838f; }

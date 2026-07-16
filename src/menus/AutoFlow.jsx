@@ -117,6 +117,37 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
     setOpenId && setOpenId(null)
   }
 
+  // Decision branches: read/write the Yes/No targets on top of the free-form
+  // `next` syntax ("6:Yes, 3:No"), preserving any custom-labelled branches.
+  const parseBranches = (raw) => {
+    const pairs = String(raw || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((t) => {
+        const i = t.indexOf(':')
+        return i === -1 ? { target: t.trim(), label: '' } : { target: t.slice(0, i).trim(), label: t.slice(i + 1).trim() }
+      })
+    const yes = pairs.find((p) => /^y(es)?$/i.test(p.label))
+    const no = pairs.find((p) => /^n(o)?$/i.test(p.label))
+    return { yes: yes ? yes.target : '', no: no ? no.target : '', rest: pairs.filter((p) => p !== yes && p !== no) }
+  }
+  const setBranch = (i, which, target) => {
+    const b = parseBranches(flow.steps[i].next)
+    if (which === 'yes') b.yes = target
+    else b.no = target
+    const parts = []
+    if (b.yes) parts.push(b.yes + ':Yes')
+    if (b.no) parts.push(b.no + ':No')
+    b.rest.forEach((p) => parts.push(p.target + (p.label ? ':' + p.label : '')))
+    setStep(i, 'next', parts.join(', '))
+  }
+  // Steps a branch can jump to, labelled by number + activity.
+  const targetOptions = (selfId) =>
+    flow.steps
+      .filter((x) => x.id !== selfId && String(x.no || '').trim())
+      .map((x) => ({ value: String(x.no).trim(), label: String(x.no).trim() + ' · ' + (x.activity || x.type) }))
+
   const loadSample = () => {
     const sf = sampleFlow()
     setFlow(sf)
@@ -218,10 +249,38 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
                     {FLOW_RASCI.map((r) => <option key={r} value={r}>{r || '—'}</option>)}
                   </select>
                   <input className="stp-ref" value={s.ref} placeholder="Ref" title="PDC reference, e.g. 7.1.1" onChange={(e) => setStep(i, 'ref', e.target.value)} />
-                  <input className="stp-next" value={s.next} placeholder="Next: auto" title="Next step number(s)" onChange={(e) => setStep(i, 'next', e.target.value)} />
+                  {s.type === 'decision' ? (
+                    <span className="stp-branches">
+                      <span className="stp-branch">
+                        <i className="stp-branch-tag stp-branch-yes">Yes →</i>
+                        <SearchSelect
+                          compact
+                          value={parseBranches(s.next).yes}
+                          options={targetOptions(s.id)}
+                          onChange={(v) => setBranch(i, 'yes', v)}
+                          placeholder="step…"
+                          emptyLabel="— pick later —"
+                        />
+                      </span>
+                      <span className="stp-branch">
+                        <i className="stp-branch-tag stp-branch-no">No →</i>
+                        <SearchSelect
+                          compact
+                          value={parseBranches(s.next).no}
+                          options={targetOptions(s.id)}
+                          onChange={(v) => setBranch(i, 'no', v)}
+                          placeholder="step…"
+                          emptyLabel="— pick later —"
+                        />
+                      </span>
+                    </span>
+                  ) : (
+                    <input className="stp-next" value={s.next} placeholder="Next: auto" title="Next step number(s)" onChange={(e) => setStep(i, 'next', e.target.value)} />
+                  )}
                 </div>
               </div>
             ))}
+            <button className="add-row" onClick={addStep}>+ Add step</button>
           </FormSection>
 
           {flowDocs.length ? (

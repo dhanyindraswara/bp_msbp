@@ -164,6 +164,7 @@ export default function HighLevelProcess({ openId, setOpenId, notify, genFrom, o
               <button className="btn btn-sm tx-addl3" onClick={() => addItem(bi)}>+ Process</button>
             </div>
           ))}
+            <button className="add-row" onClick={addBand}>+ Add band</button>
           </FormSection>
 
           {hlpDocs.length ? (

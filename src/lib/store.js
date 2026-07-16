@@ -1,4 +1,4 @@
-// STONES document store. Backend-agnostic: uses Firestore when configured
+// LEAP-STONES document store. Backend-agnostic: uses Firestore when configured
 // (with realtime sync across devices), otherwise falls back to localStorage.
 // Reads are synchronous from an in-memory cache; writes update the cache and
 // persist to the active backend, then notify subscribers.

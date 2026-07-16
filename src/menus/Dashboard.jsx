@@ -1,4 +1,4 @@
-// STONES › Dashboard — reporting. Placeholder for now; shows live counts from
+// LEAP-STONES › Dashboard — reporting. Placeholder for now; shows live counts from
 // the repository so it feels connected, with charts marked "coming soon".
 import { listDocs } from '../lib/store.js'
 

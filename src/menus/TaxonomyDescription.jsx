@@ -1,4 +1,4 @@
-// STONES › Taxonomy Description — the user fills a matrix of processes
+// LEAP-STONES › Taxonomy Description — the user fills a matrix of processes
 // (M7.1 … M7.5) with their name, description, KPI, responsible and accountable
 // parties. The system renders the description table (multi-line KPI/roles →
 // bullet lists). Saved to the repository as TAXDESC-type documents.

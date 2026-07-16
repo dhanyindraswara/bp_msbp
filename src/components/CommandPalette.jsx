@@ -1,4 +1,4 @@
-// STONES — command palette (Ctrl/⌘+K). One box to jump anywhere: menus,
+// LEAP-STONES — command palette (Ctrl/⌘+K). One box to jump anywhere: menus,
 // documents by name/ID/type, or hand the query off to Global Search for a
 // deep full-text pass. Keyboard-first: ↑↓ to move, Enter to go, Esc to close.
 import { useState, useMemo, useEffect, useRef } from 'react'
@@ -49,7 +49,7 @@ export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc,
             d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6',
           })
         )
-      out.push({ kind: 'deep', id: '__deep', label: `Cari "${q.trim()}" di semua isi dokumen`, sub: 'Global Search — full text', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' })
+      out.push({ kind: 'deep', id: '__deep', label: `Search "${q.trim()}" across all document content`, sub: 'Global Search — full text', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5' })
     }
     return out
   }, [open, q, menus])
@@ -88,7 +88,7 @@ export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc,
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
-            placeholder="Cari dokumen, proses, atau menu…"
+            placeholder="Search documents, processes, or menus…"
           />
           <kbd>Esc</kbd>
         </div>
@@ -108,12 +108,12 @@ export default function CommandPalette({ open, onClose, menus, onNav, onOpenDoc,
               {i === sel ? <kbd>↵</kbd> : null}
             </button>
           ))}
-          {rows.length === 0 ? <div className="cp-empty">Ketik untuk mencari…</div> : null}
+          {rows.length === 0 ? <div className="cp-empty">Type to search…</div> : null}
         </div>
         <div className="cp-foot">
-          <span><kbd>↑</kbd><kbd>↓</kbd> navigasi</span>
-          <span><kbd>↵</kbd> buka</span>
-          <span><kbd>Esc</kbd> tutup</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+          <span><kbd>↵</kbd> open</span>
+          <span><kbd>Esc</kbd> close</span>
         </div>
       </div>
     </div>

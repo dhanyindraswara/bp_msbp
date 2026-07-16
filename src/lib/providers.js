@@ -15,7 +15,7 @@ export const PROVIDERS = [
     keyUrl: 'https://openrouter.ai/keys',
     hasPricing: true, // /models returns pricing → enables the "free only" filter
     supportsPdf: true, // via the file-parser plugin
-    extraHeaders: { 'HTTP-Referer': 'https://dhanyindraswara.github.io/bp_msbp/', 'X-Title': 'STONES Business Process Suite' },
+    extraHeaders: { 'HTTP-Referer': 'https://dhanyindraswara.github.io/bp_msbp/', 'X-Title': 'LEAP-STONES Business Process Suite' },
     chatModels: [
       'google/gemini-2.0-flash-exp:free',
       'google/gemini-2.5-flash',

@@ -1,4 +1,4 @@
-// STONES — Business Process suite shell. Signed out: landing page → login.
+// LEAP-STONES — Business Process suite shell. Signed out: landing page → login.
 // Signed in: grouped sidebar + command palette (Ctrl/⌘+K) switch between the
 // modules; Document Development hosts the SIPOC → map + RASCI studio.
 import { useState, useRef, useCallback, useEffect } from 'react'
@@ -7,6 +7,7 @@ import { watchAuth, signInGoogle, signOutUser, firebaseEnabled } from './lib/aut
 import Landing from './Landing.jsx'
 import Login from './Login.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
+import BrandMark from './components/BrandMark.jsx'
 import DocumentDevelopment from './menus/DocumentDevelopment.jsx'
 import Repository from './menus/Repository.jsx'
 import Dashboard from './menus/Dashboard.jsx'
@@ -34,7 +35,7 @@ const Icon = ({ d }) => (
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', d: 'M4 13h6V4H4v9zm10 7h6V10h-6v10zM4 20h6v-4H4v4zM14 4v3h6V4h-6z' },
   {
-    group: 'Proses',
+    group: 'Processes',
     items: [
       { id: 'architecture', label: 'Process Architecture', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8' },
       { id: 'taxonomy', label: 'Process Taxonomy', d: 'M12 3v4M6 21v-6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6M4 21h4M16 21h4M10 3h4v4h-4z' },
@@ -216,7 +217,7 @@ export default function App() {
     return (
       <div className="stones" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div className="rf-loading" style={{ color: '#8a94a0' }}>
-          Loading STONES{firebaseEnabled ? ' · connecting to Firebase…' : '…'}
+          Loading LEAP-STONES{firebaseEnabled ? ' · connecting to cloud…' : '…'}
         </div>
       </div>
     )
@@ -226,9 +227,9 @@ export default function App() {
     <div className="stones">
       <aside className="stones-side">
         <div className="stones-brand">
-          <div className="stones-mark">S</div>
+          <div className="stones-mark"><BrandMark /></div>
           <div>
-            <div className="stones-logo">STONES</div>
+            <div className="stones-logo">LEAP-STONES</div>
             <div className="stones-tag">Business Process Suite</div>
           </div>
         </div>
@@ -236,7 +237,7 @@ export default function App() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" />
           </svg>
-          <span>Cari…</span>
+          <span>Search…</span>
           <kbd>Ctrl K</kbd>
         </button>
         <nav className="stones-nav">

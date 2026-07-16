@@ -1,4 +1,4 @@
-// STONES › Document Import — upload a company PDF (SOP/BP/policy), let AI
+// LEAP-STONES › Document Import — upload a company PDF (SOP/BP/policy), let AI
 // extract it into structured data, review & correct it side-by-side with the
 // original, then save it into the repository. The AI drafts, a human approves.
 import { useState, useRef, useEffect } from 'react'

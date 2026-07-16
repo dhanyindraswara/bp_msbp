@@ -1,4 +1,4 @@
-// STONES › Business Process Taxonomy — the user fills a simple form (two
+// LEAP-STONES › Business Process Taxonomy — the user fills a simple form (two
 // spanning band labels + columns, each with one L2 category and a stack of L3
 // boxes) and the system draws the L0 → L3 taxonomy diagram. Saved to the
 // repository as TAXONOMY-type documents and reopenable here for editing.

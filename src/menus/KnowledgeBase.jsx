@@ -1,4 +1,4 @@
-// STONES › AI Knowledge Base — upload reference documents (PDF) or paste text
+// LEAP-STONES › AI Knowledge Base — upload reference documents (PDF) or paste text
 // that Ask AI will use as source material. PDFs are read by the already-deployed
 // extractDoc function; the extracted text is shown for review/edit before it is
 // saved. Each reference can be toggled on/off so the user controls what feeds AI.

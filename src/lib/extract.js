@@ -9,7 +9,7 @@ export const extractEnabled = true
 const MAX_BYTES = 7 * 1024 * 1024 // keep request payloads sane
 
 const EXTRACT_PROMPT = [
-  'You are a document-digitization engine for STONES, a business-process management app.',
+  'You are a document-digitization engine for LEAP-STONES, a business-process management app.',
   'Read the attached company document (usually an SOP, business process, or policy — often Indonesian and/or English, sometimes scanned) and extract it into JSON matching EXACTLY this schema:',
   '{',
   '  "type": "SOP" | "BP" | "POLICY" | "OTHER",',

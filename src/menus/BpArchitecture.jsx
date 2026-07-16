@@ -1,4 +1,4 @@
-// STONES › BP Architecture — maintain the multi-entity Business Process
+// LEAP-STONES › BP Architecture — maintain the multi-entity Business Process
 // hierarchy (LVL 0 = a separate corporation → LVL 1 category → LVL 2 → LVL 3)
 // and, on each LVL 3 leaf, its SIPOC (supplier→input→process→output→customer)
 // plus standalone RISK and Performance-Indicator lists. Two panes: a tree

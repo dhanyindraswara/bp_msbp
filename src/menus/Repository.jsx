@@ -1,4 +1,4 @@
-// STONES › Repository — stores every BP document with its ID, name, version and
+// LEAP-STONES › Repository — stores every BP document with its ID, name, version and
 // last-updated time. Open, duplicate or delete documents here.
 import { useMemo } from 'react'
 import { listDocs, deleteDoc, duplicateDoc, createDoc, STATUS } from '../lib/store.js'

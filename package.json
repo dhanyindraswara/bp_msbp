@@ -1,9 +1,9 @@
 {
-  "name": "itm-sipoc-studio",
+  "name": "leap-stones",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "ITM SIPOC Studio — from a single SIPOC table, auto-generate an editable ITM business process map and a RASCI matrix, with import/export.",
+  "description": "LEAP-STONES \u2014 Business Process Suite: SIPOC \u2192 auto process map + RASCI, AI document import, flowcharts, taxonomy, governance.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

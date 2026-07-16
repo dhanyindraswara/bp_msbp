@@ -28,7 +28,7 @@ export {
 } from './providers.js'
 
 const SYSTEM_PROMPT = [
-  'You are a senior business-process analyst and consultant inside STONES, a business-process management app.',
+  'You are a senior business-process analyst and consultant inside LEAP-STONES, a business-process management app.',
   "You are given EVERY document stored in this app below as context. It starts with a repository inventory (id, name,",
   'type, status, version) followed by full details of each document. Documents come in several types: BP (SIPOC rows —',
   'Supplier, Input, Process, Output, Customer — plus flows and PPI), imported SOPs (step-by-step procedures with PIC and',

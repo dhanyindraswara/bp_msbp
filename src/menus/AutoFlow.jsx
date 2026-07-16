@@ -1,4 +1,4 @@
-// STONES › Auto Flow Process — the user fills in a simple form (lanes +
+// LEAP-STONES › Auto Flow Process — the user fills in a simple form (lanes +
 // ordered steps), and the system draws a cross-functional swimlane flowchart to
 // the company SOP template. No SIPOC needed. Flows are saved to the repository
 // as FLOW-type documents and can be reopened here for editing.

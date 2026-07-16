@@ -1,4 +1,4 @@
-// STONES › Ask AI — chat assistant that answers questions about your business
+// LEAP-STONES › Ask AI — chat assistant that answers questions about your business
 // processes (OpenRouter, called client-side with the user's own API key). It also
 // reads the reference documents added in the AI Knowledge Base.
 import { useState, useRef, useEffect, useMemo } from 'react'

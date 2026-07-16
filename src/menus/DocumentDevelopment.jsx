@@ -1,4 +1,4 @@
-// STONES › Document Development — develop a Business Process (SIPOC → map +
+// LEAP-STONES › Document Development — develop a Business Process (SIPOC → map +
 // RASCI) for the currently open document, with approval workflow, version
 // history / audit trail, and comments. Edits autosave into the repository.
 import { useState, useEffect, useMemo, useRef } from 'react'

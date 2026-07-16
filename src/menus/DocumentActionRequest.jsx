@@ -1,4 +1,4 @@
-// STONES › Document Action Request — approval queue. Documents submitted for
+// LEAP-STONES › Document Action Request — approval queue. Documents submitted for
 // review land here; a reviewer approves or sends them back.
 import { useMemo } from 'react'
 import { listDocs, approveDoc, rejectDoc, createDoc, STATUS } from '../lib/store.js'

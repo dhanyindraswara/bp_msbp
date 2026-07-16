@@ -1,4 +1,4 @@
-# STONES — Product Redesign (2026)
+# LEAP-STONES — Product Redesign (2026)
 
 Dokumen arah redesign STONES dari "kumpulan menu" menjadi platform Business
 Process Management yang terasa seperti enterprise SaaS modern (Linear/Notion
@@ -78,3 +78,21 @@ sejarah modul:
 - Palet brand landing: gradien `#ff7a1a → #f0439c → #2f8bff` (mark, ikon,
   headline accent) di atas warm paper `#fbfaf7`; app shell tetap ITM blue.
 - Deploy tetap `npm run build` + `npm run deploy` (gh-pages) setelah merge.
+
+
+## Update 2 — Rebrand LEAP-STONES + identitas ITMG (Banpu guide)
+
+- **Rename** STONES → **LEAP-STONES** di seluruh produk: landing, login, sidebar,
+  loading screen, browser title, favicon, meta description, prompt AI, package.json.
+- **Palet** dari ITMG/Banpu Color Guide: Banpu Blue `#00AEEF`, Purple Blue `#484792`,
+  Green `#00B49C`, Black `#232127`, greys — dipetakan ke design tokens (`--accent`
+  fungsional `#0084c6` agar kontras AA, `--accent-bright/deep/green/ink`).
+- **Brand mark** baru: leaf-swoosh (motif guide) putih di atas tile gradien blue→purple
+  (`BrandMark.jsx` + favicon SVG).
+- **Tipografi**: Plus Jakarta Sans untuk heading/brand (`--font-display`), Inter body.
+- **Hero visual baru** (menggantikan ilustrasi truk): "product canvas" — kartu glass
+  berisi peta value chain tambang yang tergambar animatif (node muncul berurutan,
+  konektor menggambar sendiri) + floating proof-cards (Approved, RASCI, Ask AI), di
+  atas backdrop leaf-swoosh gradien translusen. Kesan: mining company yang sedang
+  bertransformasi digital, bukan industrial berat.
+- **Bahasa**: seluruh copy UI kini bahasa Inggris.

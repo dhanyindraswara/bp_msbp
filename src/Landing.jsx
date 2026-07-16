@@ -1,8 +1,10 @@
-// STONES — public landing page (pre-auth). Tells the story: building &
-// managing Business Processes is a tangled mess of scattered files → STONES
-// straightens it into one governed platform. Hero mascot = a mining haul
-// truck (Hitachi HD style) instead of ClickUp's mask.
-import { useEffect, useRef } from 'react'
+// LEAP-STONES — public landing page (pre-auth). Story: building & managing
+// Business Processes is a tangled mess of scattered files → LEAP-STONES
+// straightens it into one governed platform. Visual identity follows the
+// ITMG/Banpu design guide: Banpu Blue #00AEEF, Purple Blue #484792, Green
+// #00B49C, airy white, translucent "leaf swoosh" gradients.
+import { useEffect } from 'react'
+import BrandMark from './components/BrandMark.jsx'
 
 // Reveal-on-scroll: elements with .rv get .in when they enter the viewport.
 function useReveal() {
@@ -27,102 +29,97 @@ const FIcon = ({ d }) => (
   </svg>
 )
 
-/* ---------------- Hero: animated haul truck ---------------- */
-function TruckHero() {
+/* ---------------- Hero visual: live process canvas + leaf swooshes ------- */
+// A glass "product canvas" showing the mining value chain as a governed
+// process map, with floating proof-cards (approval, RASCI, Ask AI) — digital
+// transformation, not heavy industrial artwork.
+const CHAIN = [
+  { x: 14, y: 44, w: 168, label: 'Mine Planning' },
+  { x: 226, y: 44, w: 158, label: 'Coal Getting' },
+  { x: 428, y: 44, w: 198, label: 'Hauling & Dispatch', hot: true },
+  { x: 140, y: 190, w: 168, label: 'Coal Processing' },
+  { x: 380, y: 190, w: 178, label: 'Barging & Shipping' },
+]
+
+function HeroVisual() {
   return (
     <div className="ld-stage">
-      <div className="ld-stage-glow" />
-      <div className="ld-ghost ld-ghost-a">SATU<br />PLATFORM</div>
-      <div className="ld-ghost ld-ghost-b">SEMUA<br />PROSES</div>
-
-      {/* callouts, ClickUp-style monospace labels */}
-      <div className="ld-callout ld-callout-l" style={{ top: '18%' }}>
-        <span>GOVERNANCE 24/7</span>
-        <i />
-      </div>
-      <div className="ld-callout ld-callout-r" style={{ top: '30%' }}>
-        <i />
-        <span>SINGLE SOURCE OF TRUTH</span>
-      </div>
-      <div className="ld-callout ld-callout-l" style={{ top: '62%' }}>
-        <span>AI-POWERED IMPORT</span>
-        <i />
-      </div>
-
-      <svg className="ld-truck" viewBox="0 0 760 440" role="img" aria-label="Haul truck STONES">
+      {/* leaf-swoosh backdrop (design-guide motif) */}
+      <svg className="ld-swoosh" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <linearGradient id="ldBed" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#ff7a1a" />
-            <stop offset="0.45" stopColor="#f0439c" />
-            <stop offset="1" stopColor="#2f8bff" />
+          <linearGradient id="swA" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stopColor="#00AEEF" />
+            <stop offset="1" stopColor="#484792" />
           </linearGradient>
-          <linearGradient id="ldCab" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#31435a" />
-            <stop offset="1" stopColor="#1c2733" />
+          <linearGradient id="swB" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stopColor="#00B49C" />
+            <stop offset="1" stopColor="#D2D4D3" />
           </linearGradient>
         </defs>
-
-        {/* dust puffs behind the rear wheel */}
-        <g className="ld-dust">
-          <circle cx="70" cy="380" r="16" />
-          <circle cx="38" cy="360" r="11" />
-          <circle cx="20" cy="385" r="8" />
-        </g>
-
-        <g className="ld-truck-body">
-          {/* chassis */}
-          <rect x="105" y="272" width="545" height="42" rx="10" fill="#1c2733" />
-          {/* radiator / front box */}
-          <rect x="596" y="176" width="66" height="122" rx="10" fill="url(#ldCab)" />
-          <rect x="606" y="206" width="46" height="8" rx="4" fill="#4d6076" />
-          <rect x="606" y="222" width="46" height="8" rx="4" fill="#4d6076" />
-          <rect x="606" y="238" width="46" height="8" rx="4" fill="#4d6076" />
-          {/* headlight */}
-          <rect x="648" y="186" width="12" height="14" rx="3" fill="#ffd66e" className="ld-lamp" />
-          {/* deck + rails */}
-          <rect x="380" y="172" width="286" height="10" rx="5" fill="#2b3a4b" />
-          <path d="M392 172 v-22 M430 172 v-22 M468 172 v-22 M392 152 h76" stroke="#3b4f66" strokeWidth="5" fill="none" strokeLinecap="round" />
-          {/* cab on the deck, under the canopy */}
-          <rect x="478" y="112" width="92" height="62" rx="9" fill="url(#ldCab)" />
-          <path d="M488 122 h50 v28 h-50 z" fill="#bfe0ff" opacity="0.92" />
-          <rect x="546" y="122" width="14" height="28" rx="3" fill="#8fb7dd" opacity="0.8" />
-          {/* exhaust stack + smoke */}
-          <rect x="452" y="118" width="10" height="56" rx="4" fill="#2b3a4b" />
-          <g className="ld-smoke">
-            <circle cx="457" cy="104" r="7" />
-            <circle cx="463" cy="86" r="9" />
-            <circle cx="455" cy="66" r="11" />
-          </g>
-          {/* dump bed + canopy over the cab (gradient, the "mask" of STONES) */}
-          <path
-            d="M38 128 L330 98 L343 118 L662 88 L666 112 L360 140 L352 252 L148 252 L66 196 Z"
-            fill="url(#ldBed)"
-          />
-          {/* bed ribs */}
-          <path d="M150 132 L165 246 M226 124 L238 248 M300 117 L310 250" stroke="#ffffff" strokeOpacity="0.28" strokeWidth="7" strokeLinecap="round" />
-          <text x="212" y="212" fill="#ffffff" fontSize="26" fontWeight="800" letterSpacing="4" opacity="0.9" fontFamily="Inter, sans-serif">STONES</text>
-          <text x="588" y="168" fill="#93a7bc" fontSize="13" fontWeight="700" letterSpacing="1" fontFamily="Inter, sans-serif">HD-785</text>
-          {/* ladder */}
-          <path d="M652 300 L614 182 M636 300 L600 190 M612 262 h30 M602 232 h30" stroke="#3b4f66" strokeWidth="6" fill="none" strokeLinecap="round" />
-
-          {/* wheels */}
-          <g className="ld-wheel">
-            <circle cx="186" cy="330" r="72" fill="#161d26" />
-            <circle cx="186" cy="330" r="34" fill="#3b4f66" />
-            <circle cx="186" cy="330" r="14" fill="#0f141a" />
-            <path d="M186 302 v-22 M186 358 v22 M158 330 h-22 M214 330 h22 M166 310 l-15 -15 M206 310 l15 -15 M166 350 l-15 15 M206 350 l15 15" stroke="#0f141a" strokeWidth="8" strokeLinecap="round" />
-          </g>
-          <g className="ld-wheel">
-            <circle cx="548" cy="336" r="66" fill="#161d26" />
-            <circle cx="548" cy="336" r="31" fill="#3b4f66" />
-            <circle cx="548" cy="336" r="13" fill="#0f141a" />
-            <path d="M548 311 v-20 M548 361 v20 M523 336 h-20 M573 336 h20 M530 318 l-14 -14 M566 318 l14 -14 M530 354 l-14 14 M566 354 l14 14" stroke="#0f141a" strokeWidth="7" strokeLinecap="round" />
-          </g>
-        </g>
-
-        {/* moving ground */}
-        <line className="ld-ground" x1="0" y1="408" x2="760" y2="408" stroke="#d8d3cb" strokeWidth="5" strokeLinecap="round" strokeDasharray="26 34" />
+        <path className="ld-sw ld-sw-a" d="M0 560 C 300 545 620 430 820 210 C 900 120 960 50 1000 0 L1000 560 Z" fill="url(#swA)" />
+        <path className="ld-sw ld-sw-b" d="M0 560 C 260 556 560 500 780 340 C 880 268 950 205 1000 150 L1000 560 Z" fill="url(#swB)" />
       </svg>
+
+      {/* product canvas */}
+      <div className="ld-canvas">
+        <div className="ld-canvas-hd">
+          <span className="ld-dot" /><span className="ld-dot" /><span className="ld-dot" />
+          <span className="ld-canvas-title">LEAP-STONES · Process Architecture</span>
+          <span className="ld-canvas-chip">Published · Rev 03</span>
+        </div>
+        <svg className="ld-flow" viewBox="0 0 640 290">
+          <defs>
+            <linearGradient id="ldHot" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#00AEEF" />
+              <stop offset="1" stopColor="#484792" />
+            </linearGradient>
+          </defs>
+          {/* connectors */}
+          <g className="ld-flow-lines" fill="none" stroke="#b9dff2" strokeWidth="2.5">
+            <path d="M182 70 H226" />
+            <path d="M384 70 H428" />
+            <path d="M532 96 V143 H224 V190" />
+            <path d="M308 216 H380" />
+          </g>
+          <g className="ld-flow-arrows" fill="#b9dff2">
+            <path d="M220 65 l8 5 -8 5 z" />
+            <path d="M422 65 l8 5 -8 5 z" />
+            <path d="M219 184 l5 8 5 -8 z" />
+            <path d="M374 211 l8 5 -8 5 z" />
+          </g>
+          {/* nodes */}
+          {CHAIN.map((n, i) => (
+            <g key={n.label} className="ld-flow-node" style={{ animationDelay: 0.5 + i * 0.28 + 's' }}>
+              <rect x={n.x} y={n.y} width={n.w} height="52" rx="12" fill={n.hot ? 'url(#ldHot)' : '#ffffff'} stroke={n.hot ? 'none' : '#cfe7f5'} strokeWidth="1.5" />
+              <text x={n.x + n.w / 2} y={n.y + 31} textAnchor="middle" fontSize="13.5" fontWeight="650" fontFamily="Inter, sans-serif" fill={n.hot ? '#fff' : '#232127'}>
+                {n.label}
+              </text>
+              <text x={n.x + 14} y={n.y - 7} fontSize="9.5" fontWeight="800" letterSpacing="1.5" fontFamily="Inter, sans-serif" fill="#9fb3c2">
+                {'L1.' + (i + 1)}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      {/* floating proof-cards */}
+      <div className="ld-fcard ld-fcard-a ld-floaty">
+        <span className="ld-fcheck">✓</span>
+        <span>
+          <b>Approved</b>
+          <small>BP-0042 · Hauling &amp; Dispatch · Rev 03</small>
+        </span>
+      </div>
+      <div className="ld-fcard ld-fcard-b ld-floaty">
+        <span className="ld-rasci">
+          {['R', 'A', 'S', 'C', 'I'].map((c) => <i key={c}>{c}</i>)}
+        </span>
+        <small>RASCI generated automatically</small>
+      </div>
+      <div className="ld-fcard ld-fcard-c ld-floaty">
+        <small className="ld-fq">“Who is accountable for coal hauling?”</small>
+        <span className="ld-fa"><b>Ask AI</b> — Hauling Superintendent. See BP-0042 §3.2</span>
+      </div>
     </div>
   )
 }
@@ -137,9 +134,9 @@ const CHIPS = [
   { t: '@', c: '#5a626e', style: { left: '25%', top: '30%' }, d: 5 },
 ]
 const BUBBLES = [
-  { t: 'SOP terbaru yang mana?', style: { left: '38%', top: '6%' }, d: 0 },
-  { t: 'Siapa PIC proses ini?', style: { left: '48%', top: '58%' }, d: 1 },
-  { t: 'Ini masih berlaku?', style: { left: '43%', top: '32%' }, d: 2 },
+  { t: 'Which SOP is current?', style: { left: '38%', top: '6%' }, d: 0 },
+  { t: 'Who owns this process?', style: { left: '48%', top: '58%' }, d: 1 },
+  { t: 'Is this still valid?', style: { left: '43%', top: '32%' }, d: 2 },
 ]
 
 function ChaosThread() {
@@ -147,9 +144,9 @@ function ChaosThread() {
     <div className="ld-thread rv">
       <svg viewBox="0 0 1200 320" preserveAspectRatio="xMidYMid meet">
         <defs>
-          <linearGradient id="ldClean" gradientUnits="userSpaceOnUse" x1="862" y1="160" x2="1190" y2="160">
-            <stop offset="0" stopColor="#2f6fb0" />
-            <stop offset="1" stopColor="#2f8bff" />
+          <linearGradient id="ldClean" gradientUnits="userSpaceOnUse" x1="880" y1="160" x2="1190" y2="160">
+            <stop offset="0" stopColor="#00AEEF" />
+            <stop offset="1" stopColor="#00B49C" />
           </linearGradient>
         </defs>
         {/* tangled part */}
@@ -157,21 +154,21 @@ function ChaosThread() {
           className="ld-mess"
           d="M-20 190 C 60 60, 150 50, 175 140 C 195 215, 95 235, 120 150 C 142 82, 245 70, 280 145 C 308 205, 215 225, 245 150 C 272 88, 380 90, 410 160 C 435 220, 350 235, 385 160 C 415 100, 520 95, 555 160 C 580 208, 505 222, 535 160 C 560 108, 650 118, 700 160"
           fill="none"
-          stroke="#e6e2db"
+          stroke="#e2e7ec"
           strokeWidth="20"
           strokeLinecap="round"
         />
-        {/* STONES node */}
+        {/* LEAP-STONES node */}
         <g className="ld-node">
-          <rect x="712" y="128" width="150" height="64" rx="18" fill="#12324e" />
-          <text x="787" y="168" textAnchor="middle" fill="#fff" fontSize="21" fontWeight="800" letterSpacing="3" fontFamily="Inter, sans-serif">STONES</text>
+          <rect x="702" y="128" width="176" height="64" rx="18" fill="#484792" />
+          <text x="790" y="167" textAnchor="middle" fill="#fff" fontSize="17" fontWeight="800" letterSpacing="2" fontFamily="'Plus Jakarta Sans', Inter, sans-serif">LEAP-STONES</text>
         </g>
         {/* clean part */}
-        <path className="ld-clean" d="M862 160 H 1190" fill="none" stroke="url(#ldClean)" strokeWidth="10" strokeLinecap="round" />
-        <g className="ld-clean-nodes" fill="#fff" stroke="#2f6fb0" strokeWidth="5">
-          <circle cx="930" cy="160" r="15" />
-          <circle cx="1030" cy="160" r="15" />
-          <circle cx="1130" cy="160" r="15" />
+        <path className="ld-clean" d="M878 160 H 1190" fill="none" stroke="url(#ldClean)" strokeWidth="10" strokeLinecap="round" />
+        <g className="ld-clean-nodes" fill="#fff" strokeWidth="5">
+          <circle cx="945" cy="160" r="15" stroke="#00AEEF" />
+          <circle cx="1040" cy="160" r="15" stroke="#00b2c9" />
+          <circle cx="1135" cy="160" r="15" stroke="#00B49C" />
         </g>
       </svg>
       {CHIPS.map((f) => (
@@ -185,8 +182,8 @@ function ChaosThread() {
         </span>
       ))}
       <div className="ld-thread-caption">
-        <span>Sebelum: file tercecer &amp; pertanyaan tanpa jawaban</span>
-        <span className="ld-thread-caption-after">Sesudah: satu alur proses yang jelas</span>
+        <span>Before: scattered files &amp; unanswered questions</span>
+        <span className="ld-thread-caption-after">After: one clear process flow</span>
       </div>
     </div>
   )
@@ -196,118 +193,117 @@ function ChaosThread() {
 const FEATURES = [
   {
     t: 'Process Architecture',
-    s: 'Peta hierarki proses L0–L3 yang bisa dijelajahi — dari value chain sampai aktivitas detail, semua terhubung.',
+    s: 'An explorable L0–L3 process hierarchy — from the value chain down to detailed activities, all connected.',
     d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zM8 3h8M8 21h8',
   },
   {
     t: 'AI Document Import',
-    s: 'Upload PDF SOP lama — AI membaca, mengekstrak langkah, aktor, dan RASCI, lalu menyusunnya jadi dokumen terstruktur.',
+    s: 'Upload a legacy SOP PDF — AI reads it, extracts steps, actors, and RASCI, and turns it into a structured document.',
     d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
   },
   {
-    t: 'SIPOC → Peta BP Otomatis',
-    s: 'Isi satu tabel SIPOC, dapatkan business process map + matriks RASCI lengkap dengan title block standar perusahaan.',
+    t: 'SIPOC → Auto Process Map',
+    s: 'Fill in a single SIPOC table and get a business process map plus a complete RASCI matrix, with the company title block.',
     d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1',
   },
   {
     t: 'Auto Flow Process',
-    s: 'Flowchart swimlane SOP tergambar otomatis dari daftar langkah — rapi, konsisten, siap ekspor PNG.',
+    s: 'Swimlane SOP flowcharts drawn automatically from a list of steps — tidy, consistent, ready to export as PNG.',
     d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9',
   },
   {
     t: 'Governance & Approval',
-    s: 'Draft → Review → Approved → Published. Versi, audit trail, dan komentar menempel di setiap dokumen.',
+    s: 'Draft → Review → Approved → Published. Versions, an audit trail, and comments attached to every document.',
     d: 'M9 11l3 3l8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9',
   },
   {
     t: 'Ask AI + Knowledge Base',
-    s: 'Tanya apa saja tentang proses perusahaan — AI menjawab dari seluruh BP, SOP, dan dokumen referensi Anda.',
+    s: 'Ask anything about your company\u2019s processes — AI answers from every BP, SOP, and reference document you have.',
     d: 'M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2zM9 10h.01M13 10h.01M17 10h.01',
   },
 ]
 
 const STEPS = [
-  { n: '01', t: 'Kumpulkan', s: 'Impor PDF SOP lama atau mulai dari tabel SIPOC. Tidak perlu menggambar ulang dari nol.' },
-  { n: '02', t: 'Rapikan', s: 'AI dan layout engine menyusun peta proses, flowchart, dan RASCI secara otomatis dan konsisten.' },
-  { n: '03', t: 'Kelola', s: 'Publikasikan lewat approval workflow. Semua orang menemukan versi resmi lewat satu pencarian.' },
+  { n: '01', t: 'Collect', s: 'Import legacy SOP PDFs or start from a SIPOC table. No need to redraw anything from scratch.' },
+  { n: '02', t: 'Structure', s: 'AI and the layout engine compose process maps, flowcharts, and RASCI automatically and consistently.' },
+  { n: '03', t: 'Govern', s: 'Publish through an approval workflow. Everyone finds the official version through a single search.' },
 ]
 
 /* ---------------- Page ---------------- */
 export default function Landing({ onEnter }) {
   useReveal()
-  const rootRef = useRef(null)
   return (
-    <div className="ld" ref={rootRef}>
+    <div className="ld">
       <header className="ld-top">
         <div className="ld-top-inner">
           <div className="ld-brandrow">
-            <div className="ld-mark">S</div>
+            <div className="ld-mark"><BrandMark /></div>
             <div>
-              <div className="ld-logo">STONES</div>
+              <div className="ld-logo">LEAP-STONES</div>
               <div className="ld-logo-sub">Business Process Suite</div>
             </div>
           </div>
           <nav className="ld-nav">
-            <a href="#masalah">Masalah</a>
+            <a href="#masalah">The problem</a>
             <a href="#fitur">Platform</a>
-            <a href="#cara">Cara kerja</a>
+            <a href="#cara">How it works</a>
           </nav>
-          <button className="ld-btn ld-btn-dark" onClick={onEnter}>Masuk</button>
+          <button className="ld-btn ld-btn-dark" onClick={onEnter}>Sign in</button>
         </div>
       </header>
 
       {/* HERO */}
       <section className="ld-hero">
-        <div className="ld-hero-badge rv in">Era baru pengelolaan proses pertambangan</div>
+        <div className="ld-hero-badge rv in">Leap forward — digital transformation for mining operations</div>
         <h1 className="ld-h1">
-          <span className="ld-h1-fade">Era baru operasional tambang,</span>
+          <span className="ld-h1-fade">A new era of mining operations,</span>
           <br />
-          dengan <span className="ld-h1-grad">STONES</span><sup className="ld-tm">™</sup>
+          with <span className="ld-h1-grad">LEAP-STONES</span>
         </h1>
         <p className="ld-hero-sub">
-          Kembangkan, kelola, dan temukan Business Process, SOP, dan dokumen perusahaan —
-          dalam satu platform yang digerakkan AI.
+          Develop, govern, and discover Business Processes, SOPs, and company
+          documents — in one AI-powered platform.
         </p>
         <div className="ld-hero-cta">
-          <button className="ld-btn ld-btn-dark ld-btn-lg" onClick={onEnter}>Mulai sekarang</button>
-          <a className="ld-btn ld-btn-ghost ld-btn-lg" href="#masalah">Pelajari dulu</a>
+          <button className="ld-btn ld-btn-dark ld-btn-lg" onClick={onEnter}>Get started</button>
+          <a className="ld-btn ld-btn-ghost ld-btn-lg" href="#masalah">See how</a>
         </div>
-        <TruckHero />
+        <HeroVisual />
       </section>
 
       {/* CHAOS */}
       <section className="ld-sec" id="masalah">
         <h2 className="ld-h2 rv">
-          <span className="ld-h1-fade">Sebagian besar pengetahuan proses</span> hilang di dokumen
+          <span className="ld-h1-fade">Most process knowledge is</span> lost in documents
           <br />
-          <span className="ld-h1-fade">— dan operasi</span> tersesat tanpanya
+          <span className="ld-h1-fade">— and operations are</span> lost without it
         </h2>
         <p className="ld-sec-sub rv">
-          Proses digambar di Visio, disimpan di Excel, dikirim lewat email, dan hilang di folder pribadi.
-          STONES meluruskannya jadi satu sumber kebenaran.
+          Processes get drawn in Visio, stored in Excel, sent over email, and lost in
+          personal folders. LEAP-STONES straightens them into a single source of truth.
         </p>
         <ChaosThread />
         <div className="ld-pains">
           <div className="ld-pain rv">
-            <h3>Berpindah-pindah aplikasi</h3>
-            <p>Proses yang sama digambar ulang di Visio, Excel, dan PowerPoint. Kelelahan digital menurunkan performa tim hingga <b>32%</b>.</p>
+            <h3>Constant app switching</h3>
+            <p>The same process gets redrawn in Visio, Excel, and PowerPoint. Digital fatigue reduces team performance by up to <b>32%</b>.</p>
           </div>
           <div className="ld-pain rv" style={{ transitionDelay: '.12s' }}>
-            <h3>Pengetahuan tak terdokumentasi</h3>
-            <p><b>Sebagian besar</b> pengetahuan proses hanya ada di kepala orang. Saat orangnya pindah, prosesnya ikut pergi.</p>
+            <h3>Undocumented knowledge</h3>
+            <p><b>Most</b> process knowledge lives only in people’s heads. When they move on, the process leaves with them.</p>
           </div>
           <div className="ld-pain rv" style={{ transitionDelay: '.24s' }}>
-            <h3>Jam terbuang mencari</h3>
-            <p>Rata-rata <b>2,5 jam sehari</b> habis untuk mencari dokumen, memastikan versi, dan menyambung-nyambungkan konteks.</p>
+            <h3>Hours lost searching</h3>
+            <p>On average, <b>2.5 hours a day</b> are wasted finding documents, checking versions, and stitching context back together.</p>
           </div>
         </div>
       </section>
 
       {/* PLATFORM */}
       <section className="ld-sec ld-sec-alt" id="fitur">
-        <h2 className="ld-h2 rv">Satu platform untuk <span className="ld-h1-grad">seluruh proses</span></h2>
+        <h2 className="ld-h2 rv">One platform for <span className="ld-h1-grad">every process</span></h2>
         <p className="ld-sec-sub rv">
-          Dari arsitektur proses level perusahaan sampai langkah kerja di lapangan — semuanya terhubung, tergovernansi, dan bisa dicari.
+          From enterprise-level process architecture down to work instructions in the field — connected, governed, and searchable.
         </p>
         <div className="ld-grid">
           {FEATURES.map((f, i) => (
@@ -322,7 +318,7 @@ export default function Landing({ onEnter }) {
 
       {/* HOW */}
       <section className="ld-sec" id="cara">
-        <h2 className="ld-h2 rv">Dari PDF berdebu ke proses hidup, <span className="ld-h1-grad">tiga langkah</span></h2>
+        <h2 className="ld-h2 rv">From dusty PDFs to living processes, <span className="ld-h1-grad">in three steps</span></h2>
         <div className="ld-steps">
           {STEPS.map((s, i) => (
             <div className="ld-step rv" key={s.n} style={{ transitionDelay: i * 0.12 + 's' }}>
@@ -337,17 +333,17 @@ export default function Landing({ onEnter }) {
       {/* CTA */}
       <section className="ld-cta rv">
         <div className="ld-cta-glow" />
-        <h2>Bawa proses tambang Anda ke satu tempat</h2>
-        <p>Masuk dengan akun Google perusahaan dan mulai dalam hitungan detik.</p>
-        <button className="ld-btn ld-btn-light ld-btn-lg" onClick={onEnter}>Masuk ke STONES</button>
+        <h2>Bring your mining processes into one place</h2>
+        <p>Sign in with your company Google account and get started in seconds.</p>
+        <button className="ld-btn ld-btn-light ld-btn-lg" onClick={onEnter}>Enter LEAP-STONES</button>
       </section>
 
       <footer className="ld-foot">
         <div className="ld-brandrow">
-          <div className="ld-mark ld-mark-sm">S</div>
-          <span className="ld-foot-name">STONES · Business Process Suite</span>
+          <div className="ld-mark ld-mark-sm"><BrandMark /></div>
+          <span className="ld-foot-name">LEAP-STONES · Business Process Suite</span>
         </div>
-        <span>© {new Date().getFullYear()} — dibangun untuk operasi pertambangan modern</span>
+        <span>© {new Date().getFullYear()} — built for modern mining operations</span>
       </footer>
     </div>
   )

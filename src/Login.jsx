@@ -1,5 +1,6 @@
-// STONES — sign-in screen. Dark, minimal, one action: continue with Google.
-// Reached from the landing page ("Masuk") — can always go back.
+// LEAP-STONES — sign-in screen. Dark, minimal, one action: continue with
+// Google. Reached from the landing page ("Masuk") — can always go back.
+import BrandMark from './components/BrandMark.jsx'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
@@ -18,19 +19,19 @@ export default function Login({ onSignIn, onBack, err }) {
       <div className="lg-grid" />
 
       <div className="lg-card">
-        <div className="lg-mark">S</div>
-        <h1 className="lg-title">Masuk ke STONES</h1>
-        <p className="lg-sub">Business Process Suite — satu platform untuk seluruh proses perusahaan.</p>
+        <div className="lg-mark"><BrandMark /></div>
+        <h1 className="lg-title">Sign in to LEAP-STONES</h1>
+        <p className="lg-sub">Business Process Suite — one platform for every company process.</p>
         <button className="lg-google" onClick={onSignIn}>
           <GoogleIcon />
-          Lanjutkan dengan Google
+          Continue with Google
         </button>
         {err ? <div className="lg-err">{err}</div> : null}
-        <div className="lg-note">Akses dibatasi untuk akun yang diizinkan perusahaan.</div>
+        <div className="lg-note">Access is limited to authorized company accounts.</div>
       </div>
 
       {onBack ? (
-        <button className="lg-back" onClick={onBack}>← Kembali ke beranda</button>
+        <button className="lg-back" onClick={onBack}>← Back to home</button>
       ) : null}
     </div>
   )

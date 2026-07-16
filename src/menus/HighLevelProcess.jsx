@@ -1,4 +1,4 @@
-// STONES › High Level Process — the user defines the company value chain as a
+// LEAP-STONES › High Level Process — the user defines the company value chain as a
 // stack of bands (Management / Core / Enabler), each holding coded process
 // boxes. The system draws the ITM-style high-level process map. Saved to the
 // repository as HLP-type documents and reopenable here for editing.

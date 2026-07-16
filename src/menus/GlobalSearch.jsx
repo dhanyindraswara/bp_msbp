@@ -1,4 +1,4 @@
-// STONES › Global Search — search across every document: name, ID, SIPOC rows,
+// LEAP-STONES › Global Search — search across every document: name, ID, SIPOC rows,
 // actors, flows, PPI, template header, and comments. Results open the document.
 import { useState, useMemo } from 'react'
 import { listDocs, STATUS } from '../lib/store.js'

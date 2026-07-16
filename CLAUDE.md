@@ -1,7 +1,18 @@
-# STONES — Business Process Suite (project memory)
+# LEAP-STONES — Business Process Suite (project memory)
 
 Web app buat mengembangkan, mengelola, dan menyimpan Business Process (BP), SOP,
-dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio". Owner: dhanyindraswara.
+dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio" → "STONES" → **LEAP-STONES**
+(rebrand 2026, UI berbahasa Inggris). Owner: dhanyindraswara.
+
+## Brand & tema (ITMG/Banpu design guide — lihat REDESIGN.md)
+- Palet: **Banpu Blue `#00AEEF`** (accent bright; fungsional `--accent:#0084c6`),
+  **Purple Blue `#484792`**, **Green `#00B49C`**, **Black `#232127`** (`--ink`), grey
+  `#F3F3F3`. Semua token di `:root` `src/index.css`; JANGAN hardcode biru lama `#2f6fb0`.
+- Font: Inter (body) + **Plus Jakarta Sans** (`--font-display`, heading/brand), dimuat
+  di `index.html` (Google Fonts).
+- Brand mark: leaf-swoosh putih di tile gradien blue→purple (`src/components/BrandMark.jsx`),
+  favicon SVG serupa di `index.html`. Motif visual: "leaf swoosh" gradien translusen.
+- Copy UI seluruh app **bahasa Inggris**.
 
 ## Stack & deploy
 - **React 18 + Vite**, base path `/bp_msbp/`, Tailwind + design tokens (Inter font).
@@ -16,14 +27,15 @@ dan dokumen perusahaan. Evolusi dari "ITM SIPOC Studio". Owner: dhanyindraswara.
 - **Deploy function:** dari terminal PC (`firebase deploy --only functions`). User pakai
   PowerShell — ingat: **nggak ada `&&`** (satu command per baris), jangan run dari `C:\WINDOWS\system32`.
 
-## Landing + Login (pra-auth) — redesign 2026 (lihat REDESIGN.md)
-- Signed-out: **Landing page** (`src/Landing.jsx`) — hero animasi haul truck HD (SVG murni),
-  section benang-kusut (chaos → STONES → alur rapi), grid fitur, CTA. CTA/„Masuk" →
-  **Login** (`src/Login.jsx`, dark glass card + Google). Login split-hero lama dihapus.
-- Animasi CSS + IntersectionObserver, hormat `prefers-reduced-motion`. Palet landing:
-  gradien `#ff7a1a → #f0439c → #2f8bff` di atas warm paper `#fbfaf7`.
+## Landing + Login (pra-auth)
+- Signed-out: **Landing page** (`src/Landing.jsx`) — hero "product canvas" (peta value
+  chain tambang animasi: Mine Planning → Coal Getting → Hauling → Processing → Shipping,
+  floating cards Approved/RASCI/Ask AI) di atas backdrop leaf-swoosh; section benang-kusut
+  (chaos → LEAP-STONES → alur rapi), grid fitur, CTA. Ilustrasi truk lama dihapus.
+- CTA/"Sign in" → **Login** (`src/Login.jsx`, dark glass card purple-blue + orb cyan/green).
+- Animasi CSS + IntersectionObserver, hormat `prefers-reduced-motion`.
 
-## Menu (STONES shell — src/App.jsx, `NAV` array; nav dikelompokkan per job-to-be-done)
+## Menu (shell — src/App.jsx, `NAV` array; nav dikelompokkan per job-to-be-done)
 Grup sidebar: **Dashboard** (atas) · **Proses** (Process Architecture, Process Taxonomy,
 High Level Process, Taxonomy Description) · **Studio** (Document Development, Document
 Import, Auto Flow Process) · **Library** (Repository, Global Search, Action Request) ·

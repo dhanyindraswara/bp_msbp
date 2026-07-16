@@ -45,20 +45,20 @@ body { font-family: var(--font); -webkit-font-smoothing: antialiased; text-rende
 /* ---- STONES suite shell ---- */
 .stones { display: flex; height: 100vh; position: relative; overflow: hidden; font-family: var(--font); color: var(--text); font-size: 14px; background: var(--bg); }
 .stones-side { width: 244px; flex: none; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-.stones-brand { display: flex; align-items: center; gap: 11px; padding: 17px 18px 16px; border-bottom: 1px solid var(--border); }
+.stones-brand { flex: none; display: flex; align-items: center; gap: 11px; padding: 15px 14px 14px 18px; border-bottom: 1px solid var(--border); }
 .stones-mark { width: 34px; height: 34px; flex: none; border-radius: 9px; background: linear-gradient(140deg, #00aeef, #484792); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(72,71,146,.32); }
 .stones-logo { font-family: var(--font-display); font-weight: 800; font-size: 16px; color: var(--text); letter-spacing: .12em; line-height: 1; }
 .stones-tag { font-size: 10.5px; color: var(--muted); font-weight: 600; margin-top: 3px; letter-spacing: .01em; }
-.stones-nav { padding: 12px 12px; display: flex; flex-direction: column; gap: 2px; }
+.stones-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 2px; }
 .stones-navlabel { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); padding: 6px 12px 6px; }
 .stones-navitem { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-2); font-weight: 550; font-size: 13.5px; border: none; background: transparent; text-align: left; width: 100%; line-height: 1.2; transition: background .13s, color .13s; }
 .stones-navitem:hover { background: var(--surface-2); color: var(--text); }
 .stones-navitem.active { background: var(--accent-tint); color: var(--accent); font-weight: 650; }
 .stones-navitem .ico { width: 18px; height: 18px; flex: none; opacity: .9; }
 .stones-navitem.active .ico { opacity: 1; }
-.stones-side-foot { margin-top: auto; padding: 14px 16px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.stones-side-foot { flex: none; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--muted); line-height: 1.5; display: flex; flex-direction: column; gap: 8px; }
 .stones-side-foot > div:first-child { color: var(--text); font-weight: 650; }
-.stones-signout { margin-top: 10px; width: 100%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .13s, box-shadow .13s; }
+.stones-signout { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .13s, box-shadow .13s; }
 .stones-signout:hover { background: var(--surface-2); box-shadow: var(--shadow-xs); color: var(--text); }
 
 /* Landing (.ld-*), sign-in (.lg-*), and command palette (.cp-*) styles live at
@@ -1532,3 +1532,30 @@ table.stones-table tbody tr td { transition: background .12s; }
 .stp input::placeholder, .tx-inp::placeholder, .td-editgrid .imp-field input::placeholder, .td-editgrid .imp-field textarea::placeholder { color: #8494a3; }
 .ss-compact .ss-btn.ss-empty { color: #74838f; }
 .ss-compact .ss-caret { color: #74838f; }
+
+/* ============================================================
+   COLLAPSIBLE SIDEBAR — scrollable nav + icon-only rail
+   ============================================================ */
+.stones-side { transition: width .18s ease; }
+.side-collapse { flex: none; margin-left: auto; width: 26px; height: 26px; border: 1px solid var(--border); background: var(--surface); border-radius: 7px; color: var(--muted); cursor: pointer; display: grid; place-items: center; transition: background .12s, color .12s, border-color .12s; }
+.side-collapse:hover { background: var(--accent-tint); color: var(--accent); border-color: var(--accent-tint-2); }
+.side-collapse svg { width: 15px; height: 15px; }
+.stones-signout-ic { width: 15px; height: 15px; flex: none; }
+
+/* collapsed rail */
+.stones-side.collapsed { width: 68px; }
+.stones-side.collapsed .stones-brand-txt,
+.stones-side.collapsed .stones-navgroup-label,
+.stones-side.collapsed .stones-navitem-lb,
+.stones-side.collapsed .stones-foot-txt,
+.stones-side.collapsed .stones-signout-lb { display: none; }
+.stones-side.collapsed .stones-brand { padding: 15px 0 14px; justify-content: center; position: relative; }
+.stones-side.collapsed .stones-mark { margin: 0; }
+.stones-side.collapsed .side-collapse { position: absolute; top: -6px; right: 8px; margin: 0; width: 22px; height: 22px; }
+.stones-side.collapsed .stones-nav { padding: 10px 10px 14px; align-items: center; }
+.stones-side.collapsed .stones-navgroup { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.stones-side.collapsed .stones-navgroup + .stones-navgroup { margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }
+.stones-side.collapsed .stones-navitem { width: 44px; height: 40px; padding: 0; justify-content: center; gap: 0; }
+.stones-side.collapsed .stones-navitem::before { left: -10px; }
+.stones-side.collapsed .stones-side-foot { align-items: center; padding: 12px 10px; }
+.stones-side.collapsed .stones-signout { width: 44px; height: 40px; padding: 0; }

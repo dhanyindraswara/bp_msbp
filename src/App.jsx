@@ -84,6 +84,12 @@ export default function App() {
   const [createOpen, setCreateOpen] = useState(false) // top-bar "+ Create" menu
   const [searchQ, setSearchQ] = useState('') // seed query handed to Global Search
   // Enterprise context: which entity (LVL 0 company) the user is working in.
+  const [sideCollapsed, setSideCollapsed] = useState(() => localStorage.getItem('stones-side-collapsed') === '1')
+  const toggleSide = () => setSideCollapsed((c) => {
+    const n = !c
+    try { localStorage.setItem('stones-side-collapsed', n ? '1' : '0') } catch (e) { /* ignore */ }
+    return n
+  })
   const [entity, setEntity] = useState(() => localStorage.getItem('stones-entity') || '')
   const [focusNodeId, setFocusNodeId] = useState(null) // process node to focus in the Explorer
   const [genReq, setGenReq] = useState(null) // {kind:'hlp'|'taxonomy'|'taxdesc', id, n} — auto-generate request
@@ -254,25 +260,30 @@ export default function App() {
 
   return (
     <div className="stones">
-      <aside className="stones-side">
+      <aside className={'stones-side' + (sideCollapsed ? ' collapsed' : '')}>
         <div className="stones-brand">
           <div className="stones-mark"><BrandMark /></div>
-          <div>
+          <div className="stones-brand-txt">
             <div className="stones-logo">LEAP-STONES</div>
             <div className="stones-tag">Business Process Suite</div>
           </div>
+          <button className="side-collapse" onClick={toggleSide} title={sideCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d={sideCollapsed ? 'M9 6l6 6-6 6' : 'M15 6l-6 6 6 6'} />
+            </svg>
+          </button>
         </div>
         <nav className="stones-nav">
-          <div className="stones-navlabel">Workspace</div>
           {NAV.map((entry, i) => {
             const NavItem = (m) => (
               <button
                 key={m.id}
                 className={'stones-navitem' + (menu === m.id ? ' active' : '')}
                 onClick={() => setMenu(m.id)}
+                title={sideCollapsed ? m.label : undefined}
               >
                 <Icon d={m.d} />
-                {m.label}
+                <span className="stones-navitem-lb">{m.label}</span>
               </button>
             )
             if (entry.group) {
@@ -287,13 +298,18 @@ export default function App() {
           })}
         </nav>
         <div className="stones-side-foot">
-          <div style={{ fontWeight: 700, color: '#aebfd0' }}>
-            {firebaseEnabled ? user?.displayName || 'Signed in' : 'Local mode'}
+          <div className="stones-foot-txt">
+            <div style={{ fontWeight: 700, color: '#aebfd0' }}>
+              {firebaseEnabled ? user?.displayName || 'Signed in' : 'Local mode'}
+            </div>
+            <div style={{ wordBreak: 'break-all' }}>{firebaseEnabled ? user?.email || '' : 'localStorage'}</div>
           </div>
-          <div style={{ wordBreak: 'break-all' }}>{firebaseEnabled ? user?.email || '' : 'localStorage'}</div>
           {firebaseEnabled ? (
-            <button className="stones-signout" onClick={doSignOut}>
-              Sign out
+            <button className="stones-signout" onClick={doSignOut} title="Sign out">
+              <svg className="stones-signout-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+              <span className="stones-signout-lb">Sign out</span>
             </button>
           ) : null}
         </div>

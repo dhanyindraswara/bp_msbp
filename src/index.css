@@ -1549,9 +1549,9 @@ table.stones-table tbody tr td { transition: background .12s; }
 .stones-side.collapsed .stones-navitem-lb,
 .stones-side.collapsed .stones-foot-txt,
 .stones-side.collapsed .stones-signout-lb { display: none; }
-.stones-side.collapsed .stones-brand { padding: 15px 0 14px; justify-content: center; position: relative; }
+.stones-side.collapsed .stones-brand { flex-direction: column; gap: 9px; padding: 14px 0 12px; justify-content: center; }
 .stones-side.collapsed .stones-mark { margin: 0; }
-.stones-side.collapsed .side-collapse { position: absolute; top: -6px; right: 8px; margin: 0; width: 22px; height: 22px; }
+.stones-side.collapsed .side-collapse { margin: 0; width: 34px; height: 26px; }
 .stones-side.collapsed .stones-nav { padding: 10px 10px 14px; align-items: center; }
 .stones-side.collapsed .stones-navgroup { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .stones-side.collapsed .stones-navgroup + .stones-navgroup { margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }

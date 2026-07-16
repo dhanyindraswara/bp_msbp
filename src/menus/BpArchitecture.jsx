@@ -88,17 +88,35 @@ function PartyField({ value, options, onChange, onNavigate }) {
 }
 
 // ---- one recursive branch of the tree navigator ----
-function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId }) {
+// Nodes with children expand/collapse (entities + LVL1 open by default), so a
+// LVL 0–5 tree stays scannable while it grows.
+function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId, openMap, onToggle }) {
   const n = node.node
   const isLeaf = n.level >= MAX_LEVEL
   const sipocN = (n.sipoc || []).length
+  const hasKids = node.children.length > 0
+  const isOpen = openMap[node.id] !== undefined ? openMap[node.id] : n.level < 2
   return (
     <div className="bpa-branch">
       <div
         className={'bpa-node' + (selectedId === node.id ? ' active' : '')}
-        style={{ paddingLeft: 10 + depth * 15 }}
+        style={{ paddingLeft: 6 + depth * 14 }}
         onClick={() => onSelect(node.id)}
       >
+        {hasKids ? (
+          <button
+            className={'bpa-caret' + (isOpen ? ' open' : '')}
+            title={isOpen ? 'Collapse' : 'Expand'}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(node.id, isOpen)
+            }}
+          >
+            ▸
+          </button>
+        ) : (
+          <span className="bpa-caret-sp" />
+        )}
         <span className={'bpa-lv bpa-lv-' + n.level}>{n.level === 0 ? n.entity || n.code || 'ENT' : 'L' + n.level}</span>
         <span className="bpa-node-main">
           <span className="bpa-node-code">{n.level === 0 ? n.title || n.entity : n.code || '—'}</span>
@@ -107,6 +125,7 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId }) {
         {n.level === 0 && n.isHolding ? <span className="bpa-hold">Holding</span> : null}
         {dirtyId === node.id ? <span className="bpa-dirty" title="Unsaved changes">●</span> : null}
         {sipocN ? <span className="bpa-node-chip">{sipocN} SIPOC</span> : null}
+        {hasKids && !isOpen ? <span className="bpa-node-count" title={node.children.length + ' sub-processes'}>{node.children.length}</span> : null}
         {!isLeaf ? (
           <button
             className="bpa-node-add"
@@ -120,17 +139,21 @@ function TreeBranch({ node, depth, selectedId, onSelect, onAdd, dirtyId }) {
           </button>
         ) : null}
       </div>
-      {node.children.map((c) => (
-        <TreeBranch
-          key={c.id}
-          node={c}
-          depth={depth + 1}
-          selectedId={selectedId}
-          onSelect={onSelect}
-          onAdd={onAdd}
-          dirtyId={dirtyId}
-        />
-      ))}
+      {isOpen
+        ? node.children.map((c) => (
+            <TreeBranch
+              key={c.id}
+              node={c}
+              depth={depth + 1}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              onAdd={onAdd}
+              dirtyId={dirtyId}
+              openMap={openMap}
+              onToggle={onToggle}
+            />
+          ))
+        : null}
     </div>
   )
 }
@@ -149,6 +172,7 @@ export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, 
   const [draft, setDraft] = useState(null) // working copy of the selected node's payload
   const [dirty, setDirty] = useState(false)
   const [adding, setAdding] = useState(false) // add-entity form
+  const [openMap, setOpenMap] = useState({}) // tree expand state (default: open above LVL 2)
   const [entForm, setEntForm] = useState({ code: '', name: '', holding: false })
   const opts = useMemo(() => processOptions(selectedId), [rev, selectedId])
   const savedRef = useRef(null)
@@ -163,6 +187,21 @@ export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, 
     if (selectedId && docs.some((d) => d.id === selectedId)) return
     setSelectedId(docs[0]?.id || null)
   }, [docs, selectedId])
+
+  const toggleOpen = (id, isOpen) => setOpenMap((m) => ({ ...m, [id]: !isOpen }))
+
+  // Whatever is selected must be visible: expand every ancestor of it.
+  useEffect(() => {
+    if (!selectedId) return
+    const updates = {}
+    let cur = byId[selectedId]
+    let guard = 0
+    while (cur && cur.node?.parent && guard++ < 12) {
+      updates[cur.node.parent] = true
+      cur = byId[cur.node.parent]
+    }
+    if (Object.keys(updates).length) setOpenMap((m) => ({ ...m, ...updates }))
+  }, [selectedId, byId])
 
   // Follow the workspace entity switcher (top bar).
   useEffect(() => {
@@ -225,6 +264,7 @@ export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, 
   const addNode = (level, parent) => {
     if (!confirmLeave()) return
     const d = createNode(level, parent)
+    if (parent) setOpenMap((m) => ({ ...m, [parent]: true }))
     setSelectedId(d.id)
     notify && notify(LEVEL_NAMES[level] + ' added')
   }
@@ -412,6 +452,8 @@ export default function BpArchitecture({ notify, rev, openDoc, entity, focusId, 
                     onSelect={selectNode}
                     onAdd={addNode}
                     dirtyId={dirty ? selectedId : null}
+                    openMap={openMap}
+                    onToggle={toggleOpen}
                   />
                 ))}
               </div>

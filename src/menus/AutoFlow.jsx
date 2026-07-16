@@ -142,15 +142,15 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
       <div className="fl-page-hd">
         <div>
           <h1>Auto Flow Process</h1>
-          <p>Isi lane (pihak yang bertanggung jawab) &amp; langkah-langkahnya — sistem menggambar flowchart SOP-nya otomatis.</p>
+          <p>Fill in the lanes (responsible parties) &amp; the steps — the system draws the SOP flowchart automatically.</p>
         </div>
         <div className="fl-page-actions">
           <button className="btn btn-sm" onClick={loadSample}>Load sample</button>
-          <button className="btn btn-sm" onClick={newFlow}>Flow baru</button>
+          <button className="btn btn-sm" onClick={newFlow}>New flow</button>
           {savedId ? (
-            <span className="chip chip-id" title="Tersimpan otomatis">{savedId}</span>
+            <span className="chip chip-id" title="Saved automatically">{savedId}</span>
           ) : (
-            <button className="btn btn-sm btn-primary" onClick={saveNew}>Simpan ke Repository</button>
+            <button className="btn btn-sm btn-primary" onClick={saveNew}>Save to Repository</button>
           )}
         </div>
       </div>
@@ -158,13 +158,13 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
       <div className="fl-split">
         {/* ---- input form ---- */}
         <div className="fl-form">
-          <Section title="Kepala dokumen" open={secOpen.header} onToggle={() => toggleSec('header')}>
+          <Section title="Document header" open={secOpen.header} onToggle={() => toggleSec('header')}>
             <div className="imp-grid">
-              <Field label="Judul flow" value={tpl.title} onChange={(v) => setT('title', v)} placeholder="C3.2 Fuel Supply" wide />
+              <Field label="Flow title" value={tpl.title} onChange={(v) => setT('title', v)} placeholder="C3.2 Fuel Supply" wide />
               <Field label="Level" value={tpl.level} onChange={(v) => setT('level', v)} />
               <Field label="Business Process No." value={tpl.bpNo} onChange={(v) => setT('bpNo', v)} />
               <Field label="Effective date" value={tpl.effectiveDate} onChange={(v) => setT('effectiveDate', v)} />
-              <Field label="Revisi" value={tpl.revision} onChange={(v) => setT('revision', v)} />
+              <Field label="Revision" value={tpl.revision} onChange={(v) => setT('revision', v)} />
               <Field label="Prepared by" value={tpl.preparedBy} onChange={(v) => setT('preparedBy', v)} />
               <Field label="Reviewed by" value={tpl.reviewedBy} onChange={(v) => setT('reviewedBy', v)} />
               <Field label="Approved by" value={tpl.approvedBy} onChange={(v) => setT('approvedBy', v)} />
@@ -178,16 +178,16 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
             </div>
           </Section>
 
-          <Section title="Judul section (band)" open={secOpen.section} onToggle={() => toggleSec('section')}>
+          <Section title="Section title (band)" open={secOpen.section} onToggle={() => toggleSec('section')}>
             <div className="imp-grid">
-              <Field label="Nama proses / section" value={flow.section} onChange={(v) => setFlow((f) => ({ ...f, section: v }))} placeholder="C3.2 Fuel Supply" wide />
+              <Field label="Process / section name" value={flow.section} onChange={(v) => setFlow((f) => ({ ...f, section: v }))} placeholder="C3.2 Fuel Supply" wide />
             </div>
           </Section>
 
-          <div className="imp-sec">Lane / kolom (satu per baris)</div>
+          <div className="imp-sec">Lanes / columns (one per line)</div>
           <div className="imp-grid">
             <label className="imp-field imp-field-wide">
-              <span>Pihak yang bertanggung jawab, urut kiri → kanan</span>
+              <span>Responsible parties, ordered left → right</span>
               <textarea
                 rows={Math.min(8, Math.max(3, (flow.lanes || []).length))}
                 value={(flow.lanes || []).join('\n')}
@@ -198,11 +198,11 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
           </div>
 
           <div className="imp-sec">
-            Langkah ({flow.steps.length})
-            <button className="btn btn-sm" onClick={addStep}>+ Langkah</button>
+            Steps ({flow.steps.length})
+            <button className="btn btn-sm" onClick={addStep}>+ Step</button>
           </div>
           <div className="fl-hint">
-            <b>Next</b>: nomor langkah tujuan, pisah koma. Untuk percabangan keputusan pakai <code>6:Yes, 3:No</code>. Kosong = otomatis lanjut ke langkah berikutnya.
+            <b>Next</b>: target step numbers, comma separated. For decision branches use <code>6:Yes, 3:No</code>. Leave empty to continue to the next step.
           </div>
           <table className="fl-steps">
             <colgroup>
@@ -217,7 +217,7 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
             </colgroup>
             <thead>
               <tr>
-                <th>No</th><th>Tipe</th><th>Lane</th><th>RASCI</th><th>Ref</th><th>Aktivitas</th><th>Next</th><th />
+                <th>No</th><th>Type</th><th>Lane</th><th>RASCI</th><th>Ref</th><th>Activity</th><th>Next</th><th />
               </tr>
             </thead>
             <tbody>
@@ -244,9 +244,9 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
                   <td><input value={s.activity} onChange={(e) => setStep(i, 'activity', e.target.value)} /></td>
                   <td><input value={s.next} onChange={(e) => setStep(i, 'next', e.target.value)} placeholder="auto" /></td>
                   <td className="fl-steps-act">
-                    <button className="imp-x" title="Naik" onClick={() => moveStep(i, -1)}>↑</button>
-                    <button className="imp-x" title="Turun" onClick={() => moveStep(i, 1)}>↓</button>
-                    <button className="imp-x" title="Hapus" onClick={() => delStep(i)}>✕</button>
+                    <button className="imp-x" title="Move up" onClick={() => moveStep(i, -1)}>↑</button>
+                    <button className="imp-x" title="Move down" onClick={() => moveStep(i, 1)}>↓</button>
+                    <button className="imp-x" title="Delete" onClick={() => delStep(i)}>✕</button>
                   </td>
                 </tr>
               ))}
@@ -255,7 +255,7 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
 
           {flowDocs.length ? (
             <>
-              <div className="imp-sec">Flow tersimpan</div>
+              <div className="imp-sec">Saved flows</div>
               <div className="fl-saved">
                 {flowDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>
@@ -281,7 +281,7 @@ export default function AutoFlow({ openId, setOpenId, notify }) {
               onResetLayout={resetLayout}
             />
           ) : (
-            <div className="fl-empty">Tambahkan minimal satu lane untuk mulai menggambar flow.</div>
+            <div className="fl-empty">Add at least one lane to start drawing the flow.</div>
           )}
         </div>
       </div>

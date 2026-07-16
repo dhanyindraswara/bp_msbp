@@ -1330,3 +1330,68 @@ table.rasci td.cell { min-width: 64px; height: 40px; }
 .repo-proc:hover { background: var(--accent); color: #fff; }
 
 .bpa-deliv { background: #eef4ff; border: 1px solid #d6e4fb; color: #3b3a7a; border-radius: 999px; padding: 2px 10px; font-size: 10.5px; font-weight: 750; letter-spacing: .02em; white-space: nowrap; }
+
+/* ============================================================
+   POLISH PASS — motion, micro-interactions, consistency
+   ============================================================ */
+
+/* every menu eases in instead of popping */
+.stones-page, .ai-page, .fl-page, .itm-wrap, .imp-review { animation: pageIn .26s ease both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+
+/* calm, thin scrollbars across the app */
+.stones *::-webkit-scrollbar { width: 10px; height: 10px; }
+.stones *::-webkit-scrollbar-track { background: transparent; }
+.stones *::-webkit-scrollbar-thumb { background: #cfd7df; border-radius: 8px; border: 3px solid transparent; background-clip: padding-box; }
+.stones *::-webkit-scrollbar-thumb:hover { background: #b4bfca; border: 3px solid transparent; background-clip: padding-box; }
+
+/* sidebar: active rail indicator + smoother states */
+.stones-navitem { position: relative; }
+.stones-navitem::before { content: ''; position: absolute; left: -6px; top: 26%; bottom: 26%; width: 3px; border-radius: 3px; background: var(--accent); opacity: 0; transform: scaleY(.4); transition: opacity .16s, transform .16s; }
+.stones-navitem.active::before { opacity: 1; transform: scaleY(1); }
+.stones-nav { padding-left: 16px; }
+
+/* toast slides up */
+.toast { animation: toastIn .24s ease; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* keyboard focus is always visible, mouse clicks stay clean */
+.stones button:focus-visible, .stones input:focus-visible, .stones select:focus-visible, .stones textarea:focus-visible,
+.ld button:focus-visible, .lg button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+/* tables breathe a little */
+table.stones-table tbody tr td { transition: background .12s; }
+.panel { transition: box-shadow .16s; }
+.panel:hover { box-shadow: var(--shadow-md); }
+
+/* command palette rows */
+.cp-row { transition: background .1s; }
+
+/* ---- top bar "+ Create" ---- */
+.top-new-wrap { position: relative; margin-left: auto; display: flex; }
+.top-search { margin-left: 0; }
+.top-new { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 9px; padding: 8px 15px; font-family: inherit; font-size: 13px; font-weight: 700; color: #fff; cursor: pointer; background: linear-gradient(140deg, #00aeef, #484792); box-shadow: 0 3px 10px rgba(0,132,198,.3); transition: box-shadow .15s, transform .05s, filter .15s; }
+.top-new:hover { filter: brightness(1.06); box-shadow: 0 5px 14px rgba(0,132,198,.4); }
+.top-new:active { transform: translateY(1px); }
+.top-new svg { width: 14px; height: 14px; }
+.top-new-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 290px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-lg); padding: 6px; display: flex; flex-direction: column; gap: 1px; animation: cpPop .16s ease; }
+.top-new-item { display: flex; align-items: center; gap: 11px; text-align: left; border: none; background: transparent; border-radius: 10px; padding: 9px 10px; cursor: pointer; font-family: inherit; transition: background .12s; }
+.top-new-item:hover { background: var(--accent-tint); }
+.top-new-ic { width: 32px; height: 32px; flex: none; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.top-new-ic .ico { width: 16px; height: 16px; }
+.top-new-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.top-new-main b { font-size: 13px; font-weight: 700; color: var(--text); }
+.top-new-main small { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+/* ---- Process Explorer tree: chevrons + collapsed counts ---- */
+.bpa-caret { flex: none; width: 18px; height: 18px; border: none; background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; border-radius: 5px; display: flex; align-items: center; justify-content: center; transition: transform .16s ease, color .13s, background .13s; transform: rotate(0deg); padding: 0; }
+.bpa-caret.open { transform: rotate(90deg); }
+.bpa-caret:hover { background: var(--accent-tint); color: var(--accent); }
+.bpa-caret-sp { flex: none; width: 18px; }
+.bpa-node-count { flex: none; min-width: 20px; height: 17px; padding: 0 5px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); font-size: 10px; font-weight: 750; display: inline-flex; align-items: center; justify-content: center; }
+.bpa-branch { animation: pageIn .18s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stones-page, .ai-page, .fl-page, .itm-wrap, .imp-review, .bpa-branch, .toast, .top-new-menu { animation: none !important; }
+  .bpa-caret { transition: none; }
+}

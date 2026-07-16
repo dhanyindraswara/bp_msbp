@@ -19,7 +19,7 @@ const submittedInfo = (d) => {
 const StatusBadge = ({ status }) => <span className={'stbadge stbadge-' + status}>{STATUS[status] || 'Draft'}</span>
 
 export default function DocumentActionRequest({ openDoc, notify, rev }) {
-  const docs = useMemo(() => listDocs(), [rev])
+  const docs = useMemo(() => listDocs().filter((d) => d.docType !== 'KNOWLEDGE' && d.docType !== 'BPNODE'), [rev])
   const pending = docs.filter((d) => d.status === 'in_review')
 
   const onApprove = (id, name) => {

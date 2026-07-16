@@ -24,7 +24,7 @@ export default function ModelPicker({ kind = 'chat', value, onChange, providerId
     setFreeOnly(hasPricing)
     fetchModels()
       .then((list) => alive && (setModels(list), setErr(''), setLoading(false)))
-      .catch((e) => alive && (setModels(fallbackModels(kind)), setErr(e.message || 'Gagal memuat'), setLoading(false)))
+      .catch((e) => alive && (setModels(fallbackModels(kind)), setErr(e.message || 'Failed to load'), setLoading(false)))
     return () => {
       alive = false
     }
@@ -48,29 +48,29 @@ export default function ModelPicker({ kind = 'chat', value, onChange, providerId
   }, [models, freeOnly, q, hasPricing])
 
   const current = models.find((m) => m.id === value)
-  const label = current ? current.name : value || 'pilih model…'
+  const label = current ? current.name : value || 'choose a model…'
   const freeCount = useMemo(() => models.filter(isFreeModel).length, [models])
 
   return (
     <div className="mp" ref={ref}>
-      <button className="mp-btn" onClick={() => setOpen((o) => !o)} title="Pilih model AI">
+      <button className="mp-btn" onClick={() => setOpen((o) => !o)} title="Choose an AI model">
         <span className="mp-btn-lb">Model</span>
         <span className="mp-btn-val">{label}</span>
         <span className="mp-caret">▾</span>
       </button>
       {open ? (
         <div className="mp-panel">
-          <input className="mp-search" placeholder="Cari model…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+          <input className="mp-search" placeholder="Search models…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           <div className="mp-bar">
             {hasPricing ? (
               <label className="mp-free">
-                <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} /> Gratis saja
+                <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} /> Free only
               </label>
             ) : (
               <span className="mp-free">{prov.label}</span>
             )}
             <span className="mp-count">
-              {loading ? 'memuat…' : `${list.length} model${hasPricing && freeOnly ? ` · ${freeCount} gratis` : ''}`}
+              {loading ? 'loading…' : `${list.length} models${hasPricing && freeOnly ? ` · ${freeCount} free` : ''}`}
             </span>
           </div>
           {err ? <div className="mp-note mp-err">{err} (pakai daftar cadangan)</div> : null}
@@ -90,7 +90,7 @@ export default function ModelPicker({ kind = 'chat', value, onChange, providerId
                 </span>
               </button>
             ))}
-            {!loading && !list.length ? <div className="mp-note">Tidak ada model cocok.</div> : null}
+            {!loading && !list.length ? <div className="mp-note">No matching models.</div> : null}
           </div>
         </div>
       ) : null}

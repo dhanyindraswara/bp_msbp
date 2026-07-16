@@ -241,7 +241,7 @@ export default function FlowChart({ flow, template, onExportName, notify, intera
         <span style={{ fontWeight: 800, color: '#0f2a43', fontSize: 13.5 }}>{titleText || 'Flow process'}</span>
         {interactive ? <span className="map-hint">Geser kotak untuk atur posisi · klik dua kali untuk ganti nama</span> : null}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center' }}>
-          <label className="fl-toggle" title="Tampilkan / sembunyikan kepala dokumen">
+          <label className="fl-toggle" title="Show / hide the document header">
             <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} />
             Kepala dokumen
           </label>

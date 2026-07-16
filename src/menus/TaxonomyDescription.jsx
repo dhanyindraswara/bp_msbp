@@ -73,33 +73,33 @@ export default function TaxonomyDescription({ openId, setOpenId, notify }) {
       <div className="fl-page-hd">
         <div>
           <h1>Taxonomy Description</h1>
-          <p>Deskripsikan tiap proses — nama, deskripsi, indikator kinerja, penanggung jawab (RACI) — dalam tabel taksonomi.</p>
+          <p>Describe each process — name, description, performance indicators, responsibilities (RACI) — in a taxonomy table.</p>
         </div>
         <div className="fl-page-actions">
           <button className="btn btn-sm" onClick={loadSample}>Load sample</button>
-          <button className="btn btn-sm" onClick={newTd}>Deskripsi baru</button>
+          <button className="btn btn-sm" onClick={newTd}>New description</button>
           {savedId ? (
             <span className="chip chip-id" title="Tersimpan otomatis">{savedId}</span>
           ) : (
-            <button className="btn btn-sm btn-primary" onClick={saveNew}>Simpan ke Repository</button>
+            <button className="btn btn-sm btn-primary" onClick={saveNew}>Save to Repository</button>
           )}
         </div>
       </div>
 
       <div className="fl-split">
         <div className="fl-form">
-          <div className="imp-sec">Judul</div>
+          <div className="imp-sec">Title</div>
           <div className="imp-grid">
-            <Field label="Judul" value={td.title} onChange={(v) => set({ title: v })} placeholder="Taksonomi Description" />
-            <Field label="Sub judul" value={td.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Sub Judul: levelnya" />
+            <Field label="Title" value={td.title} onChange={(v) => set({ title: v })} placeholder="Taxonomy Description" />
+            <Field label="Subtitle" value={td.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Subtitle: the level" />
           </div>
 
           <div className="imp-sec">
-            Proses ({td.processes.length})
-            <button className="btn btn-sm" onClick={addProc}>+ Proses</button>
+            Processes ({td.processes.length})
+            <button className="btn btn-sm" onClick={addProc}>+ Process</button>
           </div>
           <div className="fl-hint">
-            Untuk <b>Performance Indicator</b>, <b>Responsible</b>, dan <b>Accountable</b>: satu poin per baris (Enter) — akan jadi bullet list di tabel.
+            For <b>Performance Indicator</b>, <b>Responsible</b>, and <b>Accountable</b>: one point per line (Enter) — they become bullet lists in the table.
           </div>
 
           {td.processes.map((p, pi) => (
@@ -107,7 +107,7 @@ export default function TaxonomyDescription({ openId, setOpenId, notify }) {
               <div className="tx-colcard-hd">
                 <span>Proses {pi + 1}</span>
                 {td.processes.length > 1 ? (
-                  <button className="imp-x" title="Hapus proses" onClick={() => delProc(pi)}>✕ proses</button>
+                  <button className="imp-x" title="Delete process" onClick={() => delProc(pi)}>✕ process</button>
                 ) : null}
               </div>
               <div className="td-editgrid">
@@ -141,7 +141,7 @@ export default function TaxonomyDescription({ openId, setOpenId, notify }) {
 
           {tdDocs.length ? (
             <>
-              <div className="imp-sec">Deskripsi tersimpan</div>
+              <div className="imp-sec">Saved descriptions</div>
               <div className="fl-saved">
                 {tdDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>

@@ -51,8 +51,8 @@ export default function ApiKeyField({ onChange }) {
         </select>
         {keyed && !editing ? (
           <>
-            <span className="keybar-ok">✓ key tersimpan</span>
-            <button className="btn btn-sm" onClick={() => setEditing(true)}>Ganti key</button>
+            <span className="keybar-ok">✓ key saved</span>
+            <button className="btn btn-sm" onClick={() => setEditing(true)}>Change key</button>
           </>
         ) : null}
       </div>
@@ -61,7 +61,7 @@ export default function ApiKeyField({ onChange }) {
         <>
           {prov.custom ? (
             <div className="keybar-row">
-              <input placeholder="Base URL (mis. https://host/v1)" value={base} onChange={(e) => setBase(e.target.value)} />
+              <input placeholder="Base URL (e.g. https://host/v1)" value={base} onChange={(e) => setBase(e.target.value)} />
             </div>
           ) : null}
           <div className="keybar-row">
@@ -73,13 +73,13 @@ export default function ApiKeyField({ onChange }) {
               onChange={(e) => setVal(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && save()}
             />
-            <button className="btn btn-sm btn-primary" onClick={save} disabled={!val.trim() && !(prov.custom && base.trim())}>Simpan</button>
-            {keyed ? <button className="btn btn-sm" onClick={() => setEditing(false)}>Batal</button> : null}
+            <button className="btn btn-sm btn-primary" onClick={save} disabled={!val.trim() && !(prov.custom && base.trim())}>Save</button>
+            {keyed ? <button className="btn btn-sm" onClick={() => setEditing(false)}>Cancel</button> : null}
           </div>
           <div className="keybar-note">
-            Disimpan cuma di browser ini, tidak dikirim ke mana pun selain provider yang dipilih.{' '}
+            Stored only in this browser — never sent anywhere except the provider you choose.{' '}
             {prov.keyUrl ? (
-              <a href={prov.keyUrl} target="_blank" rel="noreferrer">Dapatkan key {prov.label} →</a>
+              <a href={prov.keyUrl} target="_blank" rel="noreferrer">Get a {prov.label} key →</a>
             ) : null}
           </div>
         </>

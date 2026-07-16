@@ -46,7 +46,7 @@ export default function KnowledgeBase({ notify, rev }) {
       setContent((c) => (c.trim() ? c + '\n\n' + text : text))
       if (!title.trim()) setTitle(draft.title || file.name.replace(/\.pdf$/i, ''))
       setKind('pdf')
-      notify && notify('PDF diekstrak — review teksnya lalu simpan')
+      notify && notify('PDF extracted — review the text, then save')
     } catch (e) {
       setErr(e && e.message ? e.message : 'Ekstraksi gagal')
     }
@@ -55,7 +55,7 @@ export default function KnowledgeBase({ notify, rev }) {
 
   const save = () => {
     if (!content.trim()) {
-      setErr('Isi teks referensi dulu (upload PDF atau ketik/paste).')
+      setErr('Add the reference text first (upload a PDF or type/paste it).')
       return
     }
     setPhase('saving')
@@ -63,14 +63,14 @@ export default function KnowledgeBase({ notify, rev }) {
     try {
       if (editingId) {
         updateKnowledge(editingId, { title: title.trim() || 'Referensi tanpa judul', content, kind })
-        notify && notify('Referensi diperbarui')
+        notify && notify('Reference updated')
       } else {
         addKnowledge({ title, content, kind })
         notify && notify('Referensi ditambahkan')
       }
       resetForm()
     } catch (e) {
-      setErr(e && e.message ? e.message : 'Gagal menyimpan')
+      setErr(e && e.message ? e.message : 'Saving failed')
     }
     setPhase('idle')
   }
@@ -87,7 +87,7 @@ export default function KnowledgeBase({ notify, rev }) {
 
   const toggle = (d) => updateKnowledge(d.id, { enabled: d.knowledge?.enabled === false })
   const remove = (d) => {
-    if (window.confirm('Hapus referensi "' + (d.knowledge?.title || d.name) + '"?')) {
+    if (window.confirm('Delete reference "' + (d.knowledge?.title || d.name) + '"?')) {
       if (editingId === d.id) resetForm()
       deleteKnowledge(d.id)
       notify && notify('Referensi dihapus')
@@ -101,32 +101,32 @@ export default function KnowledgeBase({ notify, rev }) {
       <div className="stones-page-hd">
         <h1>AI Knowledge Base</h1>
         <p>
-          Upload dokumen referensi atau tempel teks — Ask AI akan memakainya sebagai sumber pengetahuan saat menjawab.
-          {items.length ? ` ${activeCount} dari ${items.length} referensi aktif.` : ''}
+          Upload reference documents or paste text — Ask AI uses them as its source of knowledge when answering.
+          {items.length ? ` ${activeCount} of ${items.length} references active.` : ''}
         </p>
       </div>
 
       {/* ---- add / edit form ---- */}
       <div className="panel kb-form">
-        <div className="kb-form-hd">{editingId ? 'Edit referensi' : 'Tambah referensi'}</div>
+        <div className="kb-form-hd">{editingId ? 'Edit reference' : 'Add a reference'}</div>
         <label className="imp-field imp-field-wide">
-          <span>Judul referensi</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="mis. Kebijakan Pengadaan 2026 / SOP Bunkering" />
+          <span>Reference title</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Procurement Policy 2026 / SOP Bunkering" />
         </label>
         <label className="imp-field imp-field-wide">
-          <span>Isi / teks referensi</span>
+          <span>Reference text</span>
           <textarea
             rows={10}
             value={content}
             onChange={(e) => { setContent(e.target.value); if (kind === 'pdf') setKind('text') }}
-            placeholder="Ketik atau paste teks referensi di sini, atau upload PDF untuk diekstrak otomatis…"
+            placeholder="Type or paste the reference text here, or upload a PDF to extract it automatically…"
           />
         </label>
         <div className="kb-form-actions">
           {extractEnabled ? (
             <>
               <button className="btn" onClick={() => fileRef.current && fileRef.current.click()} disabled={phase !== 'idle'}>
-                {phase === 'extracting' ? 'Mengekstrak PDF…' : '⇪ Upload PDF & ekstrak'}
+                {phase === 'extracting' ? 'Extracting PDF…' : '⇪ Upload PDF & extract'}
               </button>
               <input
                 ref={fileRef}
@@ -137,15 +137,15 @@ export default function KnowledgeBase({ notify, rev }) {
               />
             </>
           ) : (
-            <span className="kb-hint">Upload PDF butuh mode online (Firebase). Kamu tetap bisa paste teks manual.</span>
+            <span className="kb-hint">PDF upload needs online mode (Firebase). You can still paste text manually.</span>
           )}
           {fileName ? <span className="kb-hint">📄 {fileName}</span> : null}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             {editingId || content || title ? (
-              <button className="btn" onClick={resetForm} disabled={phase === 'saving'}>Batal</button>
+              <button className="btn" onClick={resetForm} disabled={phase === 'saving'}>Cancel</button>
             ) : null}
             <button className="btn btn-primary" onClick={save} disabled={phase !== 'idle' || !content.trim()}>
-              {editingId ? 'Simpan perubahan' : 'Tambah ke knowledge base'}
+              {editingId ? 'Save changes' : 'Add to knowledge base'}
             </button>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function KnowledgeBase({ notify, rev }) {
             const on = k.enabled !== false
             return (
               <div key={d.id} className={'kb-item' + (on ? '' : ' kb-item-off')}>
-                <label className="kb-switch" title={on ? 'Aktif untuk AI — klik untuk nonaktifkan' : 'Nonaktif — klik untuk aktifkan'}>
+                <label className="kb-switch" title={on ? 'Active for AI — click to disable' : 'Disabled — click to enable'}>
                   <input type="checkbox" checked={on} onChange={() => toggle(d)} />
                   <span className="kb-switch-track"><span className="kb-switch-thumb" /></span>
                 </label>
@@ -176,7 +176,7 @@ export default function KnowledgeBase({ notify, rev }) {
                 </div>
                 <div className="kb-item-actions">
                   <button className="btn btn-sm" onClick={() => editItem(d)}>Edit</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => remove(d)}>Hapus</button>
+                  <button className="btn btn-sm btn-danger" onClick={() => remove(d)}>Delete</button>
                 </div>
               </div>
             )
@@ -184,8 +184,8 @@ export default function KnowledgeBase({ notify, rev }) {
         </div>
       ) : (
         <div className="empty-hero" style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a43', marginBottom: 4 }}>Belum ada referensi</div>
-          <div style={{ color: '#8a94a0' }}>Tambahkan dokumen atau teks di atas agar Ask AI punya sumber pengetahuan.</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a43', marginBottom: 4 }}>No references yet</div>
+          <div style={{ color: '#8a94a0' }}>Add a document or text above so Ask AI has a source of knowledge.</div>
         </div>
       )}
     </div>

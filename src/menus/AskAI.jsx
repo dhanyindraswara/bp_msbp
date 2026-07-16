@@ -8,10 +8,10 @@ import ApiKeyField from '../components/ApiKeyField.jsx'
 import ModelPicker from '../components/ModelPicker.jsx'
 
 const SUGGESTIONS = [
-  'Flow untuk request security information technology dimana dan gimana?',
-  'Proses apa saja yang melibatkan Internal Audit?',
-  'Ringkas alur di BP IT Infrastructure & Security.',
-  'Siapa customer dari output "Monthly Report"?',
+  'How does the flow for requesting IT security information work?',
+  'Which processes involve Internal Audit?',
+  'Summarize the flow in the IT Infrastructure & Security BP.',
+  'Who is the customer of the "Monthly Report" output?',
 ]
 
 export default function AskAI({ rev }) {
@@ -62,8 +62,8 @@ export default function AskAI({ rev }) {
         <div>
           <h1>Ask AI</h1>
           <p>
-            Tanya apa saja tentang Business Process kamu — flow, proses, aktor, PPI.
-            {kbCount ? ` Memakai ${kbCount} referensi dari Knowledge Base.` : ''}
+            Ask anything about your Business Processes — flows, activities, actors, PPI.
+            {kbCount ? ` Using ${kbCount} Knowledge Base reference${kbCount === 1 ? '' : 's'}.` : ''}
           </p>
         </div>
         <ModelPicker kind="chat" value={model} onChange={changeModel} providerId={getActiveProviderId() + ':' + pnonce} />
@@ -75,9 +75,9 @@ export default function AskAI({ rev }) {
         {msgs.length === 0 ? (
           <div className="ai-empty">
             <div className="ai-empty-mark">✦</div>
-            <div className="ai-empty-title">Mau tanya apa?</div>
+            <div className="ai-empty-title">What would you like to know?</div>
             <div className="ai-empty-sub">
-              AI membaca semua BP yang tersimpan{kbCount ? ` + ${kbCount} dokumen referensi` : ''} untuk menjawab.
+              The AI reads every stored BP{kbCount ? ` plus ${kbCount} reference document${kbCount === 1 ? '' : 's'}` : ''} to answer.
             </div>
             <div className="ai-sugs">
               {SUGGESTIONS.map((s) => (
@@ -108,7 +108,7 @@ export default function AskAI({ rev }) {
         <div className="ai-err">
           {err}
           {/rate|limit|quota|402|429|insufficient|credit/i.test(err) ? (
-            <span> · Kuota/model habis? Ganti <b>Model</b> di kanan atas (ada opsi gratis), atau cek saldo OpenRouter kamu.</span>
+            <span> · Out of quota? Switch the <b>Model</b> at the top right (free options available) or top up your OpenRouter balance.</span>
           ) : null}
         </div>
       ) : null}
@@ -116,7 +116,7 @@ export default function AskAI({ rev }) {
       <div className="ai-inputbar">
         <textarea
           className="ai-input"
-          placeholder={keyed ? 'Tulis pertanyaan… (Enter untuk kirim)' : 'Isi API key provider dulu di atas.'}
+          placeholder={keyed ? 'Type a question… (Enter to send)' : 'Set your provider API key above first.'}
           value={q}
           disabled={!keyed}
           onChange={(e) => setQ(e.target.value)}
@@ -128,7 +128,7 @@ export default function AskAI({ rev }) {
           }}
         />
         <button className="btn btn-primary" onClick={() => send()} disabled={busy || !keyed || !q.trim()}>
-          {busy ? '…' : 'Kirim'}
+          {busy ? '…' : 'Send'}
         </button>
       </div>
     </div>

@@ -78,25 +78,25 @@ export default function HighLevelProcess({ openId, setOpenId, notify }) {
       <div className="fl-page-hd">
         <div>
           <h1>High Level Process</h1>
-          <p>Petakan value chain perusahaan secara keseluruhan — Management, Core, dan Enabler Process — lalu ekspor.</p>
+          <p>Map the company value chain end to end — Management, Core, and Enabler processes — then export it.</p>
         </div>
         <div className="fl-page-actions">
           <button className="btn btn-sm" onClick={loadSample}>Load sample</button>
-          <button className="btn btn-sm" onClick={newHlp}>Map baru</button>
+          <button className="btn btn-sm" onClick={newHlp}>New map</button>
           {savedId ? (
             <span className="chip chip-id" title="Tersimpan otomatis">{savedId}</span>
           ) : (
-            <button className="btn btn-sm btn-primary" onClick={saveNew}>Simpan ke Repository</button>
+            <button className="btn btn-sm btn-primary" onClick={saveNew}>Save to Repository</button>
           )}
         </div>
       </div>
 
       <div className="fl-split">
         <div className="fl-form">
-          <div className="imp-sec">Judul</div>
+          <div className="imp-sec">Title</div>
           <div className="imp-grid">
-            <Field label="Judul" value={hlp.title} onChange={(v) => set({ title: v })} placeholder="ITM High Level Business Process" />
-            <Field label="Sub judul" value={hlp.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Capturing General Core Value Chain" />
+            <Field label="Title" value={hlp.title} onChange={(v) => set({ title: v })} placeholder="ITM High Level Business Process" />
+            <Field label="Subtitle" value={hlp.subtitle} onChange={(v) => set({ subtitle: v })} placeholder="Capturing General Core Value Chain" />
             <Field label="Catatan kaki / legend" value={hlp.footnote} onChange={(v) => set({ footnote: v })} placeholder="*New business to be launched" />
           </div>
 
@@ -105,25 +105,25 @@ export default function HighLevelProcess({ openId, setOpenId, notify }) {
             <button className="btn btn-sm" onClick={addBand}>+ Band</button>
           </div>
           <div className="fl-hint">
-            Tiap band = satu lapis proses (Management / Core / Enabler). Isi kode (badge) &amp; nama tiap kotak. Centang <b>HL</b> untuk highlight.
+            Each band is one process layer (Management / Core / Enabler). Fill in the code (badge) &amp; name of each box. Tick <b>HL</b> to highlight.
           </div>
 
           {hlp.bands.map((band, bi) => (
             <div key={band.id} className="tx-colcard">
               <div className="tx-colcard-hd">
-                <input className="tx-inp hlp-bandname" value={band.name} placeholder="Nama band" onChange={(e) => setBand(bi, { name: e.target.value })} />
+                <input className="tx-inp hlp-bandname" value={band.name} placeholder="Band name" onChange={(e) => setBand(bi, { name: e.target.value })} />
                 {hlp.bands.length > 1 ? (
-                  <button className="imp-x" title="Hapus band" onClick={() => delBand(bi)}>✕ band</button>
+                  <button className="imp-x" title="Delete band" onClick={() => delBand(bi)}>✕ band</button>
                 ) : null}
               </div>
               {band.items.map((it, ii) => (
                 <div key={it.id} className="tx-l3edit">
                   <input className="tx-inp tx-inp-code" value={it.code} placeholder="Kode" onChange={(e) => setItem(bi, ii, { code: e.target.value })} />
-                  <input className="tx-inp" value={it.name} placeholder="Nama proses" onChange={(e) => setItem(bi, ii, { name: e.target.value })} />
+                  <input className="tx-inp" value={it.name} placeholder="Process name" onChange={(e) => setItem(bi, ii, { name: e.target.value })} />
                   <label className="tx-hicheck" title="Highlight kotak">
                     <input type="checkbox" checked={!!it.hi} onChange={(e) => setItem(bi, ii, { hi: e.target.checked })} /> HL
                   </label>
-                  <button className="imp-x" title="Hapus" onClick={() => delItem(bi, ii)}>✕</button>
+                  <button className="imp-x" title="Delete" onClick={() => delItem(bi, ii)}>✕</button>
                 </div>
               ))}
               <button className="btn btn-sm tx-addl3" onClick={() => addItem(bi)}>+ Proses</button>
@@ -132,7 +132,7 @@ export default function HighLevelProcess({ openId, setOpenId, notify }) {
 
           {hlpDocs.length ? (
             <>
-              <div className="imp-sec">Map tersimpan</div>
+              <div className="imp-sec">Saved maps</div>
               <div className="fl-saved">
                 {hlpDocs.map((d) => (
                   <button key={d.id} className={'fl-saved-item' + (d.id === savedId ? ' on' : '')} onClick={() => setOpenId && setOpenId(d.id)}>

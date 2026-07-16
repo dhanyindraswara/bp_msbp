@@ -127,7 +127,7 @@ export default function DocumentImport({ notify, goRepository }) {
       setPhase('done')
       notify('Dokumen diimpor sebagai ' + d.id)
     } catch (e) {
-      setErr(e && e.message ? e.message : 'Gagal menyimpan')
+      setErr(e && e.message ? e.message : 'Saving failed')
       setPhase('review')
     }
   }
@@ -139,7 +139,7 @@ export default function DocumentImport({ notify, goRepository }) {
         <div className="stones-page-hd stones-page-hd-row">
           <div>
             <h1>Document Import</h1>
-            <p>Upload PDF (SOP, BP, policy) — AI mengekstrak isinya jadi data terstruktur, kamu review sebelum disimpan.</p>
+            <p>Upload a PDF (SOP, BP, policy) — AI extracts it into structured data for you to review before saving.</p>
           </div>
           <ModelPicker kind="extract" value={model} onChange={changeModel} providerId={getActiveProviderId() + ':' + pnonce} />
         </div>
@@ -149,8 +149,8 @@ export default function DocumentImport({ notify, goRepository }) {
         {phase === 'extracting' ? (
           <div className="imp-drop imp-busy">
             <div className="imp-spinner" />
-            <div className="imp-drop-title">Membaca &amp; mengekstrak “{file?.name}”…</div>
-            <div className="imp-drop-sub">Biasanya 20–60 detik tergantung jumlah halaman.</div>
+            <div className="imp-drop-title">Reading &amp; extracting “{file?.name}”…</div>
+            <div className="imp-drop-sub">Usually 20–60 seconds, depending on the page count.</div>
           </div>
         ) : (
           <div
@@ -170,9 +170,9 @@ export default function DocumentImport({ notify, goRepository }) {
           >
             <div className="imp-drop-ico">⇪</div>
             <div className="imp-drop-title">
-              {keyed ? 'Klik untuk pilih PDF, atau drag & drop ke sini' : 'Isi API key provider dulu di atas'}
+              {keyed ? 'Click to choose a PDF, or drag & drop it here' : 'Set your provider API key above first'}
             </div>
-            <div className="imp-drop-sub">Maks ±7MB · PDF digital (ada teksnya) paling akurat · PDF asli ikut tersimpan sebagai lampiran</div>
+            <div className="imp-drop-sub">Max ±7MB · digital PDFs (with selectable text) extract best · the original PDF is kept as an attachment</div>
             <input
               ref={inputRef}
               type="file"
@@ -195,11 +195,11 @@ export default function DocumentImport({ notify, goRepository }) {
         </div>
         <div className="imp-done">
           <div className="imp-done-mark">✓</div>
-          <div className="imp-done-title">Tersimpan sebagai {savedId}</div>
-          <div className="imp-done-sub">Data terstruktur masuk repository; PDF asli terlampir di dokumen.</div>
+          <div className="imp-done-title">Saved as {savedId}</div>
+          <div className="imp-done-sub">The structured data is in the repository; the original PDF is attached to the document.</div>
           <div className="imp-done-actions">
-            <button className="btn btn-primary" onClick={goRepository}>Lihat di Repository</button>
-            <button className="btn" onClick={reset}>Impor dokumen lain</button>
+            <button className="btn btn-primary" onClick={goRepository}>View in Repository</button>
+            <button className="btn" onClick={reset}>Import another document</button>
           </div>
         </div>
       </div>
@@ -211,13 +211,13 @@ export default function DocumentImport({ notify, goRepository }) {
     <div className="imp-review">
       <div className="imp-review-hd">
         <div>
-          <div className="imp-review-title">Review hasil ekstraksi</div>
-          <div className="imp-review-sub">{file?.name} — koreksi yang salah, lalu simpan.</div>
+          <div className="imp-review-title">Review the extraction</div>
+          <div className="imp-review-sub">{file?.name} — fix anything that is off, then save.</div>
         </div>
         <div className="imp-review-actions">
-          <button className="btn" onClick={reset} disabled={phase === 'saving'}>Buang</button>
+          <button className="btn" onClick={reset} disabled={phase === 'saving'}>Discard</button>
           <button className="btn btn-primary" onClick={save} disabled={phase === 'saving'}>
-            {phase === 'saving' ? 'Menyimpan…' : 'Simpan ke Repository'}
+            {phase === 'saving' ? 'Saving…' : 'Save to Repository'}
           </button>
         </div>
       </div>
@@ -231,11 +231,11 @@ export default function DocumentImport({ notify, goRepository }) {
         <div className="imp-form">
           {draft.notes ? (
             <div className="imp-note">
-              <b>Catatan AI:</b> {draft.notes}
+              <b>AI notes:</b> {draft.notes}
             </div>
           ) : null}
 
-          <div className="imp-sec">Info dokumen</div>
+          <div className="imp-sec">Document info</div>
           <div className="imp-grid">
             <label className="imp-field">
               <span>Tipe</span>
@@ -245,26 +245,26 @@ export default function DocumentImport({ notify, goRepository }) {
                 ))}
               </select>
             </label>
-            <Field label="No. dokumen" value={draft.docNo} onChange={(v) => set({ docNo: v })} placeholder="ITM/SOP/…/…" />
-            <Field label="Judul" value={draft.title} onChange={(v) => set({ title: v })} wide />
-            <Field label="Revisi" value={draft.revision} onChange={(v) => set({ revision: v })} />
-            <Field label="Tanggal efektif" value={draft.effectiveDate} onChange={(v) => set({ effectiveDate: v })} />
-            <Field label="Pemilik proses" value={draft.owner} onChange={(v) => set({ owner: v })} wide />
+            <Field label="Document no." value={draft.docNo} onChange={(v) => set({ docNo: v })} placeholder="ITM/SOP/…/…" />
+            <Field label="Title" value={draft.title} onChange={(v) => set({ title: v })} wide />
+            <Field label="Revision" value={draft.revision} onChange={(v) => set({ revision: v })} />
+            <Field label="Effective date" value={draft.effectiveDate} onChange={(v) => set({ effectiveDate: v })} />
+            <Field label="Process owner" value={draft.owner} onChange={(v) => set({ owner: v })} wide />
             <Field label="Prepared by" value={draft.approvals.preparedBy} onChange={(v) => setApproval('preparedBy', v)} />
             <Field label="Reviewed by" value={draft.approvals.reviewedBy} onChange={(v) => setApproval('reviewedBy', v)} />
             <Field label="Approved by" value={draft.approvals.approvedBy} onChange={(v) => setApproval('approvedBy', v)} />
           </div>
 
-          <div className="imp-sec">Tujuan &amp; ruang lingkup</div>
+          <div className="imp-sec">Purpose &amp; scope</div>
           <div className="imp-grid">
-            <Area label="Tujuan" value={draft.purpose} onChange={(v) => set({ purpose: v })} />
-            <Area label="Ruang lingkup" value={draft.scope} onChange={(v) => set({ scope: v })} />
+            <Area label="Purpose" value={draft.purpose} onChange={(v) => set({ purpose: v })} />
+            <Area label="Scope" value={draft.scope} onChange={(v) => set({ scope: v })} />
           </div>
 
-          <div className="imp-sec">Aktor / PIC</div>
+          <div className="imp-sec">Actors / PIC</div>
           <div className="imp-grid">
             <Area
-              label="Satu aktor per baris"
+              label="One actor per line"
               rows={Math.min(6, Math.max(3, draft.actors.length))}
               value={draft.actors.join('\n')}
               onChange={(v) => set({ actors: v.split('\n').map((x) => x.trim()).filter(Boolean) })}
@@ -272,8 +272,8 @@ export default function DocumentImport({ notify, goRepository }) {
           </div>
 
           <div className="imp-sec">
-            Langkah prosedur ({draft.steps.length})
-            <button className="btn btn-sm" onClick={addStep}>+ Langkah</button>
+            Procedure steps ({draft.steps.length})
+            <button className="btn btn-sm" onClick={addStep}>+ Step</button>
           </div>
           <table className="imp-table">
             <colgroup>
@@ -285,7 +285,7 @@ export default function DocumentImport({ notify, goRepository }) {
               <col style={{ width: 30 }} />
             </colgroup>
             <thead>
-              <tr><th>No</th><th>Aktivitas</th><th>PIC</th><th>Input</th><th>Output</th><th /></tr>
+              <tr><th>No</th><th>Activity</th><th>PIC</th><th>Input</th><th>Output</th><th /></tr>
             </thead>
             <tbody>
               {draft.steps.map((s, i) => (
@@ -295,7 +295,7 @@ export default function DocumentImport({ notify, goRepository }) {
                   <td><input value={s.pic} onChange={(e) => setStep(i, 'pic', e.target.value)} /></td>
                   <td><input value={s.input} onChange={(e) => setStep(i, 'input', e.target.value)} /></td>
                   <td><input value={s.output} onChange={(e) => setStep(i, 'output', e.target.value)} /></td>
-                  <td><button className="imp-x" onClick={() => delStep(i)} title="Hapus">✕</button></td>
+                  <td><button className="imp-x" onClick={() => delStep(i)} title="Delete">✕</button></td>
                 </tr>
               ))}
             </tbody>
@@ -303,7 +303,7 @@ export default function DocumentImport({ notify, goRepository }) {
 
           <div className="imp-sec">
             RASCI ({draft.rasci.length}) <span className="imp-hint">isi role dipisah koma</span>
-            <button className="btn btn-sm" onClick={addRasci}>+ Baris</button>
+            <button className="btn btn-sm" onClick={addRasci}>+ Row</button>
           </div>
           <table className="imp-table">
             <colgroup>
@@ -316,7 +316,7 @@ export default function DocumentImport({ notify, goRepository }) {
               <col style={{ width: 30 }} />
             </colgroup>
             <thead>
-              <tr><th>Aktivitas</th><th>R</th><th>A</th><th>S</th><th>C</th><th>I</th><th /></tr>
+              <tr><th>Activity</th><th>R</th><th>A</th><th>S</th><th>C</th><th>I</th><th /></tr>
             </thead>
             <tbody>
               {draft.rasci.map((r, i) => (
@@ -325,7 +325,7 @@ export default function DocumentImport({ notify, goRepository }) {
                   {['R', 'A', 'S', 'C', 'I'].map((k) => (
                     <td key={k}><input value={r[k].join(', ')} onChange={(e) => setRasci(i, k, e.target.value)} /></td>
                   ))}
-                  <td><button className="imp-x" onClick={() => delRasci(i)} title="Hapus">✕</button></td>
+                  <td><button className="imp-x" onClick={() => delRasci(i)} title="Delete">✕</button></td>
                 </tr>
               ))}
             </tbody>
@@ -334,7 +334,7 @@ export default function DocumentImport({ notify, goRepository }) {
           <div className="imp-sec">PPI / KPI</div>
           <div className="imp-grid">
             <Area
-              label="Satu indikator per baris"
+              label="One indicator per line"
               rows={Math.min(6, Math.max(2, draft.ppi.length))}
               value={draft.ppi.join('\n')}
               onChange={(v) => set({ ppi: v.split('\n').map((x) => x.trim()).filter(Boolean) })}

@@ -8,7 +8,7 @@ import { blankProject } from '../lib/sample.js'
 import { listNodeDocs } from '../lib/bpTree.js'
 
 const StatusBadge = ({ status }) => <span className={'stbadge stbadge-' + status}>{STATUS[status] || 'Draft'}</span>
-const TYPE_LABEL = { BP: 'BP', SOP: 'SOP', WI: 'WI', POLICY: 'Policy', MANUAL: 'Manual', MS: 'Mgmt Std', GD: 'Guideline', SP: 'Std Param', FORM: 'Form', CHARTER: 'Charter', COC: 'CoC', FLOW: 'Flow', TAXONOMY: 'Taxonomy', HLP: 'HLP', TAXDESC: 'Tax Desc' }
+const TYPE_LABEL = { BP: 'BP', SOP: 'SOP', WI: 'WI', POLICY: 'Policy', MANUAL: 'Manual', MS: 'Mgmt Std', GD: 'Guideline', SP: 'Std Param', FORM: 'Form', CHARTER: 'Charter', COC: 'CoC', FLOW: 'Flow', TAXONOMY: 'Taxonomy', HLP: 'HLP', TAXDESC: 'Tax Desc', SOPDETAIL: 'SOP Detail' }
 
 const fmt = (ts) => {
   if (!ts) return '—'

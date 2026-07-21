@@ -110,6 +110,26 @@ Repository (chip tipe), tak difilter keluar.
   lama langsung pakai — **nggak perlu deploy function**. Doc KNOWLEDGE difilter keluar dari
   Repository/Dashboard/Global Search.
 
+## SOP Detail (`sopdetail`) — menu build isi SOP lengkap (kecuali flow)
+Grup sidebar **Studio** (bareng Document Development, Document Import, Auto Flow Process).
+- `src/menus/SopDetailBuilder.jsx` (form kiri + live preview kanan) + `src/components/SopDetailDoc.jsx`
+  (render dokumen SOP ala form ITM + export PNG) + `src/lib/sopdetail.js` (model + `blank/sample/norm`,
+  `deriveProcItems`). Reuse pola FLOW/Taxonomy: autosave debounce, Load sample / New SOP / Save to
+  Repository. Disimpan sebagai doc `docType:'SOPDETAIL'`, payload `sopdetail`, `project` tetap
+  `blankProject()` valid. `openDoc` di App merutekan ke menu ini (state `sopOpenId`); ada juga di
+  top-bar "+ Create" & command palette (via NAV_FLAT). UI **bahasa Inggris**.
+- Form pakai kartu collapsible + jump-nav sticky (`sd-*` classes di index.css). Struktur ikut dokumen
+  SOP ITM: kepala dokumen (docNo, title, issued/revision date, logo), Document History, Approval
+  (Prepared/Checked/Reviewed/Approved — nama+jabatan), Distribution, PPI, lalu section bernomor
+  **1 Purpose · 2 Scope · 3 Definition · 4 References · 5 Review & Validation · 6 Flow Process ·
+  7 Process Description & Control · 8 Related Document**.
+- **Point 6 (Flow Process)** TIDAK diedit di sini — user menautkan (`flowRef`) salah satu doc FLOW dari
+  Auto Flow Process (dropdown auto-refresh via store `subscribe`); di dokumen tampil sebagai referensi.
+- **Point 7** = deskripsi tiap langkah di Point 6. Tombol **"Pull from Flow"** (`deriveProcItems`)
+  generate item 7.1.x dari step flow tertaut (ref=step.ref/no, title=step.activity); deskripsi yang
+  sudah diisi dipertahankan saat re-sync. Bisa multi sub-grup (7.1, 7.2, …).
+- Muncul di Repository (chip tipe `SOP Detail` via `TYPE_LABEL`), tidak difilter keluar.
+
 ## Fase 1 (sudah jadi)
 Version history + audit trail, approval workflow (Draft→In Review→Approved→Published),
 comments. Deep-link share via `?doc=BP-xxxx`.

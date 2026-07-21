@@ -23,6 +23,7 @@ import BpArchitecture from './menus/BpArchitecture.jsx'
 import TaxonomyBuilder from './menus/TaxonomyBuilder.jsx'
 import HighLevelProcess from './menus/HighLevelProcess.jsx'
 import TaxonomyDescription from './menus/TaxonomyDescription.jsx'
+import SopDetailBuilder from './menus/SopDetailBuilder.jsx'
 
 const Icon = ({ d }) => (
   <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -49,6 +50,7 @@ const NAV = [
     group: 'Studio',
     items: [
       { id: 'develop', label: 'Document Development', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1' },
+      { id: 'sopdetail', label: 'SOP Detail', d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5' },
       { id: 'import', label: 'Document Import', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12' },
       { id: 'flow', label: 'Auto Flow Process', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9' },
     ],
@@ -102,6 +104,7 @@ export default function App() {
   const [taxOpenId, setTaxOpenId] = useState(null)
   const [hlpOpenId, setHlpOpenId] = useState(null)
   const [descOpenId, setDescOpenId] = useState(null)
+  const [sopOpenId, setSopOpenId] = useState(null)
   const [toast, setToast] = useState('')
   const tt = useRef(null)
   const bootedRef = useRef(false)
@@ -208,6 +211,11 @@ export default function App() {
     if (dt === 'TAXDESC') {
       setDescOpenId(id)
       setMenu('taxdesc')
+      return
+    }
+    if (dt === 'SOPDETAIL') {
+      setSopOpenId(id)
+      setMenu('sopdetail')
       return
     }
     storeSetOpenId(id)
@@ -352,6 +360,7 @@ export default function App() {
                 <div className="top-new-menu">
                   {[
                     { l: 'Business Process', s: 'SIPOC → map + RASCI', d: 'M12 20h9M4 20l1-4l9.5-9.5a2.1 2.1 0 0 1 3 3L8 19l-4 1', act: () => { const d = createDoc(blankProject()); openDoc(d.id) } },
+                    { l: 'SOP Detail', s: 'Full SOP body (points 1–8)', d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5', act: () => setMenu('sopdetail') },
                     { l: 'Import document', s: 'PDF → structured SOP (AI)', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12', act: () => setMenu('import') },
                     { l: 'Flow chart', s: 'Swimlane SOP flowchart', d: 'M4 5h6v4H4zM14 5h6v4h-6zM9 15h6v4H9zM7 9v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9', act: () => setMenu('flow') },
                     { l: 'Process node / entity', s: 'Grow the architecture', d: 'M12 3v6M12 15v6M5 9h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z', act: () => setMenu('architecture') },
@@ -411,6 +420,7 @@ export default function App() {
               goRepository={() => setMenu('repository')}
             />
           )}
+          {menu === 'sopdetail' && <SopDetailBuilder openId={sopOpenId} setOpenId={setSopOpenId} notify={notify} />}
           {menu === 'import' && <DocumentImport notify={notify} goRepository={() => setMenu('repository')} />}
           {menu === 'flow' && <AutoFlow openId={flowOpenId} setOpenId={setFlowOpenId} notify={notify} />}
           {menu === 'taxonomy' && (

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>STONES — Buku Manual Pengguna</title>
+<style>
+  :root{
+    --ink:#1f2937; --muted:#5b6472; --line:#e3e7ee;
+    --brand:#1f5eff; --brand-dark:#123a99; --brand-soft:#eef3ff;
+    --slate:#0f172a; --accent:#0ea5a4; --warn:#b45309; --warn-soft:#fff7ed;
+    --page:#ffffff;
+  }
+  @page{ size:A4; margin:20mm 16mm 18mm 16mm; }
+  @page:first{ margin:0; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Inter","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); font-size:10.5pt; line-height:1.55;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{ color:var(--slate); line-height:1.25; }
+  h2{ font-size:17pt; margin:0 0 4px; }
+  h3{ font-size:12.5pt; margin:18px 0 4px; color:var(--brand-dark); }
+  h4{ font-size:10.5pt; margin:12px 0 2px; color:var(--slate); }
+  p{ margin:6px 0; }
+  a{ color:var(--brand); text-decoration:none; }
+  code{ background:#f2f4f8; border:1px solid var(--line); border-radius:4px;
+    padding:1px 5px; font-family:"SFMono-Regular",Consolas,monospace; font-size:9pt; color:#0b3b91; }
+  ul,ol{ margin:6px 0 6px 0; padding-left:20px; }
+  li{ margin:3px 0; }
+  strong{ color:var(--slate); }
+
+  /* ---------- COVER ---------- */
+  .cover{
+    height:297mm; width:100%; position:relative; color:#fff; overflow:hidden;
+    background:linear-gradient(150deg,#0b2a6b 0%,#1f5eff 55%,#3d7bff 100%);
+    page-break-after:always;
+  }
+  .cover .grid{
+    position:absolute; inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);
+    background-size:26px 26px; opacity:.5;
+  }
+  .cover .glow{ position:absolute; width:520px; height:520px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.28),transparent 62%);
+    right:-140px; top:-120px; }
+  .cover-inner{ position:absolute; inset:0; padding:34mm 22mm; display:flex;
+    flex-direction:column; }
+  .logo-badge{ display:inline-flex; align-items:center; gap:12px; }
+  .logo-mark{ width:46px; height:46px; border-radius:12px; background:#fff;
+    color:var(--brand-dark); font-weight:800; font-size:20pt; display:flex;
+    align-items:center; justify-content:center; letter-spacing:-1px; }
+  .logo-word{ font-size:15pt; font-weight:700; letter-spacing:3px; }
+  .cover h1{ color:#fff; font-size:41pt; font-weight:800; letter-spacing:-1px;
+    margin:0; line-height:1.08; }
+  .cover .sub{ font-size:15pt; font-weight:500; color:#dbe6ff; margin-top:10px; max-width:150mm; }
+  .cover .tag{ display:inline-block; margin-top:26px; padding:7px 16px;
+    border:1px solid rgba(255,255,255,.55); border-radius:999px; font-size:10pt;
+    letter-spacing:.5px; }
+  .cover .spacer{ flex:1; }
+  .cover .foot{ display:flex; justify-content:space-between; align-items:flex-end;
+    font-size:9.5pt; color:#cdd9f7; border-top:1px solid rgba(255,255,255,.3); padding-top:14px; }
+  .cover .foot b{ color:#fff; }
+
+  /* ---------- SECTIONS ---------- */
+  .section{ page-break-before:always; }
+  .eyebrow{ text-transform:uppercase; letter-spacing:2px; font-size:8.5pt;
+    color:var(--brand); font-weight:700; }
+  .lead{ color:var(--muted); font-size:11pt; }
+  hr.rule{ border:none; border-top:2px solid var(--brand); width:52px; margin:6px 0 14px; }
+
+  .toc-item{ display:flex; align-items:baseline; gap:8px; padding:6px 0;
+    border-bottom:1px dotted var(--line); }
+  .toc-item .n{ width:26px; font-weight:700; color:var(--brand); }
+  .toc-item .t{ flex:1; color:var(--slate); font-weight:500; }
+
+  .card{ border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+    margin:12px 0; background:#fff; break-inside:avoid; }
+  .card.brand{ border-left:4px solid var(--brand); background:linear-gradient(180deg,var(--brand-soft),#fff); }
+  .menu-head{ display:flex; align-items:center; gap:10px; margin:0 0 2px; }
+  .chip{ display:inline-block; font-size:8pt; font-weight:700; letter-spacing:.5px;
+    background:var(--brand-soft); color:var(--brand-dark); border-radius:6px; padding:2px 8px;
+    border:1px solid #cfe0ff; text-transform:uppercase; }
+  .chip.group{ background:#eef2f7; color:#475569; border-color:#dbe2ec; }
+
+  .note{ background:var(--warn-soft); border:1px solid #fed7aa; border-left:4px solid var(--warn);
+    border-radius:8px; padding:10px 14px; margin:12px 0; font-size:9.7pt; break-inside:avoid; }
+  .note b{ color:var(--warn); }
+  .tip{ background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid var(--accent);
+    border-radius:8px; padding:10px 14px; margin:12px 0; font-size:9.7pt; break-inside:avoid; }
+  .tip b{ color:#0f766e; }
+
+  table.tbl{ width:100%; border-collapse:collapse; margin:10px 0; font-size:9.4pt; break-inside:avoid; }
+  table.tbl th{ background:var(--slate); color:#fff; text-align:left; padding:7px 10px; font-weight:600; }
+  table.tbl td{ border:1px solid var(--line); padding:6px 10px; vertical-align:top; }
+  table.tbl tr:nth-child(even) td{ background:#f8fafc; }
+
+  .steps{ counter-reset:step; list-style:none; padding-left:0; margin:10px 0; }
+  .steps li{ position:relative; padding-left:34px; margin:8px 0; break-inside:avoid; }
+  .steps li::before{ counter-increment:step; content:counter(step);
+    position:absolute; left:0; top:-1px; width:22px; height:22px; border-radius:50%;
+    background:var(--brand); color:#fff; font-weight:700; font-size:9pt;
+    display:flex; align-items:center; justify-content:center; }
+
+  .kbd{ background:#f2f4f8; border:1px solid #cbd5e1; border-bottom-width:2px;
+    border-radius:5px; padding:1px 6px; font-size:8.6pt; font-family:monospace; color:#334155; }
+
+  .footer-brand{ text-align:center; color:var(--muted); font-size:8.5pt; margin-top:26px;
+    padding-top:12px; border-top:1px solid var(--line); }
+  .two{ display:flex; gap:14px; } .two > div{ flex:1; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="grid"></div>
+  <div class="glow"></div>
+  <div class="cover-inner">
+    <div class="logo-badge">
+      <div class="logo-mark">S</div>
+      <div class="logo-word">STONES</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="eyebrow" style="color:#bcd0ff;">Business Process Suite</div>
+    <h1>Buku Manual<br>Pengguna</h1>
+    <div class="sub">Panduan lengkap mengembangkan, mengelola, dan menyimpan Business Process,
+      SOP, dan dokumen perusahaan — dilengkapi asisten AI.</div>
+    <div class="tag">Versi 1.0 · 2026</div>
+    <div class="spacer"></div>
+    <div class="foot">
+      <div>
+        <b>Akses aplikasi</b><br>
+        dhanyindraswara.github.io/bp_msbp/
+      </div>
+      <div style="text-align:right;">
+        <b>STONES — Business Process Suite</b><br>
+        Evolusi dari ITM SIPOC Studio
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DAFTAR ISI ============ -->
+<div class="section">
+  <div class="eyebrow">Panduan</div>
+  <h2>Daftar Isi</h2>
+  <hr class="rule">
+  <div class="toc-item"><div class="n">1</div><div class="t">Pendahuluan — Apa itu STONES</div></div>
+  <div class="toc-item"><div class="n">2</div><div class="t">Mulai Cepat — Login & Navigasi</div></div>
+  <div class="toc-item"><div class="n">3</div><div class="t">Konsep Dasar — Autosave, Realtime, Status Dokumen</div></div>
+  <div class="toc-item"><div class="n">4</div><div class="t">Dashboard</div></div>
+  <div class="toc-item"><div class="n">5</div><div class="t">BP Architecture — Hierarki Proses Multi-Entitas</div></div>
+  <div class="toc-item"><div class="n">6</div><div class="t">Document Development — Studio Utama (SIPOC → Map → RASCI)</div></div>
+  <div class="toc-item"><div class="n">7</div><div class="t">Document Import — PDF menjadi Data Terstruktur</div></div>
+  <div class="toc-item"><div class="n">8</div><div class="t">Auto Flow Process — Generator Flowchart SOP</div></div>
+  <div class="toc-item"><div class="n">9</div><div class="t">Taxonomy Suite — Taxonomy, High Level Process, Description</div></div>
+  <div class="toc-item"><div class="n">10</div><div class="t">Document Action Request — Antrian Review</div></div>
+  <div class="toc-item"><div class="n">11</div><div class="t">Repository & Global Search</div></div>
+  <div class="toc-item"><div class="n">12</div><div class="t">Ask AI & AI Knowledge Base</div></div>
+  <div class="toc-item"><div class="n">13</div><div class="t">Setup AI — API Key & Pemilih Model</div></div>
+  <div class="toc-item"><div class="n">14</div><div class="t">Ekspor & Berbagi Dokumen</div></div>
+  <div class="toc-item"><div class="n">15</div><div class="t">Tips & Pertanyaan Umum (FAQ)</div></div>
+  <div class="toc-item"><div class="n">16</div><div class="t">Untuk Admin / Pengelola</div></div>
+</div>
+
+<!-- ============ 1. PENDAHULUAN ============ -->
+<div class="section">
+  <div class="eyebrow">Bab 1</div>
+  <h2>Pendahuluan — Apa itu STONES</h2>
+  <hr class="rule">
+  <p class="lead"><strong>STONES</strong> (Business Process Suite) adalah aplikasi web untuk
+  <strong>mengembangkan, mengelola, dan menyimpan</strong> Business Process (BP), Standard
+  Operating Procedure (SOP), dan dokumen perusahaan dalam satu tempat — lengkap dengan alur
+  persetujuan (approval), riwayat versi, impor PDF, generator diagram, dan asisten AI yang bisa
+  membaca basis pengetahuan internal Anda.</p>
+
+  <div class="card brand">
+    <h4>Yang bisa Anda lakukan dengan STONES</h4>
+    <ul>
+      <li>Membuat <strong>Business Process Map</strong> otomatis hanya dari satu tabel SIPOC.</li>
+      <li>Menyusun matriks tanggung jawab <strong>RASCI</strong> yang terisi otomatis.</li>
+      <li>Mengubah <strong>PDF SOP</strong> lama menjadi dokumen terstruktur dengan bantuan AI.</li>
+      <li>Membuat <strong>flowchart swimlane</strong>, diagram <strong>taksonomi</strong>, dan
+        <strong>value chain</strong> tanpa menggambar manual.</li>
+      <li>Menjalankan alur <strong>persetujuan dokumen</strong> dengan versi & jejak audit.</li>
+      <li>Bertanya & menganalisa proses lewat <strong>Ask AI</strong>.</li>
+    </ul>
+  </div>
+
+  <h3>Apa yang Anda butuhkan</h3>
+  <table class="tbl">
+    <tr><th>Kebutuhan</th><th>Keterangan</th></tr>
+    <tr><td>Peramban (browser) modern</td><td>Chrome, Edge, atau Firefox versi terbaru.</td></tr>
+    <tr><td>Akun Google</td><td>Untuk login — akses dikunci hanya untuk akun yang diizinkan.</td></tr>
+    <tr><td>Koneksi internet</td><td>Data disimpan & disinkronkan di cloud secara realtime.</td></tr>
+    <tr><td>API key AI (opsional)</td><td>Diperlukan hanya untuk fitur <strong>Ask AI</strong>
+      dan <strong>Document Import</strong>. Gratis dari OpenRouter — lihat Bab 13.</td></tr>
+  </table>
+  <div class="footer-brand">STONES — Business Process Suite · Buku Manual Pengguna</div>
+</div>
+
+<!-- ============ 2. MULAI CEPAT ============ -->
+<div class="section">
+  <div class="eyebrow">Bab 2</div>
+  <h2>Mulai Cepat — Login &amp; Navigasi</h2>
+  <hr class="rule">
+  <ol class="steps">
+    <li>Buka <a href="https://dhanyindraswara.github.io/bp_msbp/">dhanyindraswara.github.io/bp_msbp/</a>
+      di peramban Anda.</li>
+    <li>Klik <strong>Continue with Google</strong>, lalu pilih akun Google Anda.</li>
+    <li>Setelah masuk, semua fitur tersedia di <strong>sidebar kiri</strong> yang dikelompokkan
+      menurut fungsi.</li>
+    <li>Mulai bekerja — semua perubahan <strong>tersimpan otomatis</strong> ke cloud.</li>
+  </ol>
+
+  <h3>Peta menu (sidebar)</h3>
+  <p>Sidebar dikelompokkan agar mudah dinavigasi:</p>
+  <table class="tbl">
+    <tr><th>Grup</th><th>Menu</th><th>Fungsi singkat</th></tr>
+    <tr><td><span class="chip group">Standalone</span></td><td>Dashboard</td><td>Ringkasan jumlah dokumen & aktivitas.</td></tr>
+    <tr><td rowspan="3"><span class="chip group">Business Process</span></td><td>BP Architecture</td><td>Hierarki proses multi-entitas (LVL 0–3).</td></tr>
+    <tr><td>Document Development</td><td>Studio utama: SIPOC → Map → RASCI.</td></tr>
+    <tr><td>Document Import</td><td>PDF → data terstruktur dengan AI.</td></tr>
+    <tr><td><span class="chip group">Flow Process</span></td><td>Auto Flow Process</td><td>Generator flowchart swimlane SOP.</td></tr>
+    <tr><td rowspan="3"><span class="chip group">Taxonomy</span></td><td>Business Process Taxonomy</td><td>Diagram hierarki taksonomi L0–L3.</td></tr>
+    <tr><td>High Level Process</td><td>Diagram value chain perusahaan.</td></tr>
+    <tr><td>Taxonomy Description</td><td>Tabel deskripsi proses (KPI, RACI).</td></tr>
+    <tr><td rowspan="5"><span class="chip group">Standalone</span></td><td>Document Action Request</td><td>Antrian review + buat BP baru.</td></tr>
+    <tr><td>Repository</td><td>Semua dokumen tersimpan.</td></tr>
+    <tr><td>Global Search</td><td>Cari lintas dokumen.</td></tr>
+    <tr><td>Ask AI</td><td>Chat analisa proses.</td></tr>
+    <tr><td>AI Knowledge Base</td><td>Sumber pengetahuan tambahan untuk AI.</td></tr>
+  </table>
+  <div class="footer-brand">STONES — Business Process Suite · Buku Manual Pengguna</div>
+</div>
+
+<!-- ============ 3. KONSEP DASAR ============ -->
+<div class="section">
+  <div class="eyebrow">Bab 3</div>
+  <h2>Konsep Dasar</h2>
+  <hr class="rule">
+  <p class="lead">Beberapa prinsip yang berlaku di seluruh aplikasi. Memahaminya sekali akan
+  memudahkan Anda memakai semua menu.</p>
+
+  <h3>Autosave — tanpa tombol "Simpan"</h3>
+  <p>Hampir semua editan <strong>tersimpan otomatis</strong> beberapa saat setelah Anda mengetik.
+  Anda tidak perlu menekan tombol simpan. Khusus Business Process, gunakan <strong>Save version</strong>
+  bila ingin membuat <em>snapshot</em> yang bisa dipulihkan (restore) nanti.</p>
+
+  <h3>Realtime &amp; kolaboratif</h3>
+  <p>Data disimpan di cloud dan disinkronkan <strong>realtime</strong>. Perubahan dari rekan atau
+  dari perangkat lain langsung muncul di layar Anda tanpa perlu refresh.</p>
+
+  <h3>Tipe dokumen (docType)</h3>
+  <p>Setiap dokumen memiliki tipe yang menentukan menu tempat ia dibuka. Di Repository, tipe
+  ditampilkan sebagai <em>chip</em> berwarna.</p>
+  <table class="tbl">
+    <tr><th>Tipe</th><th>Dibuat di menu</th></tr>
+    <tr><td><span class="chip">BP</span></td><td>Document Development</td></tr>
+    <tr><td><span class="chip">SOP</span></td><td>Document Import</td></tr>
+    <tr><td><span class="chip">FLOW</span></td><td>Auto Flow Process</td></tr>
+    <tr><td><span class="chip">TAXONOMY / HLP / TAXDESC</span></td><td>Taxonomy Suite</td></tr>
+    <tr><td><span class="chip">KNOWLEDGE</span></td><td>AI Knowledge Base (tidak tampil di Repository)</td></tr>
+  </table>
+
+  <h3>Status &amp; alur persetujuan dokumen</h3>
+  <p>Business Process mengikuti alur status berikut:</p>
+  <p style="text-align:center; font-size:11pt; margin:14px 0;">
+    <span class="kbd">Draft</span> &nbsp;→&nbsp;
+    <span class="kbd">In Review</span> &nbsp;→&nbsp;
+    <span class="kbd">Approved</span> &nbsp;→&nbsp;
+    <span class="kbd">Published</span>
+  </p>
+  <p>Dokumen berstatus <strong>In Review</strong> masuk ke antrian <strong>Document Action
+  Request</strong> untuk di-<em>approve</em> atau <em>reject</em>. Setiap perubahan tercatat di
+  <strong>riwayat versi</strong> dan <strong>audit trail</strong>.</p>
+  <div class="footer-brand">STONES — Business Process Suite · Buku Manual Pengguna</div>
+</div>
+
+<!-- ============ 4. DASHBOARD ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 4</span></div>
+  <h2>📊 Dashboard</h2>
+  <hr class="rule">
+  <p>Halaman ringkasan yang menampilkan gambaran cepat isi repositori Anda: <strong>jumlah dokumen
+  Business Process</strong>, <strong>jumlah versi</strong> yang tersimpan, dan <strong>dokumen yang
+  terakhir diperbarui</strong>. Gunakan Dashboard sebagai titik awal untuk melihat aktivitas
+  terbaru sebelum masuk ke menu spesifik.</p>
+  <div class="tip"><b>Tip:</b> Klik dokumen terbaru di Dashboard untuk langsung membukanya di studio.</div>
+</div>
+
+<!-- ============ 5. BP ARCHITECTURE ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 5</span></div>
+  <h2>🏗️ BP Architecture</h2>
+  <hr class="rule">
+  <p class="lead">Mengelola <strong>hierarki Business Process multi-entitas</strong> — dari
+  korporasi (Level 0) hingga proses paling rinci (Level 3) — dalam satu pohon yang bisa dijelajahi.</p>
+
+  <h3>Struktur level</h3>
+  <table class="tbl">
+    <tr><th>Level</th><th>Makna</th></tr>
+    <tr><td>LVL 0</td><td>Entitas / korporasi tersendiri.</td></tr>
+    <tr><td>LVL 1</td><td>Kategori proses di dalam entitas.</td></tr>
+    <tr><td>LVL 2</td><td>Kelompok proses.</td></tr>
+    <tr><td>LVL 3</td><td>Proses rinci (daun/leaf) — di sinilah SIPOC, Risk, dan Performance Indicator disimpan.</td></tr>
+  </table>
+
+  <h3>Tata letak layar</h3>
+  <ul>
+    <li><strong>Panel kiri</strong> — navigator pohon (tree) yang bisa difilter per entitas.</li>
+    <li><strong>Panel kanan</strong> — editor untuk node yang dipilih: kode, judul, SIPOC, daftar
+      <strong>Risk</strong>, dan <strong>Performance Indicator (KPI)</strong>.</li>
+  </ul>
+  <p>Pada baris SIPOC, kolom <strong>Supplier</strong>/<strong>Customer</strong> bertipe
+  <em>Process</em> dapat ditautkan (link) ke node lain — bahkan lintas entitas — sehingga
+  keterhubungan antar-proses terjaga.</p>
+  <div class="tip"><b>Tip:</b> Gunakan tombol seed sample untuk memuat contoh pohon proses sebagai
+  titik awal, lalu sunting sesuai organisasi Anda.</div>
+</div>
+
+<!-- ============ 6. DOCUMENT DEVELOPMENT ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 6</span></div>
+  <h2>✏️ Document Development — Studio Utama</h2>
+  <hr class="rule">
+  <p class="lead">Menu inti STONES: membangun Business Process lengkap hanya dari <strong>satu tabel
+  SIPOC</strong>. Terdapat tiga tampilan yang bisa dipindah lewat tab di bagian atas.</p>
+
+  <h3>Tampilan 1 — SIPOC Editor</h3>
+  <p>Isi baris demi baris, di mana <strong>1 baris = 1 hubungan</strong>:</p>
+  <table class="tbl">
+    <tr><th>Kolom</th><th>Arti</th></tr>
+    <tr><td>Supplier</td><td>Pihak yang memberi masukan.</td></tr>
+    <tr><td>Input</td><td>Masukan yang diberikan.</td></tr>
+    <tr><td>Process</td><td>Aktivitas / sub-proses.</td></tr>
+    <tr><td>Output</td><td>Keluaran yang dihasilkan.</td></tr>
+    <tr><td>Customer</td><td>Pihak yang menerima keluaran.</td></tr>
+  </table>
+  <ul>
+    <li>Tambah / hapus baris sesuai kebutuhan.</li>
+    <li><strong>Paste langsung dari Excel</strong> — salin blok sel, tempel ke tabel.</li>
+    <li>Editor <strong>PPI</strong> (Process Performance Indicator) untuk indikator kinerja.</li>
+    <li>Impor data dari file <code>.xlsx</code> / <code>.csv</code>.</li>
+  </ul>
+
+  <h3>Tampilan 2 — Business Process Map</h3>
+  <p>Diagram yang <strong>digambar otomatis</strong> dari SIPOC: kotak proses, aktor
+  (supplier/customer), panah <em>in</em>/<em>out</em>/<em>handoff</em>, dan <strong>title block ITM</strong>
+  (logo, Prepared/Reviewed/Approved, BP No, revisi).</p>
+  <table class="tbl">
+    <tr><th>Aksi</th><th>Cara</th></tr>
+    <tr><td>Edit header / logo</td><td>Klik field header atau logo lalu ubah.</td></tr>
+    <tr><td>Atur posisi kotak</td><td><strong>Drag</strong> kotak ke tempat yang diinginkan.</td></tr>
+    <tr><td>Ganti nama kotak</td><td><strong>Double-click</strong> pada kotak.</td></tr>
+    <tr><td>Rapikan otomatis</td><td>Klik <strong>Auto-arrange</strong>.</td></tr>
+    <tr><td>Label garis</td><td>Toggle <strong>Flow #</strong> / <strong>Text</strong>.</td></tr>
+    <tr><td>Ekspor</td><td><strong>Export PNG</strong> (persis tampilan web) atau <strong>Export JSON</strong>.</td></tr>
+  </table>
+  <div class="tip"><b>Tahu tidak?</b> Garis antar-kotak dirutekan otomatis agar menghindari kotak
+  lain, dan langsung dirapikan ulang setiap kali Anda menggeser sebuah kotak.</div>
+
+  <h3>Tampilan 3 — RASCI</h3>
+  <p>Matriks tanggung jawab: <strong>baris = sub-proses</strong>, <strong>kolom = aktor</strong>.
+  Terisi <strong>otomatis</strong> dari SIPOC dan bisa Anda <em>override</em> per sel. Ekspor ke
+  <strong>CSV</strong> atau <strong>XLSX</strong>.</p>
+  <table class="tbl">
+    <tr><th>Huruf</th><th>Peran</th></tr>
+    <tr><td><strong>R</strong></td><td>Responsible — yang mengerjakan.</td></tr>
+    <tr><td><strong>A</strong></td><td>Accountable — yang bertanggung jawab akhir.</td></tr>
+    <tr><td><strong>S</strong></td><td>Support — yang membantu.</td></tr>
+    <tr><td><strong>C</strong></td><td>Consulted — yang dimintai pendapat.</td></tr>
+    <tr><td><strong>I</strong></td><td>Informed — yang diberi informasi.</td></tr>
+  </table>
+
+  <h3>Document control</h3>
+  <p>Setiap Business Process dilengkapi:</p>
+  <ul>
+    <li><strong>Status</strong>: Draft → In Review → Approved → Published.</li>
+    <li><strong>Riwayat versi</strong> (snapshot + restore) dan <strong>audit trail</strong>.</li>
+    <li><strong>Komentar</strong> melalui panel samping.</li>
+    <li>Lampiran file (PDF/PNG) dan <strong>deep-link</strong> untuk berbagi (<code>?doc=BP-xxxx</code>).</li>
+  </ul>
+  <div class="footer-brand">STONES — Business Process Suite · Buku Manual Pengguna</div>
+</div>
+
+<!-- ============ 7. DOCUMENT IMPORT ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 7</span></div>
+  <h2>📥 Document Import — PDF menjadi Data Terstruktur</h2>
+  <hr class="rule">
+  <p class="lead">Mengubah PDF SOP / BP / policy lama menjadi dokumen terstruktur dengan bantuan AI,
+  sehingga tidak perlu mengetik ulang.</p>
+
+  <div class="note"><b>Perlu API key.</b> Fitur ini memakai AI, jadi butuh <strong>API key</strong>
+  (OpenRouter atau Google Gemini) yang diisi di kotak pada layar ini. Lihat Bab 13 untuk cara
+  memperolehnya. Ada juga <strong>pemilih Model</strong> di kanan atas — defaultnya model gratis
+  yang mampu membaca hasil scan.</div>
+
+  <ol class="steps">
+    <li>Klik atau <strong>drag</strong> file <strong>PDF</strong> (maksimal ±7&nbsp;MB; hasil scan
+      pun bisa dibaca).</li>
+    <li>AI membaca dan mengekstrak isinya — biasanya <strong>20–60 detik</strong>.</li>
+    <li>Muncul layar <strong>review berdampingan</strong> (PDF di kiri, form di kanan): metadata,
+      tujuan/scope, aktor, langkah prosedur, RASCI, dan PPI. <strong>Koreksi</strong> bagian yang
+      kurang tepat.</li>
+    <li>Klik <strong>Simpan ke Repository</strong> — tersimpan sebagai dokumen tipe
+      <span class="chip">SOP</span>, dengan PDF asli ikut dilampirkan.</li>
+  </ol>
+  <div class="note"><b>Selalu review.</b> Hasil ekstraksi AI adalah data terstruktur — periksa
+  ketepatannya sebelum menyimpan, khususnya untuk PDF hasil scan.</div>
+</div>
+
+<!-- ============ 8. AUTO FLOW PROCESS ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 8</span></div>
+  <h2>🔀 Auto Flow Process — Generator Flowchart SOP</h2>
+  <hr class="rule">
+  <p class="lead">Membuat <strong>flowchart swimlane</strong> (satu kolom per pihak yang
+  bertanggung jawab) secara otomatis. Anda cukup mengisi data, sistem yang menggambar sesuai
+  template.</p>
+
+  <h3>Cara pakai</h3>
+  <ol class="steps">
+    <li>Isi <strong>Kepala dokumen</strong>: judul, level, BP No, tanggal, revisi,
+      Prepared/Reviewed/Approved, dan logo. Bagian ini bisa dilipat agar ringkas.</li>
+    <li>Isi <strong>Judul section</strong> — nama proses, misalnya "C3.2 Fuel Supply".</li>
+    <li>Isi <strong>Lane / kolom</strong> — satu pihak per baris, diurutkan dari kiri ke kanan.</li>
+    <li>Isi tabel <strong>Langkah</strong>: No, Tipe (Start/End, Process, Sub Process, Decision,
+      dll), Lane, RASCI, Ref, Aktivitas, dan <strong>Next</strong>.</li>
+    <li>Lihat hasilnya di panel <strong>Preview</strong> di sebelah kanan secara langsung.</li>
+  </ol>
+
+  <h3>Aturan kolom "Next"</h3>
+  <table class="tbl">
+    <tr><th>Isi Next</th><th>Arti</th></tr>
+    <tr><td><em>(kosong)</em></td><td>Otomatis lanjut ke langkah berikutnya.</td></tr>
+    <tr><td><code>6:Yes, 3:No</code></td><td>Percabangan keputusan: ke langkah 6 bila "Yes", ke langkah 3 bila "No".</td></tr>
+  </table>
+
+  <h3>Tips di preview</h3>
+  <ul>
+    <li><strong>Drag</strong> kotak untuk atur posisi manual; <strong>double-click</strong> untuk
+      mengganti nama aktivitas.</li>
+    <li><strong>Rapikan ulang</strong> mengembalikan semua kotak ke posisi otomatis.</li>
+    <li>Hilangkan centang <strong>Kepala dokumen</strong> untuk menyembunyikan title block.</li>
+    <li><strong>Export PNG</strong> untuk hasil siap tempel.</li>
+    <li><strong>Load sample</strong> menampilkan contoh "C3.2 Fuel Supply" sebagai titik awal.</li>
+  </ul>
+  <p>Flow tersimpan sebagai dokumen tipe <span class="chip">FLOW</span> dan bisa dibuka lagi untuk
+  disunting.</p>
+  <div class="footer-brand">STONES — Business Process Suite · Buku Manual Pengguna</div>
+</div>
+
+<!-- ============ 9. TAXONOMY SUITE ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 9</span></div>
+  <h2>🗂️ Taxonomy Suite</h2>
+  <hr class="rule">
+  <p class="lead">Tiga menu generator diagram yang berbagi pola sama: <strong>form di kiri, preview
+  langsung di kanan</strong>, autosave, tombol <em>Load sample</em>, dan <strong>Export PNG</strong>.
+  Semua hasilnya muncul di Repository dengan chip tipe masing-masing.</p>
+
+  <h3>9.1 Business Process Taxonomy</h3>
+  <p>Diagram hierarki <strong>L0 → L3</strong>: rail label level, dua band membentang (L0 core
+  process dan L1 grup), lalu grid kolom — setiap kolom berisi satu kotak kategori L2 dengan
+  tumpukan L3 di bawahnya. Tiap kotak punya <strong>kode</strong>, <strong>nama</strong>, dan opsi
+  <strong>highlight</strong> (garis tepi biru). Tersimpan sebagai tipe <span class="chip">TAXONOMY</span>.</p>
+
+  <h3>9.2 High Level Process</h3>
+  <p>Diagram <strong>value chain</strong> perusahaan: band bertumpuk
+  (<strong>Management / Core / Enabler</strong>), tiap band berupa tray abu-abu berisi kotak proses
+  (badge bulat kode + nama miring), dengan opsi highlight. Dilengkapi judul, subjudul, dan
+  footnote/legenda. Tersimpan sebagai tipe <span class="chip">HLP</span>.</p>
+
+  <h3>9.3 Taxonomy Description</h3>
+  <p>Tabel deskripsi proses: header biru berisi nomor proses (kolom), dengan baris atribut tetap —
+  <strong>name, description, KPI, responsible, accountable</strong>. Atribut KPI/responsible/
+  accountable yang bernilai banyak ditampilkan sebagai daftar bullet. Tersimpan sebagai tipe
+  <span class="chip">TAXDESC</span>.</p>
+
+  <div class="tip"><b>Alur kerja umum:</b> klik <strong>Load sample</strong> untuk melihat contoh →
+  sunting datanya di form kiri → pantau preview kanan → <strong>Simpan ke Repository</strong> →
+  <strong>Export PNG</strong> saat siap dipakai.</div>
+</div>
+
+<!-- ============ 10. DOCUMENT ACTION REQUEST ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 10</span></div>
+  <h2>📝 Document Action Request — Antrian Review</h2>
+  <hr class="rule">
+  <p class="lead">Pusat persetujuan dokumen. Semua dokumen berstatus <strong>In Review</strong>
+  berkumpul di sini untuk ditindaklanjuti.</p>
+  <ul>
+    <li>Klik <strong>Approve</strong> untuk menyetujui dokumen (status naik ke Approved).</li>
+    <li>Klik <strong>Reject</strong> untuk mengembalikan dokumen ke pembuatnya.</li>
+    <li>Gunakan tombol <strong>+ New BP</strong> untuk memulai Business Process baru dari sini.</li>
+  </ul>
+  <p>Alur ini melengkapi status dokumen yang dijelaskan di Bab 3.</p>
+</div>
+
+<!-- ============ 11. REPOSITORY & SEARCH ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 11</span></div>
+  <h2>🗄️ Repository &amp; 🔍 Global Search</h2>
+  <hr class="rule">
+
+  <h3>Repository</h3>
+  <p>Daftar <strong>semua dokumen</strong> yang tersimpan — menampilkan ID, nama, versi, status,
+  dan waktu terakhir diperbarui, beserta chip tipe (BP/SOP/FLOW/dll). Untuk tiap dokumen Anda bisa:</p>
+  <table class="tbl">
+    <tr><th>Aksi</th><th>Hasil</th></tr>
+    <tr><td><strong>Open</strong></td><td>Membuka dokumen di menu yang sesuai tipenya.</td></tr>
+    <tr><td><strong>Duplicate</strong></td><td>Menggandakan dokumen sebagai salinan baru.</td></tr>
+    <tr><td><strong>Delete</strong></td><td>Menghapus dokumen.</td></tr>
+  </table>
+  <p>Dokumen referensi (AI Knowledge Base) sengaja <strong>tidak</strong> ditampilkan di Repository.</p>
+
+  <h3>Global Search</h3>
+  <p>Mencari lintas <strong>seluruh</strong> dokumen: nama, ID, isi SIPOC, aktor, flow, PPI, header,
+  hingga komentar. Klik salah satu hasil untuk langsung membuka dokumennya.</p>
+  <div class="tip"><b>Tip:</b> Global Search berguna untuk menemukan proses yang menyebut aktor atau
+  istilah tertentu meski Anda lupa nama dokumennya.</div>
+</div>
+
+<!-- ============ 12. ASK AI & KNOWLEDGE ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 12</span></div>
+  <h2>✦ Ask AI &amp; 📚 AI Knowledge Base</h2>
+  <hr class="rule">
+
+  <h3>Ask AI</h3>
+  <p class="lead">Chat untuk <strong>bertanya, meringkas, dan menganalisa</strong> Business Process
+  Anda — misalnya menemukan bottleneck, gap, kejelasan ownership, PPI yang lemah, dan rekomendasi
+  perbaikan.</p>
+  <p>AI membaca <strong>semua BP tersimpan</strong> ditambah <strong>referensi aktif</strong> di AI
+  Knowledge Base. Jawaban mengikuti bahasa pertanyaan (Indonesia atau Inggris).</p>
+  <ul>
+    <li>Setup sekali: masukkan <strong>API key</strong> dan pilih <strong>Model</strong> (lihat Bab 13).</li>
+    <li>Makin lengkap SIPOC/PPI/SOP di dokumen, makin dalam analisa yang bisa diberikan AI.</li>
+  </ul>
+
+  <h3>AI Knowledge Base</h3>
+  <p>Menyediakan bahan tambahan agar jawaban Ask AI lebih relevan dengan konteks perusahaan Anda.</p>
+  <ol class="steps">
+    <li>Beri <strong>judul</strong> referensi.</li>
+    <li><strong>Upload PDF &amp; ekstrak</strong> (AI membaca isinya, scan pun bisa) — atau langsung
+      <strong>paste / ketik teks</strong>.</li>
+    <li>Review atau sunting teksnya, lalu klik <strong>Tambah ke knowledge base</strong>.</li>
+    <li>Tiap referensi punya <strong>toggle aktif/nonaktif</strong> — hanya yang aktif yang dipakai
+      AI. Bisa juga di-<strong>Edit</strong> atau <strong>Hapus</strong>.</li>
+  </ol>
+  <p>Setelah itu, buka <strong>Ask AI</strong> dan bertanya seperti biasa — jawaban otomatis
+  mempertimbangkan referensi yang aktif.</p>
+  <div class="footer-brand">STONES — Business Process Suite · Buku Manual Pengguna</div>
+</div>
+
+<!-- ============ 13. SETUP AI ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 13</span></div>
+  <h2>🔑 Setup AI — API Key &amp; Pemilih Model</h2>
+  <hr class="rule">
+  <p class="lead">Fitur <strong>Ask AI</strong> dan <strong>Document Import</strong> memakai
+  penyedia AI yang dipanggil langsung dari peramban Anda. Anda perlu memasukkan API key sendiri
+  (BYO — <em>Bring Your Own key</em>) satu kali.</p>
+
+  <div class="tip"><b>Privasi:</b> API key disimpan <strong>hanya di peramban ini</strong>
+  (localStorage) dan tidak pernah dikirim ke mana pun selain penyedia AI yang Anda pilih. Key tidak
+  disimpan di server aplikasi maupun di dalam kode.</div>
+
+  <h3>Langkah setup (contoh OpenRouter)</h3>
+  <ol class="steps">
+    <li>Buat key gratis di <a href="https://openrouter.ai/keys">openrouter.ai/keys</a>.</li>
+    <li>Di STONES, buka <strong>Ask AI</strong> (atau Document Import). Pada kotak API key di atas,
+      pilih penyedia lalu tempel key Anda, dan klik <strong>Simpan</strong>.</li>
+    <li>Pilih <strong>Model</strong> di kanan atas. Tersedia opsi <strong>gratis</strong>
+      (bertanda <code>:free</code>).</li>
+    <li>Mulai bertanya atau mengimpor PDF.</li>
+  </ol>
+
+  <h3>Penyedia yang didukung</h3>
+  <table class="tbl">
+    <tr><th>Penyedia</th><th>Catatan</th></tr>
+    <tr><td>OpenRouter</td><td>Direkomendasikan; mendukung banyak model & pembaca PDF. Ada model gratis.</td></tr>
+    <tr><td>Google Gemini</td><td>Mendukung baca PDF/scan langsung.</td></tr>
+    <tr><td>Groq / OpenAI</td><td>Untuk chat; <em>tidak</em> mendukung baca PDF di Document Import.</td></tr>
+    <tr><td>Custom (OpenAI-compatible)</td><td>Isi base URL sendiri.</td></tr>
+  </table>
+
+  <div class="note"><b>Kena limit?</b> Model gratis memiliki batas pemakaian per model. Bila
+  tercapai, cukup <strong>ganti model</strong> dari dropdown, atau top-up saldo. Saran: set
+  <strong>limit kredit</strong> di dashboard penyedia agar biaya terkendali.</div>
+  <div class="note"><b>Dokumen sensitif?</b> Sebagian penyedia free tier dapat memakai data untuk
+  pelatihan. Untuk dokumen sangat sensitif, pilih model / endpoint berbayar dengan kebijakan
+  no-logging.</div>
+</div>
+
+<!-- ============ 14. EKSPOR ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 14</span></div>
+  <h2>📤 Ekspor &amp; Berbagi Dokumen</h2>
+  <hr class="rule">
+  <table class="tbl">
+    <tr><th>Kebutuhan</th><th>Cara</th></tr>
+    <tr><td>Gambar diagram siap tempel</td><td><strong>Export PNG</strong> (tersedia di Business
+      Process Map, Auto Flow, dan seluruh Taxonomy Suite) — hasilnya persis tampilan di layar.</td></tr>
+    <tr><td>Data mentah diagram</td><td><strong>Export JSON</strong> di Business Process Map.</td></tr>
+    <tr><td>Matriks RASCI</td><td><strong>Export CSV</strong> atau <strong>XLSX</strong>.</td></tr>
+    <tr><td>Berbagi dokumen ke rekan</td><td>Bagikan <strong>deep-link</strong>
+      <code>?doc=BP-xxxx</code> — rekan yang login akan langsung membuka dokumen yang sama.</td></tr>
+    <tr><td>Impor data SIPOC</td><td>Impor dari <code>.xlsx</code> / <code>.csv</code>, atau paste
+      langsung dari Excel.</td></tr>
+  </table>
+</div>
+
+<!-- ============ 15. FAQ ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 15</span></div>
+  <h2>❓ Tips &amp; Pertanyaan Umum (FAQ)</h2>
+  <hr class="rule">
+
+  <h4>Apakah perlu menekan tombol simpan?</h4>
+  <p>Tidak. Editan tersimpan otomatis. Untuk BP, gunakan <strong>Save version</strong> bila ingin
+  membuat snapshot yang bisa dipulihkan.</p>
+
+  <h4>Apakah bisa kolaborasi realtime?</h4>
+  <p>Bisa. Perubahan dari perangkat atau orang lain langsung muncul di layar Anda.</p>
+
+  <h4>Sudah diperbarui tapi tampilan belum berubah?</h4>
+  <p>Muat ulang secara paksa dengan <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> +
+  <span class="kbd">R</span>. Bila baru saja dideploy, tunggu ±1–2 menit.</p>
+
+  <h4>Apakah PDF hasil scan bisa diimpor?</h4>
+  <p>Bisa — AI mampu membacanya. Namun hasilnya berupa data terstruktur, jadi <strong>selalu
+  review</strong> sebelum menyimpan.</p>
+
+  <h4>Ask AI menampilkan error atau tidak menjawab?</h4>
+  <p>Pastikan <strong>API key sudah diisi</strong> dan <strong>model sudah dipilih</strong> (Bab 13).
+  Bila kena rate limit, ganti model dari dropdown.</p>
+
+  <h4>Seberapa aman datanya?</h4>
+  <p>Akses dikunci login Google + Security Rules. Diagram dan dokumen tersimpan aman di cloud; API
+  key AI hanya tersimpan di peramban Anda.</p>
+</div>
+
+<!-- ============ 16. ADMIN ============ -->
+<div class="section">
+  <div class="menu-head"><span class="chip group">Bab 16</span></div>
+  <h2>⚙️ Untuk Admin / Pengelola</h2>
+  <hr class="rule">
+  <p class="lead">Bagian ini ditujukan untuk pengelola teknis aplikasi.</p>
+  <table class="tbl">
+    <tr><th>Tugas</th><th>Perintah / Cara</th></tr>
+    <tr><td>Deploy web</td><td><code>npm run build</code> lalu <code>npm run deploy</code>
+      (publish <code>dist/</code> ke branch <code>gh-pages</code>).</td></tr>
+    <tr><td>Menjalankan lokal</td><td><code>npm install</code> → <code>npm run dev</code>
+      (buka <code>http://localhost:5173/bp_msbp/</code>).</td></tr>
+    <tr><td>Akses / keamanan</td><td>Firebase Auth (Google sign-in) + Security Rules
+      (<code>request.auth != null</code>).</td></tr>
+    <tr><td>Data</td><td>Firestore collection <code>bp_documents</code>; lampiran di Cloud Storage.</td></tr>
+  </table>
+
+  <div class="note"><b>Catatan.</b> Fitur AI kini dipanggil langsung dari peramban (client-side)
+  memakai API key milik pengguna — <strong>tidak</strong> memerlukan deploy Cloud Functions.
+  Perubahan frontend cukup <code>npm run deploy</code>.</div>
+
+  <h3>Keamanan API key Firebase</h3>
+  <p>Firebase Web <code>apiKey</code> yang ada di kode adalah key publik client (by design).
+  Proteksi sesungguhnya adalah Security Rules + Auth, ditambah API key restriction di GCP. Jangan
+  pernah menaruh API key AI yang sensitif di dalam kode/bundle.</p>
+
+  <div class="footer-brand">
+    STONES — Business Process Suite · Buku Manual Pengguna · Versi 1.0 (2026)<br>
+    dhanyindraswara.github.io/bp_msbp/
+  </div>
+</div>
+
+</body>
+</html>

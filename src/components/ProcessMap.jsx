@@ -588,7 +588,7 @@ function FlowInner({ project, setProject, derived, notify }) {
               {appr.map((a) => (
                 <div key={a.k} className="tb-appr">
                   <div className="tb-appr-lb">{a.lb}</div>
-                  <EditableField className="tb-appr-val" value={tpl[a.k]} placeholder="—" onCommit={(v) => setTpl(a.k, v)} />
+                  <EditableField className="tb-appr-val" value={tpl[a.k]} placeholder="Name&#10;Position" multiline onCommit={(v) => setTpl(a.k, v)} />
                 </div>
               ))}
             </div>

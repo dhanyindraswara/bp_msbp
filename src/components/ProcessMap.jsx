@@ -15,9 +15,9 @@ import ReactFlow, {
   EdgeLabelRenderer,
 } from 'reactflow'
 import * as htmlToImage from 'html-to-image'
-import { jsPDF } from 'jspdf'
 import { C, PROC_W, PROC_H, BOX_W, BOX_H } from '../lib/constants.js'
 import { parseProcess, download } from '../lib/generate.js'
+import { jpegToPdfBlob, dataUrlToBytes } from '../lib/imgpdf.js'
 import { routeOrthogonal, simpleRoute, sidePoint, polyMidpoint, roundedPath } from '../lib/router.js'
 import { BoxNode, ProcessNode, BandNode, SLOTS } from './nodes.jsx'
 
@@ -450,30 +450,41 @@ function FlowInner({ project, setProject, derived, notify }) {
 
   const allNodes = nodes
 
-  // Capture the ITM document as a high-res PNG data URL (shared by PNG + PDF export).
-  const captureDataUrl = useCallback(async () => {
-    rf.fitView({ padding: 0.12, duration: 0 })
-    await new Promise((r) => setTimeout(r, 350))
-    const el = document.getElementById('itm-capture')
-    const dataUrl = await htmlToImage.toPng(el, {
-      backgroundColor: '#ffffff',
-      pixelRatio: 2,
-      cacheBust: true,
-      filter: (n) => {
-        if (
-          n.classList &&
-          (n.classList.contains('react-flow__controls') ||
-            n.classList.contains('react-flow__attribution') ||
-            n.classList.contains('nodedel') ||
-            n.classList.contains('itm-hint'))
-        )
-          return false
-        return true
-      },
-    })
-    return { dataUrl, width: el.offsetWidth, height: el.offsetHeight }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rf])
+  const tpl = useMemo(() => ({ ...DEFAULT_TEMPLATE, ...(project.template || {}) }), [project.template])
+  const setTpl = useCallback(
+    (k, v) => setProject((p) => ({ ...p, template: { ...DEFAULT_TEMPLATE, ...(p.template || {}), [k]: v } })),
+    [setProject],
+  )
+
+  // Capture the ITM document as a high-res data URL (shared by PNG + PDF export).
+  // fmt 'png' (default) for the PNG export, 'jpeg' for the PDF (embeds directly).
+  const captureDataUrl = useCallback(
+    async (fmt = 'png') => {
+      rf.fitView({ padding: 0.12, duration: 0 })
+      await new Promise((r) => setTimeout(r, 350))
+      const el = document.getElementById('itm-capture')
+      const opts = {
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+        cacheBust: true,
+        filter: (n) => {
+          if (
+            n.classList &&
+            (n.classList.contains('react-flow__controls') ||
+              n.classList.contains('react-flow__attribution') ||
+              n.classList.contains('nodedel') ||
+              n.classList.contains('itm-hint'))
+          )
+            return false
+          return true
+        },
+      }
+      const dataUrl = fmt === 'jpeg' ? await htmlToImage.toJpeg(el, { ...opts, quality: 0.92 }) : await htmlToImage.toPng(el, opts)
+      return { dataUrl, width: el.offsetWidth, height: el.offsetHeight }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [rf],
+  )
 
   const exportPng = useCallback(async () => {
     try {
@@ -490,18 +501,17 @@ function FlowInner({ project, setProject, derived, notify }) {
 
   const exportPdf = useCallback(async () => {
     try {
-      const { dataUrl, width, height } = await captureDataUrl()
-      const orientation = width >= height ? 'landscape' : 'portrait'
-      const pdf = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
-      const pw = pdf.internal.pageSize.getWidth()
-      const ph = pdf.internal.pageSize.getHeight()
-      const margin = 24
-      const scale = Math.min((pw - margin * 2) / width, (ph - margin * 2) / height)
-      const w = width * scale
-      const h = height * scale
-      pdf.addImage(dataUrl, 'PNG', (pw - w) / 2, (ph - h) / 2, w, h, undefined, 'FAST')
+      const { dataUrl } = await captureDataUrl('jpeg')
+      // Read the JPEG's true pixel dimensions for the PDF image dictionary.
+      const dims = await new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+        img.onerror = reject
+        img.src = dataUrl
+      })
+      const blob = jpegToPdfBlob(dataUrlToBytes(dataUrl), dims.w, dims.h)
       const name = (tpl.bpNo || tpl.title || 'itm-process-map').replace(/[^\w.-]+/g, '-')
-      pdf.save(name + '.pdf')
+      download(name + '.pdf', blob)
       notify('PDF exported')
     } catch (err) {
       console.error(err)
@@ -533,11 +543,6 @@ function FlowInner({ project, setProject, derived, notify }) {
   }, [project.ppi])
 
   // ---- document title-block template ----
-  const tpl = useMemo(() => ({ ...DEFAULT_TEMPLATE, ...(project.template || {}) }), [project.template])
-  const setTpl = useCallback(
-    (k, v) => setProject((p) => ({ ...p, template: { ...DEFAULT_TEMPLATE, ...(p.template || {}), [k]: v } })),
-    [setProject],
-  )
   const logoRef = useRef(null)
   const onLogoFile = (file) => {
     if (!file) return

@@ -15,6 +15,7 @@ import ReactFlow, {
   EdgeLabelRenderer,
 } from 'reactflow'
 import * as htmlToImage from 'html-to-image'
+import { jsPDF } from 'jspdf'
 import { C, PROC_W, PROC_H, BOX_W, BOX_H } from '../lib/constants.js'
 import { parseProcess, download } from '../lib/generate.js'
 import { routeOrthogonal, simpleRoute, sidePoint, polyMidpoint, roundedPath } from '../lib/router.js'
@@ -449,27 +450,34 @@ function FlowInner({ project, setProject, derived, notify }) {
 
   const allNodes = nodes
 
+  // Capture the ITM document as a high-res PNG data URL (shared by PNG + PDF export).
+  const captureDataUrl = useCallback(async () => {
+    rf.fitView({ padding: 0.12, duration: 0 })
+    await new Promise((r) => setTimeout(r, 350))
+    const el = document.getElementById('itm-capture')
+    const dataUrl = await htmlToImage.toPng(el, {
+      backgroundColor: '#ffffff',
+      pixelRatio: 2,
+      cacheBust: true,
+      filter: (n) => {
+        if (
+          n.classList &&
+          (n.classList.contains('react-flow__controls') ||
+            n.classList.contains('react-flow__attribution') ||
+            n.classList.contains('nodedel') ||
+            n.classList.contains('itm-hint'))
+        )
+          return false
+        return true
+      },
+    })
+    return { dataUrl, width: el.offsetWidth, height: el.offsetHeight }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rf])
+
   const exportPng = useCallback(async () => {
     try {
-      rf.fitView({ padding: 0.12, duration: 0 })
-      await new Promise((r) => setTimeout(r, 350))
-      const el = document.getElementById('itm-capture')
-      const dataUrl = await htmlToImage.toPng(el, {
-        backgroundColor: '#ffffff',
-        pixelRatio: 2,
-        cacheBust: true,
-        filter: (n) => {
-          if (
-            n.classList &&
-            (n.classList.contains('react-flow__controls') ||
-              n.classList.contains('react-flow__attribution') ||
-              n.classList.contains('nodedel') ||
-              n.classList.contains('itm-hint'))
-          )
-            return false
-          return true
-        },
-      })
+      const { dataUrl } = await captureDataUrl()
       const res = await fetch(dataUrl)
       const blob = await res.blob()
       download('itm-process-map.png', blob)
@@ -478,8 +486,28 @@ function FlowInner({ project, setProject, derived, notify }) {
       console.error(err)
       notify('PNG export failed: ' + err.message)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rf])
+  }, [captureDataUrl, notify])
+
+  const exportPdf = useCallback(async () => {
+    try {
+      const { dataUrl, width, height } = await captureDataUrl()
+      const orientation = width >= height ? 'landscape' : 'portrait'
+      const pdf = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
+      const pw = pdf.internal.pageSize.getWidth()
+      const ph = pdf.internal.pageSize.getHeight()
+      const margin = 24
+      const scale = Math.min((pw - margin * 2) / width, (ph - margin * 2) / height)
+      const w = width * scale
+      const h = height * scale
+      pdf.addImage(dataUrl, 'PNG', (pw - w) / 2, (ph - h) / 2, w, h, undefined, 'FAST')
+      const name = (tpl.bpNo || tpl.title || 'itm-process-map').replace(/[^\w.-]+/g, '-')
+      pdf.save(name + '.pdf')
+      notify('PDF exported')
+    } catch (err) {
+      console.error(err)
+      notify('PDF export failed: ' + err.message)
+    }
+  }, [captureDataUrl, notify, tpl.bpNo, tpl.title])
   const exportJSON = useCallback(() => {
     download('itm-sipoc-project.json', new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }))
     notify('JSON exported')
@@ -556,8 +584,11 @@ function FlowInner({ project, setProject, derived, notify }) {
           <button className="btn btn-sm" onClick={exportJSON}>
             Export JSON
           </button>
-          <button className="btn btn-sm btn-primary" onClick={exportPng}>
+          <button className="btn btn-sm" onClick={exportPng}>
             Export PNG
+          </button>
+          <button className="btn btn-sm btn-primary" onClick={exportPdf}>
+            Export PDF
           </button>
         </div>
       </div>

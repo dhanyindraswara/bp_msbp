@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "LEAP-STONES \u2014 Business Process Suite: SIPOC \u2192 auto process map + RASCI, AI document import, flowcharts, taxonomy, governance.",
+  "description": "LEAP-STONES — Business Process Suite: SIPOC → auto process map + RASCI, AI document import, flowcharts, taxonomy, governance.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

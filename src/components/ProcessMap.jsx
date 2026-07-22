@@ -17,6 +17,7 @@ import ReactFlow, {
 import * as htmlToImage from 'html-to-image'
 import { C, PROC_W, PROC_H, BOX_W, BOX_H } from '../lib/constants.js'
 import { parseProcess, download } from '../lib/generate.js'
+import { jpegToPdfBlob, dataUrlToBytes } from '../lib/imgpdf.js'
 import { routeOrthogonal, simpleRoute, sidePoint, polyMidpoint, roundedPath } from '../lib/router.js'
 import { BoxNode, ProcessNode, BandNode, SLOTS } from './nodes.jsx'
 
@@ -449,12 +450,20 @@ function FlowInner({ project, setProject, derived, notify }) {
 
   const allNodes = nodes
 
-  const exportPng = useCallback(async () => {
-    try {
+  const tpl = useMemo(() => ({ ...DEFAULT_TEMPLATE, ...(project.template || {}) }), [project.template])
+  const setTpl = useCallback(
+    (k, v) => setProject((p) => ({ ...p, template: { ...DEFAULT_TEMPLATE, ...(p.template || {}), [k]: v } })),
+    [setProject],
+  )
+
+  // Capture the ITM document as a high-res data URL (shared by PNG + PDF export).
+  // fmt 'png' (default) for the PNG export, 'jpeg' for the PDF (embeds directly).
+  const captureDataUrl = useCallback(
+    async (fmt = 'png') => {
       rf.fitView({ padding: 0.12, duration: 0 })
       await new Promise((r) => setTimeout(r, 350))
       const el = document.getElementById('itm-capture')
-      const dataUrl = await htmlToImage.toPng(el, {
+      const opts = {
         backgroundColor: '#ffffff',
         pixelRatio: 2,
         cacheBust: true,
@@ -469,7 +478,17 @@ function FlowInner({ project, setProject, derived, notify }) {
             return false
           return true
         },
-      })
+      }
+      const dataUrl = fmt === 'jpeg' ? await htmlToImage.toJpeg(el, { ...opts, quality: 0.92 }) : await htmlToImage.toPng(el, opts)
+      return { dataUrl, width: el.offsetWidth, height: el.offsetHeight }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [rf],
+  )
+
+  const exportPng = useCallback(async () => {
+    try {
+      const { dataUrl } = await captureDataUrl()
       const res = await fetch(dataUrl)
       const blob = await res.blob()
       download('itm-process-map.png', blob)
@@ -478,8 +497,27 @@ function FlowInner({ project, setProject, derived, notify }) {
       console.error(err)
       notify('PNG export failed: ' + err.message)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rf])
+  }, [captureDataUrl, notify])
+
+  const exportPdf = useCallback(async () => {
+    try {
+      const { dataUrl } = await captureDataUrl('jpeg')
+      // Read the JPEG's true pixel dimensions for the PDF image dictionary.
+      const dims = await new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+        img.onerror = reject
+        img.src = dataUrl
+      })
+      const blob = jpegToPdfBlob(dataUrlToBytes(dataUrl), dims.w, dims.h)
+      const name = (tpl.bpNo || tpl.title || 'itm-process-map').replace(/[^\w.-]+/g, '-')
+      download(name + '.pdf', blob)
+      notify('PDF exported')
+    } catch (err) {
+      console.error(err)
+      notify('PDF export failed: ' + err.message)
+    }
+  }, [captureDataUrl, notify, tpl.bpNo, tpl.title])
   const exportJSON = useCallback(() => {
     download('itm-sipoc-project.json', new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }))
     notify('JSON exported')
@@ -505,11 +543,6 @@ function FlowInner({ project, setProject, derived, notify }) {
   }, [project.ppi])
 
   // ---- document title-block template ----
-  const tpl = useMemo(() => ({ ...DEFAULT_TEMPLATE, ...(project.template || {}) }), [project.template])
-  const setTpl = useCallback(
-    (k, v) => setProject((p) => ({ ...p, template: { ...DEFAULT_TEMPLATE, ...(p.template || {}), [k]: v } })),
-    [setProject],
-  )
   const logoRef = useRef(null)
   const onLogoFile = (file) => {
     if (!file) return
@@ -556,8 +589,11 @@ function FlowInner({ project, setProject, derived, notify }) {
           <button className="btn btn-sm" onClick={exportJSON}>
             Export JSON
           </button>
-          <button className="btn btn-sm btn-primary" onClick={exportPng}>
+          <button className="btn btn-sm" onClick={exportPng}>
             Export PNG
+          </button>
+          <button className="btn btn-sm btn-primary" onClick={exportPdf}>
+            Export PDF
           </button>
         </div>
       </div>
@@ -588,7 +624,7 @@ function FlowInner({ project, setProject, derived, notify }) {
               {appr.map((a) => (
                 <div key={a.k} className="tb-appr">
                   <div className="tb-appr-lb">{a.lb}</div>
-                  <EditableField className="tb-appr-val" value={tpl[a.k]} placeholder="—" onCommit={(v) => setTpl(a.k, v)} />
+                  <EditableField className="tb-appr-val" value={tpl[a.k]} placeholder="Name&#10;Position" multiline onCommit={(v) => setTpl(a.k, v)} />
                 </div>
               ))}
             </div>
